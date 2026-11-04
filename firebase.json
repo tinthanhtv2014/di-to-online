@@ -1,0 +1,7 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": ["firebase.json", ".firebaserc", "firestore.rules", "README.md", "di-to-online-deploy.zip"]
+  },
+  "firestore": { "rules": "firestore.rules" }
+}
