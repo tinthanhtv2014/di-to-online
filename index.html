@@ -42,7 +42,7 @@
       #clockPlate{ padding:6px 12px 7px; min-width:148px; }
       #clockPlate .day{ font-size:17px; font-weight:800; line-height:1.05; letter-spacing:.2px; }
       #clockPlate .day small{ color:var(--noodle); font-size:12px; font-weight:700; }
-      #clockPlate .clock{ font-size:12.5px; color:var(--dim); font-weight:600; font-variant-numeric:tabular-nums; }
+      #clockPlate .clock{ font-size:12.5px; color:var(--dim); font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:48vw; }
       #clockPlate .phase{ font-size:13px; font-weight:700; color:var(--mint); line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:190px; }
       #rightPlate{ display:flex; flex-direction:column; gap:8px; align-items:flex-end; pointer-events:auto; }
       #noodlePlate{ display:flex; align-items:center; gap:8px; padding:7px 13px; font-weight:800; font-size:17px; }
@@ -59,13 +59,18 @@
 
       #stats{
         position:fixed; left:10px; top:calc(96px + env(safe-area-inset-top)); z-index:20;
-        padding:8px 10px 9px; width:150px; pointer-events:none;
+        padding:7px 9px 8px; width:124px; pointer-events:auto; cursor:pointer;
       }
-      .stat{ margin-bottom:5px; }
+      .stat{ margin-bottom:4px; }
       .stat:last-child{ margin-bottom:0; }
-      .stat .lab{ display:flex; justify-content:space-between; font-size:11.5px; font-weight:700; color:var(--dim); margin-bottom:2px; }
+      .stat .lab{ display:flex; justify-content:space-between; font-size:10.5px; font-weight:700; color:var(--dim); margin-bottom:2px; }
       .stat .lab b{ color:var(--txt); font-variant-numeric:tabular-nums; }
-      .bar{ height:7px; border-radius:99px; background:rgba(255,255,255,.14); overflow:hidden; }
+      .bar{ height:5px; border-radius:99px; background:rgba(255,255,255,.14); overflow:hidden; }
+      /* chỉ số gập mini: chỉ còn 4 thanh ngắn, chạm vào plate để mở lại */
+      #stats.mini{ width:64px; padding:7px 8px; }
+      #stats.mini .stat{ margin-bottom:5px; }
+      #stats.mini .stat:last-child{ margin-bottom:0; }
+      #stats.mini .stat .lab{ display:none; }
       .bar i{ display:block; height:100%; border-radius:99px; transition:width .35s ease; }
       #barHunger i{ background:var(--coral); }
       #barHealth i{ background:#ff5d73; }
@@ -87,11 +92,11 @@
       #objective .objLab{ font-size:10px; letter-spacing:1.4px; font-weight:800; color:var(--noodle); line-height:1.2; }
       #objective .objTxt{ font-size:14px; font-weight:800; line-height:1.25; }
       #objective.done .objTxt{ color:var(--mint); }
-      #objective.collapsed{ align-items:center; padding:6px 6px 6px 12px; border-radius:99px; }
+      #objective.collapsed{ align-items:center; padding:5px 5px 5px 11px; border-radius:99px; }
       #objective.collapsed .objLab{ display:none; }
-      #objective.collapsed .objTxt{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      #objective.collapsed .objTxt{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:13px; }
       #objToggle{
-        flex:0 0 auto; width:28px; height:28px; border-radius:50%; border:1px solid var(--line);
+        flex:0 0 auto; width:24px; height:24px; border-radius:50%; border:1px solid var(--line);
         background:rgba(255,255,255,.10); color:var(--txt); cursor:pointer; pointer-events:auto;
         display:flex; align-items:center; justify-content:center; padding:0; margin-top:1px;
       }
@@ -295,6 +300,21 @@
         position:fixed; right:10px; top:calc(104px + env(safe-area-inset-top)); z-index:20;
         width:198px; padding:8px 10px 9px; font-size:12px;
       }
+      /* chip xóm thu gọn: 1 dòng ở mép phải — chấm nối + tên xóm + số người + nút mở.
+         Chạm vào chip mới bung danh sách thành viên và 2 nút Chuồng / Rời xóm. */
+      #roomPanel.mini{ width:auto; max-width:64vw; border-radius:99px; padding:5px 6px 5px 11px; }
+      #roomPanel.mini .rpHead{ margin-bottom:0; }
+      #roomPanel.mini #rpMembers,
+      #roomPanel.mini #btnCopyCode,
+      #roomPanel.mini #btnLeaveRoom{ display:none; }
+      #rpTitle{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .rpHead{ cursor:pointer; }
+      #btnRpToggle{
+        width:22px; height:22px; border-radius:50%; padding:0; flex:0 0 auto;
+        display:flex; align-items:center; justify-content:center;
+      }
+      #btnRpToggle svg{ width:13px; height:13px; transition:transform .25s ease; }
+      #roomPanel.mini #btnRpToggle svg{ transform:rotate(180deg); }
       #rpMembers{ max-height:30vh; overflow-y:auto; }
       .rpMore{ color:var(--dim); font-weight:700; font-size:11.5px; padding-top:5px; }
       .rpHead{ display:flex; align-items:center; gap:6px; font-weight:800; font-size:13.5px; margin-bottom:6px; }
@@ -368,20 +388,24 @@
 
       @media (max-width:560px){
         #roomPanel{ width:168px; top:calc(104px + env(safe-area-inset-top)); }
+        #roomPanel.mini{ width:auto; }
         #chatPanel{ bottom:calc(150px + env(safe-area-inset-bottom)); }
+        .iconBtn{ width:36px; height:36px; border-radius:11px; }
+        #noodlePlate{ padding:5px 10px; font-size:15px; }
       }
 
       .hidden{ display:none !important; }
 
       /* điện thoại dọc: nhiệm vụ ghim thành pill 1 dòng ngay dưới hàng HUD trên cùng — không nằm giữa màn hình nữa */
       @media (max-width:560px){
-        #stats{ top:auto; bottom:calc(160px + env(safe-area-inset-bottom)); width:132px; padding:7px 9px; }
+        #stats{ top:auto; bottom:calc(160px + env(safe-area-inset-bottom)); width:106px; padding:6px 8px 7px; }
+        #stats.mini{ width:56px; }
         #clockPlate{ min-width:0; padding:6px 10px; }
         #clockPlate .day{ font-size:15.5px; }
         #clockPlate .phase{ max-width:128px; }
         #objective{
-          top:calc(72px + env(safe-area-inset-top)); bottom:auto;
-          left:10px; right:10px; transform:none; max-width:none;
+          top:calc(64px + env(safe-area-inset-top)); bottom:auto;
+          left:50%; right:auto; transform:translateX(-50%); max-width:78vw; width:max-content;
         }
         #dialogue{ bottom:calc(112px + env(safe-area-inset-bottom)); }
         #toast{ top:calc(122px + env(safe-area-inset-top)); }
@@ -397,7 +421,8 @@
         #clockPlate .phase{ font-size:12px; max-width:150px; }
         #noodlePlate{ padding:5px 11px; font-size:15px; }
         .iconBtn{ width:34px; height:34px; border-radius:10px; }
-        #stats{ top:calc(74px + env(safe-area-inset-top)); left:calc(8px + env(safe-area-inset-left)); width:128px; padding:6px 8px 7px; }
+        #stats{ top:calc(74px + env(safe-area-inset-top)); left:calc(8px + env(safe-area-inset-left)); width:112px; padding:6px 8px 7px; }
+        #stats.mini{ width:56px; }
         #roomPanel{ top:calc(88px + env(safe-area-inset-top)); right:calc(8px + env(safe-area-inset-right)); width:176px; }
         #rpMembers{ max-height:24vh; }
         #objective{ max-width:min(38vw,320px); }
@@ -426,7 +451,7 @@
     <div id="hudTop" class="hidden">
       <div id="clockPlate" class="plate">
         <div class="day">Ngày <span id="uiDay">1</span><small> / <span id="uiTotal">3</span></small></div>
-        <div class="clock"><span id="uiClock">05:30</span> · <span id="uiRoomLabel">Máy chủ chung</span></div>
+        <div class="clock"><span id="uiClock">05:30</span> · <span id="uiRoomLabel">Xóm Tò</span></div>
         <div class="phase" id="uiPhase">Thức dậy</div>
       </div>
       <div id="rightPlate">
@@ -439,7 +464,7 @@
           <button class="iconBtn" id="btnSound" title="Bật / tắt âm thanh">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.2 6a9 9 0 0 1 0 12"/></svg>
           </button>
-          <button class="iconBtn hidden" id="btnChat" title="Chat trong phòng">
+          <button class="iconBtn hidden" id="btnChat" title="Tám chuyện cả xóm">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-3-.4-4.2-1.1L3 20l1.1-5.3A8.5 8.5 0 1 1 21 11.5Z"/></svg>
           </button>
           <button class="iconBtn" id="btnPause" title="Tạm dừng">
@@ -449,15 +474,15 @@
       </div>
     </div>
 
-    <div id="stats" class="plate hidden">
+    <div id="stats" class="plate hidden" title="Chạm để thu gọn / mở chỉ số">
       <div class="stat" id="stHunger"><div class="lab"><span>Bụng dạ</span><b id="vHunger">80</b></div><div class="bar" id="barHunger"><i style="width:80%"></i></div></div>
       <div class="stat" id="stHealth"><div class="lab"><span>Sức khỏe</span><b id="vHealth">90</b></div><div class="bar" id="barHealth"><i style="width:90%"></i></div></div>
       <div class="stat" id="stMood"><div class="lab"><span>Tinh thần</span><b id="vMood">85</b></div><div class="bar" id="barMood"><i style="width:85%"></i></div></div>
       <div class="stat" id="stRespect"><div class="lab"><span>Uy tín phòng</span><b id="vRespect">20</b></div><div class="bar" id="barRespect"><i style="width:20%"></i></div></div>
     </div>
 
-    <div id="roomPanel" class="plate hidden">
-      <div class="rpHead"><span id="rpTitle">Server chung</span><span id="fbDot" title="Trạng thái Firebase"></span><span class="sp"></span><button class="miniBtn" id="btnCopyCode">Chuồng ?</button><button class="miniBtn" id="btnLeaveRoom">Rời server</button></div>
+    <div id="roomPanel" class="plate hidden mini">
+      <div class="rpHead"><span id="rpTitle">Xóm Tò</span><span id="fbDot" title="Tình trạng nối xóm"></span><span class="sp"></span><button class="miniBtn" id="btnCopyCode">Chuồng của tui</button><button class="miniBtn" id="btnLeaveRoom">Rời xóm</button><button class="miniBtn" id="btnRpToggle" aria-label="Mở / thu danh sách bạn tù"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button></div>
       <div id="rpMembers"></div>
     </div>
 
@@ -479,7 +504,7 @@
     <div id="nameTags"></div>
 
     <div id="chatPanel" class="plate hidden">
-      <div class="chatHead"><span>Chat máy chủ chung</span><button class="miniBtn" id="btnChatClose">Đóng</button></div>
+      <div class="chatHead"><span>Tám chuyện cả xóm</span><button class="miniBtn" id="btnChatClose">Đóng</button></div>
       <div id="chatMsgs"></div>
       <div class="chatRow"><input id="chatInp" maxlength="200" placeholder="Nhắn gì đó với bạn tù…" autocomplete="off" /><button id="btnChatSend">Gửi</button></div>
     </div>
@@ -503,7 +528,7 @@
     <div class="overlay" id="startOverlay">
       <div class="card">
         <h1>Đi Tò <span class="thin">Online 3D</span></h1>
-        <p class="sub">Một ngày trong trại, bản chibi. Chung <b>máy chủ 100 người</b>, mỗi người <b>1 chuồng riêng</b>. Tiến trình <b>tự lưu</b>.</p>
+        <p class="sub">Một ngày trong trại, bản chibi. Cả trại gom về <b>1 xóm tới 100 anh em</b>, mỗi người <b>1 chuồng riêng</b>. Tiến trình <b>tự lưu</b>.</p>
         <div class="fieldLab">TÊN CỦA NÍ</div>
         <input id="inpName" maxlength="14" placeholder="Ví dụ: Tý Tò" autocomplete="off" />
         <div class="fieldLab">MÀU ÁO PHẠM NHÂN</div>
@@ -542,13 +567,13 @@
     <!-- LOBBY -->
     <div class="overlay hidden" id="lobbyOverlay">
       <div class="card">
-        <h1>Máy chủ <span class="thin">chung</span></h1>
-        <p class="sub" id="lobbyInfo">Chung 1 máy chủ, tối đa 100 người.</p>
-        <div class="fbStatus" id="fbStatus">Firebase: đang nối…</div>
-        <div id="rejoinBox" class="hidden">Chuồng của ní: <b id="rejoinCode">—</b> — chơi tiếp từ chỗ cũ.<button id="btnRejoin">Vào máy chủ chung</button></div>
-        <button class="bigBtn" id="btnEnterServer">Vào máy chủ chung</button>
+        <h1>Xóm <span class="thin">Tò</span></h1>
+        <p class="sub" id="lobbyInfo">Cả trại ở chung một xóm, chứa tới 100 anh em.</p>
+        <div class="fbStatus" id="fbStatus">Đang nối vô xóm…</div>
+        <div id="rejoinBox" class="hidden">Chuồng <b id="rejoinCode">—</b> vẫn giữ nguyên cho ní — vô tiếp chỗ cũ nè.<button id="btnRejoin">Vào Tò đi ní</button></div>
+        <button class="bigBtn" id="btnEnterServer">Vào Tò đi ní</button>
         <p class="lobbyMsg" id="lobbyMsg"></p>
-        <button class="ghostBtn" id="btnSolo">Chơi một mình (NPC)</button>
+        <button class="ghostBtn" id="btnSolo">Chơi một mình (bạn tù máy)</button>
       </div>
     </div>
 
@@ -957,7 +982,7 @@
       if(c.facing < 0) ownPlateMesh.rotation.y = Math.PI;
       scene.add(ownPlateMesh);
       STATIONS.bed.x = c.appX; STATIONS.bed.z = c.appZ;
-      const lbl = $('uiRoomLabel'); if(lbl) lbl.textContent = 'Máy chủ chung · Chuồng số ' + c.no;
+      const lbl = $('uiRoomLabel'); if(lbl) lbl.textContent = 'Xóm Tò · Chuồng số ' + c.no;
       const bc = $('btnCopyCode'); if(bc) bc.textContent = 'Chuồng ' + c.no;
     }
 
@@ -2338,6 +2363,22 @@
       $('objToggle').setAttribute('aria-expanded', String(!el.classList.contains('collapsed')));
       SFX.tap();
     });
+    /* panel xóm: mặc định là chip 1 dòng, chạm đầu panel mới bung danh sách */
+    $('btnRpToggle').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      $('roomPanel').classList.toggle('mini');
+      SFX.tap();
+    });
+    $('roomPanel').querySelector('.rpHead').addEventListener('click', (e)=>{
+      if(e.target.closest('#btnCopyCode, #btnLeaveRoom, #btnRpToggle')) return;
+      $('roomPanel').classList.toggle('mini');
+      SFX.tap();
+    });
+    /* panel chỉ số: chạm để gập thành 4 thanh mini / mở lại */
+    $('stats').addEventListener('click', ()=>{
+      $('stats').classList.toggle('mini');
+      SFX.tap();
+    });
     let rotateDismissed = false;
     function tryLockLandscape(){
       try{
@@ -2631,7 +2672,7 @@
         FB.online = false;
         showLobby();
         const st = $('fbStatus');
-        st.textContent = 'Firebase: KHÔNG nối được (' + (e.message || 'lỗi mạng') + '). Máy chủ chung tạm nghỉ — ní vẫn chơi một mình với bạn tù máy được, dữ liệu sẽ nối lại lần mở sau.';
+        st.textContent = 'Nối vô xóm không được (' + (e.message || 'lỗi mạng') + '). Xóm tạm nghỉ — ní cứ chơi một mình với bạn tù máy, lần mở sau vô xóm tiếp.';
         st.className = 'fbStatus bad';
       }
       btn.disabled = false; btn.textContent = old;
@@ -2644,10 +2685,10 @@
     function showLobby(){
       $('startOverlay').classList.add('hidden');
       $('lobbyOverlay').classList.remove('hidden');
-      $('lobbyInfo').innerHTML = 'Xin chào <b>' + escapeHtml(G.playerName) + '</b> — số tù <b>' + escapeHtml(G.number) + '</b>, mức án ' + G.totalDays + ' ngày, đang ở ngày ' + G.day + '/' + G.totalDays + '. Cả trại chơi chung <b>một máy chủ (tối đa 100 người)</b>; chuồng song sắt của ní là <b>chuồng số ' + (G.cellNo || '?') + '</b>. Tiến trình được lưu tự động lên hồ sơ của ní.';
+      $('lobbyInfo').innerHTML = 'Xin chào <b>' + escapeHtml(G.playerName) + '</b> — số tù <b>' + escapeHtml(G.number) + '</b>, mức án ' + G.totalDays + ' ngày, đang ở ngày ' + G.day + '/' + G.totalDays + '. Cả trại gom về <b>một xóm (tới 100 anh em)</b>; chuồng song sắt của ní là <b>chuồng số ' + (G.cellNo || '?') + '</b>. Tiến trình tự lưu vô hồ sơ của ní.';
       if(FB.online){
         const st = $('fbStatus');
-        st.textContent = 'Firebase: ĐÃ NỐI — project di-to-44436, máy chủ chung sẵn sàng.';
+        st.textContent = 'Đã nối vô xóm rồi — xóm Tò sẵn sàng đón ní.';
         st.className = 'fbStatus ok';
       }
       if(G.cellNo){ $('rejoinBox').classList.remove('hidden'); $('rejoinCode').textContent = 'số ' + G.cellNo; }
@@ -2661,7 +2702,7 @@
         const ps = await fbQueryField('players', 'serverId', SERVER_ID, 150);
         const n = ps.filter(p => isFresh(p, 25000)).length;
         const st = $('fbStatus');
-        st.textContent = 'Firebase: ĐÃ NỐI — máy chủ chung đang có ' + n + '/' + SERVER_CAP + ' người online. Tiến trình của ní đã được lưu.';
+        st.textContent = 'Đã nối vô xóm — xóm đang có ' + n + '/' + SERVER_CAP + ' anh em online. Tiến trình của ní đã được lưu.';
         st.className = 'fbStatus ok';
       }catch(e){}
     }
@@ -2675,28 +2716,28 @@
       if(!needOnline()) return;
       const btn = $('btnEnterServer');
       btn.disabled = true;
-      setLobbyMsg('Đang vào máy chủ chung…');
+      setLobbyMsg('Đang vô xóm…');
       try{
         const n = await serverOnlineCount();
         const meIn = myProfile && isFresh(myProfile, 25000);
         if(n >= SERVER_CAP && !meIn){
-          setLobbyMsg('Máy chủ chung đang đủ ' + SERVER_CAP + ' người online rồi — ní thử lại sau ít phút nha.', true);
+          setLobbyMsg('Xóm đông nghẹt rồi ní ơi — đủ ' + SERVER_CAP + ' anh em rồi, đợi ít phút quay lại nha.', true);
           btn.disabled = false; return;
         }
         roomMode = true; roomCode = SERVER_ID; G.serverId = SERVER_ID;
         try{ await fbPatch('players/' + FB.uid, { serverId: SERVER_ID, cellNo: G.cellNo }, ['serverId','cellNo']); }catch(e){}
         $('lobbyOverlay').classList.add('hidden');
-        $('uiRoomLabel').textContent = 'Máy chủ chung · Chuồng số ' + (G.cellNo || '?');
-        $('rpTitle').textContent = 'Server chung';
+        $('uiRoomLabel').textContent = 'Xóm Tò · Chuồng số ' + (G.cellNo || '?');
+        $('rpTitle').textContent = 'Xóm Tò';
         $('roomPanel').classList.remove('hidden');
         $('btnChat').classList.remove('hidden');
         startGame();
         startPresence();
         pollMembers();
         chatPoll();
-        toast('Đã vào máy chủ chung! Ní ở chuồng song sắt số ' + (G.cellNo || '?') + ' — bạn tù người thật khắp trại sẽ hiện dần quanh sân chung.');
+        toast('Vô Tò rồi ní! Chuồng song sắt số ' + (G.cellNo || '?') + ' là của ní — anh em người thật khắp xóm sẽ hiện dần quanh sân chung.');
       }catch(e){
-        setLobbyMsg('Vào máy chủ lỗi: ' + (e.message || e), true);
+        setLobbyMsg('Vô xóm lỗi: ' + (e.message || e), true);
       }
       btn.disabled = false;
     }
@@ -2704,7 +2745,7 @@
       roomMode = false; roomCode = null;
       $('lobbyOverlay').classList.add('hidden');
       startGame();
-      if(!FB.online) toast('Đang chơi một mình với bạn tù máy — Firebase nối lại được thì lần sau vô máy chủ chung nha.');
+      if(!FB.online) toast('Đang chơi một mình với bạn tù máy — lần sau nối được thì vô xóm chơi chung nha.');
     }
 
     /* ---------- hiện diện + đồng bộ ---------- */
@@ -2718,7 +2759,7 @@
     function setFbDot(ok){
       const d = $('fbDot'); if(!d) return;
       d.style.background = ok ? '#5fd68b' : '#ff5d73';
-      d.title = ok ? 'Firebase: đang nối tốt' : 'Firebase: mất nối, đang tự thử lại';
+      d.title = ok ? 'Xóm: đang nối tốt' : 'Xóm: mất nối, đang tự thử lại';
     }
     function startPresence(){
       if(hbTimer) clearInterval(hbTimer);
@@ -2826,7 +2867,7 @@
     }
     function renderMemberList(fresh){
       const el = $('rpMembers'); if(!el) return;
-      $('rpTitle').textContent = 'Server chung · ' + fresh.length + '/' + SERVER_CAP;
+      $('rpTitle').textContent = 'Xóm Tò · ' + fresh.length + '/' + SERVER_CAP;
       const sorted = fresh.slice().sort((a, b) => (a.__pid === FB.uid ? -1 : b.__pid === FB.uid ? 1 : (a.cellNo || 999) - (b.cellNo || 999)));
       let html = sorted.slice(0, 24).map(p => {
         const me = p.__pid === FB.uid;
@@ -2834,7 +2875,7 @@
         const st = p.state === 'sleep' ? 'đang ngủ trong chuồng' : p.state === 'wc' ? 'đang ngồi bồn cầu' : p.state === 'eat' ? 'đang ngồi ghế ăn cơm' : p.state === 'sit' ? 'đang ngồi ghế' : (p.state === 'walk' ? 'đang đi lại' : 'đang ở trong trại');
         return '<div class="rpMember"><span class="dot"></span><span class="rpName">' + escapeHtml(p.name || 'Bạn tù') + (me ? ' (ní)' : '') + '</span><span class="rpMeta">' + escapeHtml(p.prisonerNo || '') + ' · chuồng ' + (p.cellNo || '?') + ' · còn ' + left + ' ngày · ' + st + '</span></div>';
       }).join('');
-      if(sorted.length > 24) html += '<div class="rpMore">… và ' + (sorted.length - 24) + ' bạn tù nữa đang online</div>';
+      if(sorted.length > 24) html += '<div class="rpMore">… và ' + (sorted.length - 24) + ' anh em nữa trong xóm</div>';
       el.innerHTML = html || '<div class="rpMember">Chưa có ai trong trại…</div>';
     }
 
@@ -2914,7 +2955,7 @@
     /* ---------- wiring: sảnh / máy chủ chung / chat ---------- */
     function needOnline(){
       if(FB.online && FB.uid) return true;
-      setLobbyMsg('Chưa nối được máy chủ. Kiểm tra mạng, hoặc chơi một mình đỡ nha.', true);
+      setLobbyMsg('Chưa nối được vô xóm. Kiểm tra mạng, hoặc chơi một mình đỡ nha.', true);
       return false;
     }
     $('btnEnterServer').addEventListener('click', () => { audio(); tryLockLandscape(); enterServer(); });
