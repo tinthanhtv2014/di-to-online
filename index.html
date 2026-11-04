@@ -39,11 +39,11 @@
         display:flex; justify-content:space-between; align-items:flex-start; gap:8px;
         pointer-events:none; z-index:20;
       }
-      #clockPlate{ padding:8px 14px 9px; min-width:172px; }
-      #clockPlate .day{ font-size:19px; font-weight:800; line-height:1.05; letter-spacing:.2px; }
-      #clockPlate .day small{ color:var(--noodle); font-size:13px; font-weight:700; }
-      #clockPlate .clock{ font-size:14px; color:var(--dim); font-weight:600; font-variant-numeric:tabular-nums; }
-      #clockPlate .phase{ font-size:14.5px; font-weight:700; color:var(--mint); line-height:1.15; }
+      #clockPlate{ padding:6px 12px 7px; min-width:148px; }
+      #clockPlate .day{ font-size:17px; font-weight:800; line-height:1.05; letter-spacing:.2px; }
+      #clockPlate .day small{ color:var(--noodle); font-size:12px; font-weight:700; }
+      #clockPlate .clock{ font-size:12.5px; color:var(--dim); font-weight:600; font-variant-numeric:tabular-nums; }
+      #clockPlate .phase{ font-size:13px; font-weight:700; color:var(--mint); line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:190px; }
       #rightPlate{ display:flex; flex-direction:column; gap:8px; align-items:flex-end; pointer-events:auto; }
       #noodlePlate{ display:flex; align-items:center; gap:8px; padding:7px 13px; font-weight:800; font-size:17px; }
       #noodlePlate .ic{ width:20px; height:20px; flex:0 0 auto; }
@@ -58,14 +58,14 @@
       .iconBtn svg{ width:21px; height:21px; }
 
       #stats{
-        position:fixed; left:10px; top:calc(118px + env(safe-area-inset-top)); z-index:20;
-        padding:10px 12px 11px; width:172px; pointer-events:none;
+        position:fixed; left:10px; top:calc(96px + env(safe-area-inset-top)); z-index:20;
+        padding:8px 10px 9px; width:150px; pointer-events:none;
       }
-      .stat{ margin-bottom:7px; }
+      .stat{ margin-bottom:5px; }
       .stat:last-child{ margin-bottom:0; }
-      .stat .lab{ display:flex; justify-content:space-between; font-size:12.5px; font-weight:700; color:var(--dim); margin-bottom:3px; }
+      .stat .lab{ display:flex; justify-content:space-between; font-size:11.5px; font-weight:700; color:var(--dim); margin-bottom:2px; }
       .stat .lab b{ color:var(--txt); font-variant-numeric:tabular-nums; }
-      .bar{ height:8px; border-radius:99px; background:rgba(255,255,255,.14); overflow:hidden; }
+      .bar{ height:7px; border-radius:99px; background:rgba(255,255,255,.14); overflow:hidden; }
       .bar i{ display:block; height:100%; border-radius:99px; transition:width .35s ease; }
       #barHunger i{ background:var(--coral); }
       #barHealth i{ background:#ff5d73; }
@@ -75,15 +75,29 @@
       .stat.low .bar i{ animation:pulse .7s infinite alternate; }
       @keyframes pulse{ from{ filter:brightness(.8);} to{ filter:brightness(1.35);} }
 
-      /* objective chip */
+      /* objective chip — pill gọn ghim ở mép trên, không đè giữa màn hình / nhân vật.
+         Thu gọn (collapsed): chỉ 1 dòng việc cần làm + nút mở; bấm nút mới xem chi tiết. */
       #objective{
         position:fixed; left:50%; transform:translateX(-50%);
-        top:calc(8px + env(safe-area-inset-top)); z-index:19; max-width:min(92vw,430px);
-        padding:8px 16px; text-align:center; pointer-events:none;
+        top:calc(8px + env(safe-area-inset-top)); z-index:19; max-width:min(44vw,360px);
+        padding:7px 8px 7px 12px; pointer-events:none;
+        display:flex; align-items:flex-start; gap:8px; text-align:left;
       }
-      #objective .objLab{ font-size:11px; letter-spacing:1.6px; font-weight:800; color:var(--noodle); }
-      #objective .objTxt{ font-size:16.5px; font-weight:800; line-height:1.2; }
+      #objective .objBody{ flex:1; min-width:0; }
+      #objective .objLab{ font-size:10px; letter-spacing:1.4px; font-weight:800; color:var(--noodle); line-height:1.2; }
+      #objective .objTxt{ font-size:14px; font-weight:800; line-height:1.25; }
       #objective.done .objTxt{ color:var(--mint); }
+      #objective.collapsed{ align-items:center; padding:6px 6px 6px 12px; border-radius:99px; }
+      #objective.collapsed .objLab{ display:none; }
+      #objective.collapsed .objTxt{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      #objToggle{
+        flex:0 0 auto; width:28px; height:28px; border-radius:50%; border:1px solid var(--line);
+        background:rgba(255,255,255,.10); color:var(--txt); cursor:pointer; pointer-events:auto;
+        display:flex; align-items:center; justify-content:center; padding:0; margin-top:1px;
+      }
+      #objective.collapsed #objToggle{ margin-top:0; }
+      #objToggle svg{ width:15px; height:15px; transition:transform .25s ease; }
+      #objective.collapsed #objToggle svg{ transform:rotate(180deg); }
 
       /* phase banner + toast */
       #banner{
@@ -278,10 +292,10 @@
         font-family:inherit; font-size:15.5px; font-weight:800;
       }
       #roomPanel{
-        position:fixed; right:10px; top:calc(124px + env(safe-area-inset-top)); z-index:20;
-        width:228px; padding:9px 11px 10px; font-size:12.5px;
+        position:fixed; right:10px; top:calc(104px + env(safe-area-inset-top)); z-index:20;
+        width:198px; padding:8px 10px 9px; font-size:12px;
       }
-      #rpMembers{ max-height:36vh; overflow-y:auto; }
+      #rpMembers{ max-height:30vh; overflow-y:auto; }
       .rpMore{ color:var(--dim); font-weight:700; font-size:11.5px; padding-top:5px; }
       .rpHead{ display:flex; align-items:center; gap:6px; font-weight:800; font-size:13.5px; margin-bottom:6px; }
       .rpHead .sp{ flex:1; }
@@ -321,23 +335,87 @@
         background:linear-gradient(180deg,#ffd34d,var(--noodle)); color:#33230a;
         font-family:inherit; font-size:14.5px; font-weight:800;
       }
+      /* thanh zoom camera — pill nhỏ ở đáy giữa, giữa joystick và nút tương tác */
+      #zoomCtl{
+        position:fixed; left:50%; transform:translateX(-50%);
+        bottom:calc(24px + env(safe-area-inset-bottom)); z-index:26;
+        display:flex; align-items:center; gap:2px; padding:5px 7px; border-radius:99px;
+      }
+      #zoomCtl button{
+        width:30px; height:30px; border-radius:50%; border:0; cursor:pointer; flex:0 0 auto;
+        background:rgba(255,255,255,.12); color:var(--txt); font-family:inherit;
+        font-size:17px; font-weight:800; line-height:1; display:flex; align-items:center; justify-content:center; padding:0;
+      }
+      #zoomCtl button:active{ background:var(--mint); color:#0d2016; }
+      #zoomRange{ width:104px; accent-color:var(--mint); cursor:pointer; }
+
+      /* nhắc xoay ngang — phủ toàn màn khi cầm dọc lúc đang chơi, tắt được */
+      #rotateHint{
+        position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center;
+        padding:18px; background:rgba(5,10,8,.78); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+      }
+      .rotateCard{ width:min(92vw,360px); padding:26px 22px 20px; text-align:center; border-radius:20px; }
+      .rotateCard .rIcon{
+        width:72px; height:72px; margin:0 auto 12px; border-radius:50%;
+        background:rgba(95,214,139,.14); border:1px solid rgba(95,214,139,.45); color:var(--mint);
+        display:flex; align-items:center; justify-content:center;
+      }
+      .rotateCard .rIcon svg{ width:38px; height:38px; animation:tiltPhone 1.8s ease-in-out infinite alternate; }
+      @keyframes tiltPhone{ from{ transform:rotate(0deg);} to{ transform:rotate(90deg);} }
+      .rotateCard h2{ margin:0 0 6px; font-size:21px; font-weight:800; line-height:1.2; }
+      .rotateCard p{ margin:0 0 16px; color:var(--dim); font-weight:600; font-size:14.5px; line-height:1.45; }
+      .rotateCard .bigBtn{ margin-top:0; }
+
       @media (max-width:560px){
-        #roomPanel{ width:172px; top:calc(112px + env(safe-area-inset-top)); }
+        #roomPanel{ width:168px; top:calc(104px + env(safe-area-inset-top)); }
         #chatPanel{ bottom:calc(150px + env(safe-area-inset-bottom)); }
       }
 
       .hidden{ display:none !important; }
 
+      /* điện thoại dọc: nhiệm vụ ghim thành pill 1 dòng ngay dưới hàng HUD trên cùng — không nằm giữa màn hình nữa */
       @media (max-width:560px){
-        #stats{ top:auto; bottom:calc(160px + env(safe-area-inset-bottom)); width:138px; padding:8px 10px; }
-        #clockPlate{ min-width:0; padding:7px 11px; }
-        #clockPlate .day{ font-size:16px; }
-        #objective{ top:auto; bottom:calc(292px + env(safe-area-inset-bottom)); }
+        #stats{ top:auto; bottom:calc(160px + env(safe-area-inset-bottom)); width:132px; padding:7px 9px; }
+        #clockPlate{ min-width:0; padding:6px 10px; }
+        #clockPlate .day{ font-size:15.5px; }
+        #clockPlate .phase{ max-width:128px; }
+        #objective{
+          top:calc(72px + env(safe-area-inset-top)); bottom:auto;
+          left:10px; right:10px; transform:none; max-width:none;
+        }
         #dialogue{ bottom:calc(112px + env(safe-area-inset-bottom)); }
-        #toast{ top:calc(128px + env(safe-area-inset-top)); }
+        #toast{ top:calc(122px + env(safe-area-inset-top)); }
+        #zoomCtl{ bottom:calc(152px + env(safe-area-inset-bottom)); padding:4px 6px; }
+        #zoomRange{ width:84px; }
+      }
+      /* điện thoại ngang (màn thấp): mọi panel ép gọn về 2 mép, giữa màn hình trống cho nhân vật */
+      @media (max-height:500px) and (orientation:landscape){
+        #hudTop{ top:calc(6px + env(safe-area-inset-top)); left:calc(8px + env(safe-area-inset-left)); right:calc(8px + env(safe-area-inset-right)); }
+        #clockPlate{ padding:4px 10px 5px; min-width:128px; }
+        #clockPlate .day{ font-size:15px; }
+        #clockPlate .clock{ font-size:11.5px; }
+        #clockPlate .phase{ font-size:12px; max-width:150px; }
+        #noodlePlate{ padding:5px 11px; font-size:15px; }
+        .iconBtn{ width:34px; height:34px; border-radius:10px; }
+        #stats{ top:calc(74px + env(safe-area-inset-top)); left:calc(8px + env(safe-area-inset-left)); width:128px; padding:6px 8px 7px; }
+        #roomPanel{ top:calc(88px + env(safe-area-inset-top)); right:calc(8px + env(safe-area-inset-right)); width:176px; }
+        #rpMembers{ max-height:24vh; }
+        #objective{ max-width:min(38vw,320px); }
+        #joy{ width:94px; height:94px; left:calc(14px + env(safe-area-inset-left)); bottom:calc(12px + env(safe-area-inset-bottom)); }
+        #joyKnob{ width:44px; height:44px; }
+        #interactWrap{ right:calc(14px + env(safe-area-inset-right)); bottom:calc(14px + env(safe-area-inset-bottom)); }
+        #btnInteract{ width:66px; height:66px; font-size:13px; }
+        #dialogue{ bottom:calc(12px + env(safe-area-inset-bottom)); width:min(62vw,480px); padding:8px 14px 9px; }
+        #dialogue .what{ font-size:15px; }
+        #toast{ top:calc(64px + env(safe-area-inset-top)); }
+        #chatPanel{ bottom:calc(12px + env(safe-area-inset-bottom)); width:min(56vw,380px); }
+        #chatMsgs{ max-height:110px; }
+        #banner{ top:16%; }
+        #zoomCtl{ bottom:calc(14px + env(safe-area-inset-bottom)); }
       }
       @media (prefers-reduced-motion: reduce){
         #btnInteract.show{ animation:none; }
+        .rotateCard .rIcon svg{ animation:none; transform:rotate(90deg); }
       }
     </style>
   </head>
@@ -383,9 +461,14 @@
       <div id="rpMembers"></div>
     </div>
 
-    <div id="objective" class="plate hidden">
-      <div class="objLab">VIỆC CẦN LÀM</div>
-      <div class="objTxt" id="uiObjective">Gấp chăn cho vuông vức</div>
+    <div id="objective" class="plate hidden collapsed">
+      <div class="objBody">
+        <div class="objLab">VIỆC CẦN LÀM</div>
+        <div class="objTxt" id="uiObjective">Gấp chăn cho vuông vức</div>
+      </div>
+      <button id="objToggle" aria-label="Mở rộng nhiệm vụ" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
     </div>
 
     <div id="banner"><div class="bClock" id="bannerClock">05:30</div><div class="bName" id="bannerName">Thức dậy</div></div>
@@ -401,6 +484,13 @@
       <div class="chatRow"><input id="chatInp" maxlength="200" placeholder="Nhắn gì đó với bạn tù…" autocomplete="off" /><button id="btnChatSend">Gửi</button></div>
     </div>
 
+    <!-- zoom camera -->
+    <div id="zoomCtl" class="plate hidden">
+      <button id="btnZoomIn" aria-label="Zoom lại gần">+</button>
+      <input id="zoomRange" type="range" min="5" max="14" step="0.1" value="9.5" aria-label="Mức zoom camera" />
+      <button id="btnZoomOut" aria-label="Zoom ra xa">−</button>
+    </div>
+
     <!-- touch controls -->
     <div id="joy" class="hidden"><div id="joyKnob"></div></div>
     <div id="interactWrap" class="hidden">
@@ -413,22 +503,20 @@
     <div class="overlay" id="startOverlay">
       <div class="card">
         <h1>Đi Tò <span class="thin">Online 3D</span></h1>
-        <p class="sub">Trải nghiệm một ngày trong trại giam — phiên bản chibi dễ thương, sống chậm và chill chill. Mọi người chơi chung <b>một máy chủ chung (tối đa 100 người)</b>, mỗi người được cấp <b>một chuồng song sắt riêng</b> có giường của mình. Tiến trình chơi được <b>lưu tự động</b> — tắt đi mở lại là chơi tiếp đúng chỗ cũ.</p>
+        <p class="sub">Một ngày trong trại, bản chibi. Chung <b>máy chủ 100 người</b>, mỗi người <b>1 chuồng riêng</b>. Tiến trình <b>tự lưu</b>.</p>
         <div class="fieldLab">TÊN CỦA NÍ</div>
         <input id="inpName" maxlength="14" placeholder="Ví dụ: Tý Tò" autocomplete="off" />
         <div class="fieldLab">MÀU ÁO PHẠM NHÂN</div>
         <div class="swatches" id="swatches"></div>
-        <div class="fieldLab">CHỌN MỨC ÁN ĐỂ TRẢI NGHIỆM</div>
+        <div class="fieldLab">MỨC ÁN</div>
         <div class="terms" id="terms">
           <button class="term sel" data-days="3"><b>3 ngày</b><span>chơi nhanh</span></button>
           <button class="term" data-days="7"><b>7 ngày</b><span>cho quen nếp</span></button>
           <button class="term" data-days="30"><b>30 ngày</b><span>ở thiệt luôn</span></button>
         </div>
-        <div class="fieldLab">ĐỒ ĐƯỢC PHÁT KHI NHẬN PHÒNG</div>
-        <div class="kit"><span>1 bộ đồ sọc</span><span>1 chăn mỏng</span><span>1 bàn chải</span><span>1 đôi dép tổ ong</span><span>3 gói mì tôm</span></div>
         <p class="howto hidden" id="restoreNote"></p>
         <button class="bigBtn" id="btnStart">Nhận số tù &amp; vào phòng</button>
-        <p class="howto"><b>Cách chơi:</b> cần điều khiển bên trái (hoặc WASD) để đi lại, kéo màn hình để xoay camera, tới gần đồ vật / người đang phát sáng rồi bấm nút vàng. Tới giường của mình là <b>trèo lên nằm ngủ</b> được thiệt luôn; tới bàn ăn là <b>ngồi xuống ghế ăn cơm</b>, ghé góc vệ sinh là <b>ngồi bồn cầu đi vệ sinh</b> được luôn. Hoàn thành việc theo lịch từng buổi để giữ sức khỏe, tinh thần và uy tín trong phòng.</p>
+        <p class="howto"><b>Cách chơi:</b> joystick / WASD để đi · kéo màn hình xoay camera · tới gần điểm phát sáng, bấm nút vàng. <b>Điện thoại: xoay ngang</b> cho dễ chơi.</p>
       </div>
     </div>
 
@@ -446,7 +534,7 @@
           <div class="row"><span>Việc trong lịch làm xong</span><b id="endTasks">0</b></div>
           <div class="row"><span>Uy tín lúc ra về</span><b id="endRespect">0</b></div>
         </div>
-        <p class="verdict">Ở trong đó mới thấy: một bữa cơm nhà, một giấc ngủ không ai điểm danh, quý hơn nhiều lắm. Tự do không phải là điều hiển nhiên — giữ gìn nó nhé ní.</p>
+        <p class="verdict">Tự do không phải điều hiển nhiên — giữ gìn nó nhé ní.</p>
         <button class="bigBtn" id="btnAgain">Chơi lại từ đầu</button>
       </div>
     </div>
@@ -455,12 +543,25 @@
     <div class="overlay hidden" id="lobbyOverlay">
       <div class="card">
         <h1>Máy chủ <span class="thin">chung</span></h1>
-        <p class="sub" id="lobbyInfo">Cả trại chung một máy chủ duy nhất — tối đa 100 người chơi cùng lúc. Mỗi người được cấp một chuồng song sắt riêng có giường của mình; ra sân chung sinh hoạt, tối về chuồng ngủ.</p>
+        <p class="sub" id="lobbyInfo">Chung 1 máy chủ, tối đa 100 người.</p>
         <div class="fbStatus" id="fbStatus">Firebase: đang nối…</div>
-        <div id="rejoinBox" class="hidden">Chuồng song sắt của ní: <b id="rejoinCode">—</b> — tiến trình đã lưu sẽ được chơi tiếp.<button id="btnRejoin">Vào máy chủ chung</button></div>
-        <button class="bigBtn" id="btnEnterServer">Vào máy chủ chung (100 người)</button>
+        <div id="rejoinBox" class="hidden">Chuồng của ní: <b id="rejoinCode">—</b> — chơi tiếp từ chỗ cũ.<button id="btnRejoin">Vào máy chủ chung</button></div>
+        <button class="bigBtn" id="btnEnterServer">Vào máy chủ chung</button>
         <p class="lobbyMsg" id="lobbyMsg"></p>
-        <button class="ghostBtn" id="btnSolo">Chơi một mình với bạn tù máy (NPC)</button>
+        <button class="ghostBtn" id="btnSolo">Chơi một mình (NPC)</button>
+      </div>
+    </div>
+
+    <!-- ROTATE HINT -->
+    <div id="rotateHint" class="hidden" role="dialog" aria-label="Xoay ngang điện thoại để chơi">
+      <div class="rotateCard plate">
+        <div class="rIcon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/><rect x="8" y="9.2" width="8" height="5.6" rx="1.4"/></svg>
+        </div>
+        <h2>Xoay ngang máy đi ní</h2>
+        <p>Để ngang màn hình rộng hơn, thấy nhân vật rõ hơn hẳn.</p>
+        <button class="bigBtn" id="btnRotateLock">Xoay ngang ngay</button>
+        <button class="ghostBtn" id="btnRotateDismiss">Chơi dọc vẫn được</button>
       </div>
     </div>
 
@@ -532,17 +633,17 @@
       cellNo:0, serverId:'', restoredPos:false,
       playerName:'Tý Tò', number:'T-0000', shirt:0x5b8def,
       busy:0, lying:false, onBed:false, resting:false, climbActive:false, elapsed:0, eventCd:0,
-      sitting:'', sitTrans:false
+      sitting:'', sitTrans:false, workPose:''
     };
 
     const PHASES = [
       { id:'wake',     name:'Thức dậy & gấp chăn',   clock:[5.5,6.0],  dur:26, station:'bed',   task:'Gấp chăn cho vuông vức',        verb:'Gấp chăn' },
       { id:'rollam',   name:'Điểm danh buổi sáng',   clock:[6.0,6.5],  dur:20, station:'door',  task:'Ra cửa điểm danh',              verb:'Điểm danh' },
       { id:'breakfast',name:'Ăn sáng',               clock:[6.5,7.25], dur:24, station:'table', task:'Ăn sáng lấy sức',               verb:'Ăn sáng', meal:38 },
-      { id:'labor',    name:'Lao động: gấp hộp',     clock:[7.25,11.5],dur:52, station:'table', task:'Gấp hộp giấy kiếm mì tôm',      verb:'Gấp hộp' },
+      { id:'labor',    name:'Đi lao động',           clock:[7.25,11.5],dur:52, station:'table', task:'Đi lao động kiếm mì tôm',       verb:'Gấp hộp' },
       { id:'lunch',    name:'Ăn trưa',               clock:[11.5,12.5],dur:24, station:'table', task:'Ăn trưa',                       verb:'Ăn trưa', meal:45 },
       { id:'nap',      name:'Ngủ trưa',              clock:[12.5,14.0],dur:30, station:'bed',   task:'Về giường ngủ trưa',            verb:'Ngủ trưa' },
-      { id:'labor2',   name:'Lao động buổi chiều',   clock:[14.0,17.0],dur:46, station:'table', task:'Gấp hộp tiếp cho đủ chỉ tiêu',  verb:'Gấp hộp' },
+      { id:'labor2',   name:'Lao động buổi chiều',   clock:[14.0,17.0],dur:46, station:'table', task:'Lao động tiếp cho đủ chỉ tiêu', verb:'Gấp hộp' },
       { id:'wash',     name:'Tắm rửa',               clock:[17.0,18.0],dur:24, station:'basin', task:'Tắm rửa cho sạch sẽ',           verb:'Tắm rửa' },
       { id:'dinner',   name:'Ăn chiều',              clock:[18.0,19.0],dur:24, station:'table', task:'Ăn chiều',                      verb:'Ăn chiều', meal:42 },
       { id:'free',     name:'Sinh hoạt phòng',       clock:[19.0,21.0],dur:44, station:null,    task:'Tám chuyện, đếm ngày trên tường', verb:'' },
@@ -579,19 +680,19 @@
     renderer.shadowMap.type = THREE.PCFShadowMap;
     try{ renderer.outputColorSpace = THREE.SRGBColorSpace; }catch(e){ try{ renderer.outputEncoding = THREE.sRGBEncoding; }catch(e2){} }
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.12;
+    renderer.toneMappingExposure = 1.32;
     container.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x9fc8bd);
-    scene.fog = new THREE.Fog(0x9fc8bd, 30, 95);
+    scene.background = new THREE.Color(0xbde6da);
+    scene.fog = new THREE.Fog(0xbde6da, 34, 100);
 
-    const camera = new THREE.PerspectiveCamera(46, innerWidth/innerHeight, 0.1, 160);
-    camera.position.set(5.2, 3.6, 5.6);
+    const camera = new THREE.PerspectiveCamera(54, innerWidth/innerHeight, 0.1, 160);
+    camera.position.set(8.5, 5.5, 8.5);
 
-    const hemi = new THREE.HemisphereLight(0xeaf6ff, 0x5d6b5a, 0.95);
+    const hemi = new THREE.HemisphereLight(0xf2f9ff, 0x7d8f74, 1.35);
     scene.add(hemi);
-    const sun = new THREE.DirectionalLight(0xfff1d6, 1.5);
+    const sun = new THREE.DirectionalLight(0xfff3da, 1.85);
     sun.position.set(6, 9, -4);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -635,9 +736,9 @@
 
     // floor tiles
     const floorTex = canvasTex(512,512,(g)=>{
-      g.fillStyle='#b9beb4'; g.fillRect(0,0,512,512);
+      g.fillStyle='#ccd2c2'; g.fillRect(0,0,512,512);
       for(let i=0;i<8;i++) for(let j=0;j<8;j++){
-        g.fillStyle = (i+j)%2 ? '#c3c8bd' : '#b4bab0';
+        g.fillStyle = (i+j)%2 ? '#d3d9cb' : '#c6ccbc';
         g.fillRect(i*64+2,j*64+2,60,60);
       }
       g.fillStyle='rgba(90,100,90,.25)';
@@ -647,8 +748,8 @@
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.w, ROOM.d), new THREE.MeshStandardMaterial({ map:floorTex, roughness:.95 }));
     floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; scene.add(floor);
 
-    const wallMat = mat(0xa8bfb2, .95);
-    const wallMatLow = mat(0x7fae94, .95);
+    const wallMat = mat(0xc2dacd, .95);
+    const wallMatLow = mat(0x97c7ab, .95);
     function wall(w,h,x,y,z,ry){
       const g = new THREE.Group();
       const up = box(w,h*0.55,0.15, wallMat, 0, h*0.725, 0, g);
@@ -660,7 +761,7 @@
     wall(ROOM.w, ROOM.h, 0, 0,  ROOM.d/2, Math.PI);      // front (behind camera)
     wall(ROOM.d, ROOM.h, -ROOM.w/2, 0, 0,  Math.PI/2);   // left
     wall(ROOM.d, ROOM.h,  ROOM.w/2, 0, 0, -Math.PI/2);   // right
-    const ceil = box(ROOM.w, 0.12, ROOM.d, mat(0xd9dcd2,.95), 0, ROOM.h, 0, scene, false);
+    const ceil = box(ROOM.w, 0.12, ROOM.d, mat(0xe8ebe1,.95), 0, ROOM.h, 0, scene, false);
     ceil.castShadow=false;
 
     // window with bars on back wall
@@ -789,7 +890,7 @@
         dummy.updateMatrix();
         m.setMatrixAt(i, dummy.matrix);
       }
-      const barMat = mat(0x3f4a44, .45, .6), wallCellMat = mat(0x9db4a6, .95), slabMat = mat(0xa9aca2, .95);
+      const barMat = mat(0x55645c, .45, .6), wallCellMat = mat(0xb6cdbf, .95), slabMat = mat(0xbcbeb4, .95);
       const vBars = makeInst(900, barMat, true), gateBars = makeInst(300, barMat, false), gateRails = makeInst(200, barMat, false);
       const rails = makeInst(200, barMat, false), beams = makeInst(100, barMat, false);
       const backs = makeInst(100, wallCellMat, false), parts = makeInst(104, wallCellMat, false);
@@ -907,6 +1008,116 @@
     addObstacle(3.55,-2.55, 0.62, 0.6);
     addObstacle(3.6, 2.6, 0.5, 0.5);
 
+    /* ================================================================
+       KHU LAO ĐỘNG — vườn rau (bên trái sân) + chuồng heo (bên phải sân)
+       + điểm quét sân. Mỗi việc có trạm tương tác riêng ở nearestInteract.
+       ================================================================ */
+    function signBoard(txt, x, z, ry){
+      const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry || 0; scene.add(g);
+      box(0.07, 1.0, 0.07, mat(0x6e4e2f,.8), -0.55, 0.5, 0, g);
+      box(0.07, 1.0, 0.07, mat(0x6e4e2f,.8),  0.55, 0.5, 0, g);
+      const tex = canvasTex(512, 128, (c)=>{
+        c.fillStyle = '#f3e5c3'; c.fillRect(0,0,512,128);
+        c.strokeStyle = '#8a5a33'; c.lineWidth = 8; c.strokeRect(6,6,500,116);
+        c.fillStyle = '#5d4020'; c.textAlign = 'center'; c.font = '800 56px "Baloo 2", sans-serif';
+        c.fillText(txt, 256, 84);
+      });
+      const p = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.38), new THREE.MeshStandardMaterial({ map:tex, roughness:.9 }));
+      p.position.set(0, 1.12, 0.03); g.add(p);
+      box(1.6, 0.46, 0.05, mat(0x8a5a33,.8), 0, 1.12, 0, g);
+      return g;
+    }
+    // ---- vườn rau ----
+    const gardenGroup = new THREE.Group(); gardenGroup.position.set(-15, 0, -4); scene.add(gardenGroup);
+    const soilMat = mat(0x6b4a2e, 1);
+    [-1.5, 0, 1.5].forEach(dz => box(6.4, 0.14, 1.0, soilMat, 0, 0.07, dz, gardenGroup));
+    // hàng rào gỗ thấp quanh vườn (chừa lối vào phía đông)
+    const fenceMatG = mat(0xa87f4f, .85);
+    for(let i=0;i<7;i++){ box(0.09, 0.55, 0.09, fenceMatG, -3.2 + i*1.07, 0.27, -2.3, gardenGroup); box(0.09, 0.55, 0.09, fenceMatG, -3.2 + i*1.07, 0.27, 2.3, gardenGroup); }
+    box(6.6, 0.07, 0.07, fenceMatG, 0, 0.48, -2.3, gardenGroup); box(6.6, 0.07, 0.07, fenceMatG, 0, 0.48, 2.3, gardenGroup);
+    for(let i=0;i<5;i++) box(0.09, 0.55, 0.09, fenceMatG, -3.3, 0.27, -2.3 + i*1.15, gardenGroup);
+    box(0.07, 0.07, 4.7, fenceMatG, -3.3, 0.48, 0, gardenGroup);
+    addObstacle(-15, -6.3, 3.4, 0.15); addObstacle(-15, -1.7, 3.4, 0.15); addObstacle(-18.3, -4, 0.15, 2.4);
+    // thùng nước tưới
+    cyl(0.34, 0.3, 0.72, mat(0x3f7fbf,.55,.2), 3.9, 0.36, 1.9, gardenGroup, 16);
+    cyl(0.31, 0.31, 0.03, new THREE.MeshStandardMaterial({ color:0x7fd4ff, roughness:.15, transparent:true, opacity:.9 }), 3.9, 0.7, 1.9, gardenGroup, 16);
+    addObstacle(-11.1, -2.1, 0.4, 0.4);
+    signBoard('VƯỜN RAU', -15, -7.6, 0);
+    // mầm cây: hiện dần khi người chơi trồng
+    const sprouts = [];
+    const leafMat = mat(0x4caf50, .8), stemMat = mat(0x3d8b40, .9);
+    for(let r=0;r<3;r++) for(let i=0;i<4;i++){
+      const s = new THREE.Group();
+      s.position.set(-17.4 + i*1.6, 0.14, -5.5 + r*1.5);
+      cyl(0.025, 0.035, 0.3, stemMat, 0, 0.15, 0, s, 8);
+      sph(0.13, leafMat, 0, 0.36, 0, s, 10); sph(0.1, leafMat, 0.11, 0.28, 0.05, s, 10); sph(0.1, leafMat, -0.11, 0.28, -0.05, s, 10);
+      s.visible = false; s.scale.setScalar(0.3); scene.add(s); sprouts.push(s);
+    }
+    // ---- chuồng heo ----
+    const penGroup = new THREE.Group(); penGroup.position.set(15.5, 0, 4.8); scene.add(penGroup);
+    const mud = cyl(1.5, 1.6, 0.04, mat(0x8a6a4a, 1), 0.2, 0.02, 0.2, penGroup, 22); mud.scale.z = 0.75; mud.castShadow = false;
+    const penMat = mat(0x9a9a92, .6, .3);
+    function penSide(w, x, z, ry){
+      const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry || 0; penGroup.add(g);
+      const n = Math.max(2, Math.round(w/1.1));
+      for(let i=0;i<=n;i++) box(0.08, 0.85, 0.08, penMat, -w/2 + (w/n)*i, 0.42, 0, g);
+      box(w, 0.07, 0.07, penMat, 0, 0.78, 0, g); box(w, 0.07, 0.07, penMat, 0, 0.34, 0, g);
+    }
+    penSide(6.4, 0, -2.6, 0); penSide(6.4, 0, 2.6, 0); penSide(5.2, 3.2, 0, Math.PI/2); penSide(2.2, -3.2, -1.5, Math.PI/2);
+    addObstacle(15.5, 2.2, 3.3, 0.14); addObstacle(15.5, 7.4, 3.3, 0.14); addObstacle(18.7, 4.8, 0.14, 2.7); addObstacle(12.3, 3.3, 0.14, 1.2);
+    // máng ăn
+    box(1.5, 0.24, 0.5, mat(0x7a5a38,.7), -0.6, 0.12, -1.7, penGroup);
+    box(1.34, 0.06, 0.36, mat(0xc9a06b,.95), -0.6, 0.26, -1.7, penGroup);
+    addObstacle(14.9, 3.1, 0.85, 0.35);
+    signBoard('CHUỒNG HEO', 15.5, 8.6, Math.PI);
+    // 3 chú heo chibi
+    const pigs = [];
+    function makePig(x, z, ry, sc){
+      const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; g.scale.setScalar(sc || 1); penGroup.add(g);
+      const skin = mat(0xf5a8b8, .75), skinD = mat(0xef8fa5, .75);
+      const body = sph(0.34, skin, 0, 0.36, 0, g, 18); body.scale.set(1.25, 0.9, 0.95);
+      sph(0.21, skin, 0.42, 0.42, 0, g, 16);
+      cyl(0.09, 0.1, 0.07, skinD, 0.6, 0.4, 0, g, 12).rotation.z = Math.PI/2;
+      const earGeo = new THREE.ConeGeometry(0.07, 0.13, 8);
+      [-0.1, 0.1].forEach(dz => { const e = new THREE.Mesh(earGeo, skinD); e.position.set(0.34, 0.62, dz); e.castShadow = true; g.add(e); });
+      [[-0.2,-0.16],[-0.2,0.16],[0.2,-0.16],[0.2,0.16]].forEach(p => cyl(0.045, 0.05, 0.2, skinD, p[0], 0.1, p[1], g, 8));
+      const tail = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.02, 6, 12), skinD);
+      tail.position.set(-0.44, 0.44, 0); g.add(tail);
+      pigs.push({ g, baseZ: z, ph: rand(0, 6) });
+      return g;
+    }
+    makePig(-0.9, 0.7, 0.6, 1); makePig(1.3, -0.9, -0.8, 0.85); makePig(0.4, 1.3, 2.4, 0.7);
+    // điểm quét sân: chổi + thùng rác ở sân giữa
+    const sweepSpot = new THREE.Group(); sweepSpot.position.set(-3.5, 0, -6.8); scene.add(sweepSpot);
+    cyl(0.16, 0.19, 0.62, mat(0x4f9e63,.6), 0.5, 0.31, 0.3, sweepSpot, 14);
+    const leanBroom = new THREE.Group(); leanBroom.position.set(-0.45, 0, 0.25); leanBroom.rotation.z = 0.5; sweepSpot.add(leanBroom);
+    cyl(0.025, 0.025, 1.05, mat(0xa87f4f,.8), 0, 0.52, 0, leanBroom, 8);
+    box(0.3, 0.22, 0.09, mat(0xd8b93c,.95), 0, 0.05, 0, leanBroom);
+    addObstacle(-3.0, -6.5, 0.3, 0.3);
+
+    /* đạo cụ lao động trên tay người chơi (cuốc / bình tưới / thau cám / chổi) —
+       group lơ lửng trước mặt nhân vật khi đang làm việc, xem updateWorkProp */
+    const workProp = new THREE.Group(); workProp.visible = false; scene.add(workProp);
+    const propHoe = new THREE.Group(); {
+      const stick = cyl(0.028, 0.028, 1.0, mat(0xa87f4f,.8), 0, 0, 0, propHoe, 8); stick.rotation.x = 0.9;
+      const blade = box(0.3, 0.05, 0.16, mat(0x8b948e,.4,.5), 0, -0.38, 0.4, propHoe); blade.rotation.x = 0.9;
+    }
+    const propCan = new THREE.Group(); {
+      cyl(0.13, 0.15, 0.26, mat(0x3f9e63,.5,.2), 0, 0, 0, propCan, 14);
+      const spout = cyl(0.03, 0.05, 0.34, mat(0x357f52,.5,.2), 0.2, -0.04, 0.1, propCan, 8); spout.rotation.z = -1.0;
+      sph(0.055, mat(0x357f52,.5,.2), 0.34, -0.12, 0.1, propCan, 10);
+    }
+    const propFeed = new THREE.Group(); {
+      cyl(0.19, 0.14, 0.24, mat(0xe2543e,.6), 0, 0, 0, propFeed, 14);
+      cyl(0.17, 0.17, 0.04, mat(0xc9a06b,.95), 0, 0.13, 0, propFeed, 14);
+    }
+    const propBroom = new THREE.Group(); {
+      const stick = cyl(0.026, 0.026, 1.05, mat(0xa87f4f,.8), 0, 0, 0, propBroom, 8); stick.rotation.x = 0.65;
+      box(0.34, 0.26, 0.08, mat(0xd8b93c,.95), 0, -0.42, 0.3, propBroom);
+    }
+    [propHoe, propCan, propFeed, propBroom].forEach(p => { p.visible = false; workProp.add(p); });
+    const WORK_PROPS = { hoe:propHoe, water:propCan, feed:propFeed, sweep:propBroom };
+
     // ceiling fan (the one moving element besides life)
     const fanGroup = new THREE.Group(); fanGroup.position.set(0,ROOM.h-0.06,0.2); scene.add(fanGroup);
     cyl(0.035,0.035,0.3, mat(0x666e68,.4,.5), 0,-0.15,0, fanGroup, 10);
@@ -947,7 +1158,11 @@
       door:  { x: 9.6,  z:-4, label:'Cổng điểm danh' },
       table: { x: 0.6,  z: 1.25, label:'Bàn sinh hoạt' },
       basin: { x: 2.75, z:-2.45, label:'Chậu nước' },
-      wall:  { x: 6.8,  z:-10.55, label:'Bảng đếm ngày' }
+      wall:  { x: 6.8,  z:-10.55, label:'Bảng đếm ngày' },
+      garden:{ x:-11.6, z:-4.0, label:'Vườn rau' },
+      barrel:{ x:-11.3, z:-2.0, label:'Thùng nước tưới' },
+      pigpen:{ x: 12.0, z: 4.8, label:'Chuồng heo' },
+      sweep: { x:-3.5,  z:-5.9, label:'Sân giữa' }
     };
 
     // splash particles
@@ -1095,10 +1310,10 @@
       wake:     [ {x:-2.5,z:-1.7},{x:-2.5,z:1.9},{x:-1.2,z:2.6},{x:0.4,z:-2.8} ],
       rollam:   [ {x:3.4,z:-0.5},{x:3.4,z:1.3},{x:2.7,z:-0.9},{x:2.7,z:1.7} ],
       breakfast:[ {x:-0.2,z:-0.6},{x:1.4,z:-0.6},{x:-0.2,z:1.0},{x:1.4,z:1.0} ],
-      labor:    [ {x:-0.2,z:-0.75},{x:1.4,z:-0.75},{x:-0.2,z:1.15},{x:1.4,z:1.15} ],
+      labor:    [ {x:-12.2,z:-3.2},{x:12.6,z:5.6},{x:-0.2,z:1.15},{x:1.4,z:1.15} ],
       lunch:    [ {x:-0.2,z:-0.6},{x:1.4,z:-0.6},{x:-0.2,z:1.0},{x:1.4,z:1.0} ],
       nap:      null, // beds
-      labor2:   [ {x:-0.2,z:-0.75},{x:1.4,z:-0.75},{x:-0.2,z:1.15},{x:1.4,z:1.15} ],
+      labor2:   [ {x:-0.2,z:-0.75},{x:-12.4,z:-5.2},{x:12.4,z:3.8},{x:1.4,z:1.15} ],
       wash:     [ {x:2.6,z:-1.7},{x:2.5,z:2.0},{x:1.9,z:-2.7},{x:2.6,z:1.2} ],
       dinner:   [ {x:-0.2,z:-0.6},{x:1.4,z:-0.6},{x:-0.2,z:1.0},{x:1.4,z:1.0} ],
       free:     [ {x:-1.6,z:0.8},{x:1.8,z:-1.4},{x:-0.6,z:-2.4},{x:2.2,z:2.2} ],
@@ -1189,8 +1404,10 @@
       knob.style.transform = 'translate(calc(-50% + '+(dx*34)+'px), calc(-50% + '+(dy*34)+'px))';
     }
 
-    // camera orbit by dragging on the scene
-    let camYaw = 0.65, camPitch = 0.5, camDist = 5.8;
+    // camera orbit by dragging on the scene — mặc định lùi xa (9.5) cho khung nhìn rộng,
+    // người chơi tự chỉnh khoảng cách bằng con lăn chuột / pinch 2 ngón / thanh zoom
+    const CAM_MIN = 5, CAM_MAX = 14;
+    let camYaw = 0.65, camPitch = 0.46, camDist = 9.5;
     const drag = { active:false, id:null, lx:0, ly:0, moved:false };
     renderer.domElement.addEventListener('pointerdown', e=>{
       audio();
@@ -1204,12 +1421,33 @@
       drag.lx = e.clientX; drag.ly = e.clientY;
     });
     addEventListener('pointerup', e=>{ if(e.pointerId===drag.id) drag.active=false; });
-    addEventListener('wheel', e=>{ camDist = clamp(camDist + e.deltaY*0.004, 4.2, 8.5); }, { passive:true });
+    addEventListener('wheel', e=>{ camDist = clamp(camDist + e.deltaY*0.006, CAM_MIN, CAM_MAX); }, { passive:true });
+    // pinch 2 ngón trên canvas để zoom ra / vào
+    const camPointers = new Map(); let pinchD0 = 0, pinchDist0 = 0;
+    renderer.domElement.addEventListener('pointerdown', e=>{
+      camPointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
+      if(camPointers.size===2){
+        const pts = [...camPointers.values()];
+        pinchD0 = Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y) || 1;
+        pinchDist0 = camDist; drag.active = false;
+      }
+    });
+    addEventListener('pointermove', e=>{
+      if(!camPointers.has(e.pointerId)) return;
+      camPointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
+      if(camPointers.size===2 && pinchD0>0){
+        const pts = [...camPointers.values()];
+        const d = Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y) || 1;
+        camDist = clamp(pinchDist0 * pinchD0 / d, CAM_MIN, CAM_MAX);
+      }
+    });
+    function pinchEnd(e){ camPointers.delete(e.pointerId); if(camPointers.size<2) pinchD0 = 0; }
+    addEventListener('pointerup', pinchEnd); addEventListener('pointercancel', pinchEnd);
 
     $('btnInteract').addEventListener('click', ()=>{ audio(); tryInteract(); });
 
     /* ---------------- INTERACTABLES ---------------- */
-    let foldCount = 0, laborCount = 0, wallCount = 0;
+    let foldCount = 0, laborCount = 0, wallCount = 0, plantCount = 0;
     const eventItems = { slipper:null, parcel:null }; // meshes when active
 
     function makeSlipper(){
@@ -1273,13 +1511,20 @@
       if(!(p.station==='bed' && !G.taskDone)){
         const bs = STATIONS.bed;
         consider(bs.x, bs.z, { label:'Trèo lên giường nằm', verb:'Lên giường', act:()=>{
-          startClimbUp(()=>{ showBubble('player','Zzz… nằm trên giường êm hơn sàn nhiều.', 2400); toast('Đã leo lên giường nằm. Bấm “Xuống giường” khi muốn dậy.'); });
+          startClimbUp(()=>{ showBubble('player','Zzz… êm hơn sàn nhiều.', 2200); });
         } });
       }
       // keep folding boxes for extra noodles after quota
       if((p.id==='labor' || p.id==='labor2') && G.taskDone){
         const s = STATIONS.table;
         consider(s.x, s.z, { label:'Gấp hộp tiếp (kiếm mì)', verb:'Gấp hộp', act:()=>doPhaseTask(p) });
+      }
+      // lao động tự chọn trong buổi lao động: vườn rau, chuồng heo, quét sân
+      if(p.id==='labor' || p.id==='labor2'){
+        consider(STATIONS.garden.x, STATIONS.garden.z, { label:'Trồng cây ở vườn rau', verb:'Trồng cây', act:()=>doJob('plant') });
+        consider(STATIONS.barrel.x, STATIONS.barrel.z, { label:'Tưới rau', verb:'Tưới rau', act:()=>doJob('water') });
+        consider(STATIONS.pigpen.x, STATIONS.pigpen.z, { label:'Cho heo ăn', verb:'Cho heo ăn', act:()=>doJob('feed') });
+        consider(STATIONS.sweep.x, STATIONS.sweep.z, { label:'Quét sân', verb:'Quét sân', act:()=>doJob('sweep') });
       }
       // wall counting — any time
       consider(STATIONS.wall.x, STATIONS.wall.z, { label:'Đếm ngày trên tường', verb:'Đếm ngày', act:doWall });
@@ -1299,7 +1544,7 @@
             noiseBurst(.35,.14,900); SFX.splash();
             G.stats.mood = clamp(G.stats.mood+4,0,100); G.stats.health = clamp(G.stats.health+2,0,100);
             showBubble('player','Xong… nhẹ cả người!', 2000);
-            toast('Đi vệ sinh xong, xả nước đàng hoàng. Bấm “Đứng dậy” khi muốn đi tiếp.');
+            toast('Xong, đã xả nước.');
           });
         });
       }});
@@ -1329,7 +1574,7 @@
       G.taskDone = true; G.tasksDone++;
       if(typeof fbSaveProgress === 'function') fbSaveProgress();
       $('objective').classList.add('done');
-      $('uiObjective').textContent = 'Xong việc buổi này rồi — thong thả thôi';
+      $('uiObjective').textContent = 'Xong việc buổi này.';
       if(bonusMsg) toast(bonusMsg);
     }
 
@@ -1352,7 +1597,7 @@
           SFX.bell();
           showBubble('player','CÓ MẶT!', 1800);
           tone(700,.12,'square',.06);
-          if(p.id==='rollam'){ completeTask('Điểm danh xong. Cả phòng đủ mặt, không ai trốn chăn.'); }
+          if(p.id==='rollam'){ completeTask('Điểm danh xong.'); }
           else { enterSleep(); }
           break; }
         case 'breakfast': case 'lunch': case 'dinner': {
@@ -1366,7 +1611,7 @@
           stackMeshes.forEach((m,i)=> m.visible = i < clamp(laborCount,0,12));
           SFX.tap(); noiseBurst(.05,.05,500);
           if(laborCount % 4 === 0){ G.noodles++; G.noodlesEarned++; tone(980,.09,'sine',.1); toast('Gấp đủ 4 hộp: +1 gói mì tôm công lao động.'); }
-          if(laborCount>=6) completeTask('Đủ chỉ tiêu gấp hộp buổi này rồi. Vẫn gấp tiếp được để kiếm thêm mì.');
+          if(laborCount>=6) completeTask('Đủ chỉ tiêu. Gấp tiếp vẫn tính công.');
           showBubble('player','Hộp số '+laborCount, 700);
           break; }
         case 'nap': { enterLie('Ngủ trưa ngon… dậy người khoẻ hẳn ra.'); break; }
@@ -1375,7 +1620,7 @@
             splash(3.3,0.85,-2.5);
             G.stats.health = clamp(G.stats.health+5,0,100);
             G.stats.mood = clamp(G.stats.mood+5,0,100);
-            completeTask('Tắm rửa sạch sẽ, thơm tho (trong khả năng cho phép).');
+            completeTask('Tắm rửa sạch sẽ.');
           });
           break; }
       }
@@ -1387,16 +1632,69 @@
         G.stats.health = clamp(G.stats.health + 3, 0, 100);
         SFX.good();
         const hasMeat = meatMeshes[0].visible;
-        completeTask(hasMeat ? 'Hôm nay cơm có thịt thiệt nè! Ngồi ghế ăn ngon hết sảy.' : 'Ăn xong. Cơm tù nhạt nhưng ngồi ăn đàng hoàng là no liền.');
-        toast('Ăn xong vẫn đang ngồi ghế — bấm “Đứng dậy” khi muốn đi tiếp.');
+        completeTask(hasMeat ? 'Cơm có thịt thiệt nè!' : 'Ăn xong.');
       });
+    }
+    /* ---- lao động tự chọn: trồng cây / tưới rau / cho heo ăn / quét sân ----
+       Mỗi lượt làm xong tính 1 đơn vị công chung với gấp hộp: đủ 6 đơn vị là
+       xong chỉ tiêu buổi lao động; cứ 4 đơn vị trả +1 gói mì tôm công. */
+    function laborUnit(){
+      laborCount++;
+      if(laborCount % 4 === 0){ G.noodles++; G.noodlesEarned++; tone(980,.09,'sine',.1); toast('Đủ 4 lượt công: +1 gói mì tôm.'); }
+      if(laborCount>=6 && !G.taskDone) completeTask('Đủ chỉ tiêu lao động buổi này. Làm tiếp vẫn được tính công mì tôm.');
+    }
+    function doJob(kind){
+      if(kind==='plant'){
+        G.workPose = 'hoe';
+        startBusy(2.2, ()=>{ if(Math.random()<0.3) noiseBurst(.05,.06,400); }, ()=>{
+          G.workPose = '';
+          const s = sprouts[clamp(plantCount, 0, sprouts.length-1)];
+          if(plantCount < sprouts.length && s){ s.visible = true; s.scale.setScalar(0.3); }
+          plantCount++;
+          SFX.good();
+          showBubble('player', plantCount<=sprouts.length ? 'Thêm 1 cây con ('+Math.min(plantCount,sprouts.length)+'/'+sprouts.length+')' : 'Vườn kín cây rồi!', 1300);
+          G.stats.health = clamp(G.stats.health+1,0,100);
+          laborUnit();
+        });
+      }
+      else if(kind==='water'){
+        G.workPose = 'water';
+        startBusy(1.8, ()=>{}, ()=>{
+          G.workPose = '';
+          splash(player.pos.x + Math.sin(player.rotY)*0.8, 0.45, player.pos.z + Math.cos(player.rotY)*0.8);
+          SFX.good();
+          showBubble('player','Tưới đẫm, rau xanh mướt…', 1200);
+          G.stats.mood = clamp(G.stats.mood+2,0,100);
+          laborUnit();
+        });
+      }
+      else if(kind==='feed'){
+        G.workPose = 'feed';
+        startBusy(2.0, ()=>{ if(Math.random()<0.25){ tone(180,.09,'square',.05,0,120); tone(150,.08,'square',.04,.12,100); } }, ()=>{
+          G.workPose = '';
+          SFX.good();
+          showBubble('player','Heo ăn ngon lành, kêu ụt ịt cảm ơn!', 1400);
+          G.stats.mood = clamp(G.stats.mood+2,0,100);
+          laborUnit();
+        });
+      }
+      else if(kind==='sweep'){
+        G.workPose = 'sweep';
+        startBusy(2.0, ()=>{ if(Math.random()<0.35) noiseBurst(.05,.04,900); }, ()=>{
+          G.workPose = '';
+          SFX.good();
+          showBubble('player','Sân sạch bong!', 1100);
+          if(Math.random()<0.5) G.stats.respect = clamp(G.stats.respect+1,0,100);
+          laborUnit();
+        });
+      }
     }
     function doWall(){
       wallCount++; G.tallies++; drawTallies();
       noiseBurst(.08,.09,2000); tone(180,.05,'square',.05);
       G.stats.mood = clamp(G.stats.mood+2,0,100);
       showBubble('player', pick(['Thêm một ngày nữa…','Gần về thêm một chút.','Vạch này là cho má.','Đếm hoài cũng tới ngày ra.']), 1700);
-      if(phase().id==='free' && wallCount>=2) completeTask('Ngồi ngắm tường đếm ngày — thú vui tao nhã nhất phòng 7.');
+      if(phase().id==='free' && wallCount>=2) completeTask('Đếm ngày xong.');
     }
     /* ---- climbing onto / off the bed ----
        Two-leg path: floor -> approach spot beside the bunk -> up and over onto
@@ -1568,6 +1866,7 @@
       $('uiPhase').textContent = p.name;
       $('objective').classList.remove('done');
       $('uiObjective').textContent = p.task;
+      if(typeof applyObjAuto === 'function') applyObjAuto();
       // trays at meals
       const isMeal = !!p.meal;
       trayGroup.visible = isMeal;
@@ -1622,7 +1921,7 @@
       fade.querySelector('#fadeTxt').textContent = 'Ngày '+G.day+' / '+G.totalDays;
       fade.classList.add('show');
       G.lying = false; G.onBed = false; G.resting = false; G.climbActive = false; CLIMB.active = false;
-      G.sitting = ''; G.sitTrans = false; SIT.active = false;
+      G.sitting = ''; G.sitTrans = false; SIT.active = false; G.workPose = '';
       npcs.forEach(n=>{ n.onBed = false; n.climbing = false; n.pos.y = 0; });
       // overnight recovery / costs
       G.stats.hunger = clamp(G.stats.hunger-18, 5, 100);
@@ -1673,7 +1972,7 @@
     }
 
     /* ---------------- CHARACTER ANIMATION ---------------- */
-    function animChibi(mesh, walkPhase, moving, t, lying, blink, climbing, sitting){
+    function animChibi(mesh, walkPhase, moving, t, lying, blink, climbing, sitting, working){
       const u = mesh.userData;
       const baseY = mesh.position.y; // floor / mattress height set by the caller
       if(sitting){
@@ -1690,6 +1989,23 @@
         mesh.position.y = baseY;
         const bl2 = blink ? 0.12 : 1;
         u.eyeL.scale.y = 1.5*bl2; u.eyeR.scale.y = 1.5*bl2;
+        return;
+      }
+      if(working){
+        // labour pose: feet planted, torso tipped forward, arms swinging the tool
+        u.tilt.rotation.z = lerp(u.tilt.rotation.z, 0, 0.3);
+        u.tilt.rotation.x = -0.14;
+        u.legL.rotation.x = 0.06; u.legR.rotation.x = -0.06;
+        const sw = Math.sin(t*7);
+        if(working==='water'){ u.armR.rotation.x = -1.15 + sw*0.12; u.armL.rotation.x = -0.5; }
+        else if(working==='feed'){ u.armR.rotation.x = -0.9 + sw*0.3; u.armL.rotation.x = -0.75 + sw*0.3; }
+        else { u.armR.rotation.x = -0.95 + sw*0.5; u.armL.rotation.x = -0.8 + sw*0.42; }
+        u.headG.rotation.z = 0; u.headG.rotation.x = 0.22;
+        u.headG.position.y = 0.34;
+        u.body.scale.y = 1 + Math.abs(sw)*0.02;
+        mesh.position.y = baseY;
+        const bl3 = blink ? 0.12 : 1;
+        u.eyeL.scale.y = 1.5*bl3; u.eyeR.scale.y = 1.5*bl3;
         return;
       }
       if(lying){
@@ -1792,9 +2108,10 @@
             exhaustCd = 30;
             s.health = Math.max(s.health, 42); s.mood = Math.max(s.mood, 45); s.hunger = Math.max(s.hunger, 30);
             G.lying = false; G.onBed = false; G.resting = false; G.climbActive = false; CLIMB.active = false;
-            G.sitting = ''; G.sitTrans = false; SIT.active = false;
+            G.sitting = ''; G.sitTrans = false; SIT.active = false; G.workPose = ''; G.busy = 0; G.busyDone = null; G.busyTick = null;
+            $('actionProg').classList.remove('show');
             player.pos.copy(cellSpawn(G.cellNo));
-            toast('Kiệt sức rồi… Cả phòng dìu ní về giường nằm nghỉ, pha cho gói mì lấy lại sức.', 4600);
+            toast('Kiệt sức… cả phòng dìu ní về giường nghỉ, ăn mì lấy sức.', 3600);
             SFX.bad();
           }
 
@@ -1835,7 +2152,19 @@
           player.mesh.rotation.y = player.rotY;
           player.blinkT -= gdt;
           if(player.blinkT < -0.12) player.blinkT = rand(1.8, 4.2);
-          animChibi(player.mesh, player.walkT, moving, t + 1.3, G.onBed, player.blinkT < 0, G.climbActive, G.sitting);
+          animChibi(player.mesh, player.walkT, moving, t + 1.3, G.onBed, player.blinkT < 0, G.climbActive, G.sitting, G.workPose);
+
+          /* đạo cụ lao động + heo + mầm cây */
+          if(G.workPose && WORK_PROPS[G.workPose]){
+            workProp.visible = true;
+            Object.values(WORK_PROPS).forEach(p => p.visible = false);
+            WORK_PROPS[G.workPose].visible = true;
+            const fx = Math.sin(player.rotY), fz = Math.cos(player.rotY);
+            workProp.position.set(player.pos.x + fx*0.46, 0.42 + Math.sin(t*7)*0.05, player.pos.z + fz*0.46);
+            workProp.rotation.y = player.rotY;
+          } else workProp.visible = false;
+          for(const pg of pigs){ pg.g.position.z = pg.baseZ + Math.sin(t*0.7 + pg.ph)*0.14; pg.g.rotation.y += Math.sin(t*0.4 + pg.ph)*0.0006; }
+          for(const s of sprouts){ if(s.visible && s.scale.x < 1) s.scale.setScalar(Math.min(1, s.scale.x + gdt*0.25)); }
 
           /* --- NPCs --- */
           for(const n of npcs){
@@ -1918,16 +2247,20 @@
           /* lighting by clock */
           const h = clockNow();
           const dayAmt = clamp(Math.sin((h-5.2)/13.5 * Math.PI), 0.06, 1);
-          hemi.intensity = lerp(0.25, 1.0, dayAmt);
-          sun.intensity = lerp(0.12, 1.55, dayAmt);
-          lamp.intensity = lerp(1.15, 0.0, dayAmt);
-          const bgC = new THREE.Color(0x2c3e46).lerp(new THREE.Color(0x9fc8bd), dayAmt);
+          hemi.intensity = lerp(0.62, 1.4, dayAmt);
+          sun.intensity = lerp(0.38, 1.9, dayAmt);
+          lamp.intensity = lerp(1.7, 0.0, dayAmt);
+          const bgC = new THREE.Color(0x51687c).lerp(new THREE.Color(0xbde6da), dayAmt);
           scene.background.copy(bgC); scene.fog.color.copy(bgC);
           const warm = (h>16.5 && h<19.5) ? 0.25 : 0;
           sun.color.setHex(0xfff1d6).lerp(new THREE.Color(0xffb27a), warm);
 
           hudT -= dt;
-          if(hudT <= 0){ hudT = 0.15; updateHUD(); }
+          if(hudT <= 0){ hudT = 0.15; updateHUD();
+            const zr = $('zoomRange');
+            if(zr && document.activeElement !== zr) zr.value = camDist;
+            if(typeof updateRotateHint === 'function') updateRotateHint();
+          }
         }
 
         /* camera follow */
@@ -1964,6 +2297,8 @@
       camera.aspect = innerWidth/innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(innerWidth, innerHeight);
+      if(typeof updateRotateHint === 'function') updateRotateHint();
+      if(typeof applyObjAuto === 'function') applyObjAuto();
     });
 
     /* ---------------- START / UI WIRING ---------------- */
@@ -1988,7 +2323,47 @@
     });
     buildPlayer();
 
-    $('btnStart').addEventListener('click', ()=>{ audio(); fbStartFlow(); });
+    /* ---------- nhiệm vụ thu gọn + nhắc xoay ngang + zoom ---------- */
+    let objManual = false;
+    function applyObjAuto(){
+      if(objManual) return;
+      const c = (innerWidth < 760 || innerHeight < 520);
+      $('objective').classList.toggle('collapsed', c);
+      $('objToggle').setAttribute('aria-expanded', String(!c));
+    }
+    $('objToggle').addEventListener('click', ()=>{
+      objManual = true;
+      const el = $('objective');
+      el.classList.toggle('collapsed');
+      $('objToggle').setAttribute('aria-expanded', String(!el.classList.contains('collapsed')));
+      SFX.tap();
+    });
+    let rotateDismissed = false;
+    function tryLockLandscape(){
+      try{
+        const doLock = ()=>{ try{ if(screen.orientation && screen.orientation.lock){ const p = screen.orientation.lock('landscape'); if(p && p.catch) p.catch(()=>{}); } }catch(e){} };
+        if(!document.fullscreenElement && document.documentElement.requestFullscreen){
+          let r = null;
+          try{ r = document.documentElement.requestFullscreen(); }catch(e){}
+          if(r && r.then) r.then(doLock).catch(doLock); else doLock();
+        } else doLock();
+      }catch(e){}
+    }
+    function updateRotateHint(){
+      const el = $('rotateHint'); if(!el) return;
+      const overlayOpen = ['startOverlay','lobbyOverlay','endOverlay'].some(id => !$(id).classList.contains('hidden'));
+      const show = G.started && !G.over && !overlayOpen && !rotateDismissed
+        && innerHeight > innerWidth && Math.min(innerWidth, innerHeight) <= 860;
+      el.classList.toggle('hidden', !show);
+    }
+    $('btnRotateLock').addEventListener('click', ()=>{ audio(); tryLockLandscape(); setTimeout(updateRotateHint, 400); });
+    $('btnRotateDismiss').addEventListener('click', ()=>{ rotateDismissed = true; updateRotateHint(); SFX.tap(); });
+    addEventListener('orientationchange', ()=> setTimeout(()=>{ updateRotateHint(); applyObjAuto(); }, 80));
+    $('zoomRange').addEventListener('input', e=>{ camDist = clamp(parseFloat(e.target.value) || 9.5, CAM_MIN, CAM_MAX); });
+    $('btnZoomIn').addEventListener('click', ()=>{ camDist = clamp(camDist - 1.2, CAM_MIN, CAM_MAX); SFX.tap(); });
+    $('btnZoomOut').addEventListener('click', ()=>{ camDist = clamp(camDist + 1.2, CAM_MIN, CAM_MAX); SFX.tap(); });
+
+    $('btnStart').addEventListener('click', ()=>{ audio(); tryLockLandscape(); fbStartFlow(); });
 
     $('btnAgain').addEventListener('click', ()=> location.reload());
     $('btnSpeed').addEventListener('click', function(){
@@ -2505,8 +2880,10 @@
       npcs.forEach((n, i) => { n.bedIdx = cand[i % cand.length]; });
     }
     function startGame(){
-      ['hudTop','stats','objective','joy','interactWrap'].forEach(id => $(id).classList.remove('hidden'));
+      ['hudTop','stats','objective','joy','interactWrap','zoomCtl'].forEach(id => $(id).classList.remove('hidden'));
       G.started = true;
+      tryLockLandscape(); applyObjAuto();
+      setTimeout(updateRotateHint, 350);
       G.boxesTotal = G.boxesTotal || 0;
       markOwnCell();
       assignNpcBeds();
@@ -2522,14 +2899,14 @@
       if(resumeDone){
         G.taskDone = true;
         $('objective').classList.add('done');
-        $('uiObjective').textContent = 'Xong việc buổi này rồi — thong thả thôi';
+        $('uiObjective').textContent = 'Xong việc buổi này.';
       }
       startAutoSave();
       fbSaveProgress();
       banner(fmtClock(phase().clock[0]), 'Ngày ' + G.day + ' — Chuồng số ' + (G.cellNo || '?'));
       drawTallies();
       updateHUD();
-      setTimeout(() => { if(npcs[0].mesh.visible) showDialogue('Đại ca Tùng', 'Mới vô hả? Phòng này hiền lắm. Nhớ: chăn gấp vuông, điểm danh hô to, mì tôm giữ kỹ. Làm theo lịch là yên ổn.', 5600); }, 600);
+      setTimeout(() => { if(npcs[0].mesh.visible) showDialogue('Đại ca Tùng', 'Mới vô hả? Làm theo lịch là yên ổn.', 3600); }, 600);
       setTimeout(() => { if(npcs[3].mesh.visible) showBubble(npcs[3], 'Chào anh! Em cũng mới vô tuần trước.', 3000); }, 2400);
       setTimeout(() => { if(npcs[1].mesh.visible) showBubble(npcs[1], 'Tối anh hát cho nghe, đừng lo!', 2800); }, 4600);
     }
@@ -2537,13 +2914,13 @@
     /* ---------- wiring: sảnh / máy chủ chung / chat ---------- */
     function needOnline(){
       if(FB.online && FB.uid) return true;
-      setLobbyMsg('Chưa nối được Firebase nên chưa vào máy chủ chung được. Ní kiểm tra mạng rồi mở lại game, hoặc chơi một mình với bạn tù máy đỡ nha.', true);
+      setLobbyMsg('Chưa nối được máy chủ. Kiểm tra mạng, hoặc chơi một mình đỡ nha.', true);
       return false;
     }
-    $('btnEnterServer').addEventListener('click', () => { audio(); enterServer(); });
-    $('btnRejoin').addEventListener('click', () => { audio(); enterServer(); });
-    $('btnSolo').addEventListener('click', () => { audio(); enterSolo(); });
-    $('btnCopyCode').addEventListener('click', () => { toast('Chuồng song sắt của ní là chuồng số ' + (G.cellNo || '?') + ' — bảng số treo ngay trên cổng chuồng đó.'); });
+    $('btnEnterServer').addEventListener('click', () => { audio(); tryLockLandscape(); enterServer(); });
+    $('btnRejoin').addEventListener('click', () => { audio(); tryLockLandscape(); enterServer(); });
+    $('btnSolo').addEventListener('click', () => { audio(); tryLockLandscape(); enterSolo(); });
+    $('btnCopyCode').addEventListener('click', () => { toast('Chuồng của ní: số ' + (G.cellNo || '?') + '.'); });
     $('btnLeaveRoom').addEventListener('click', async () => {
       await fbSaveProgress();
       location.reload();
@@ -2570,7 +2947,7 @@
           G.totalDays = doc.sentenceDays || 3;
           const rn = $('restoreNote');
           rn.classList.remove('hidden');
-          rn.innerHTML = 'Đã thấy hồ sơ + tiến trình đã lưu: <b>' + escapeHtml(doc.name || '') + '</b> (' + escapeHtml(doc.prisonerNo || '') + ') — ngày ' + (doc.day || 1) + '/' + (doc.sentenceDays || 3) + ', ' + (doc.noodles || 0) + ' gói mì tôm' + (doc.cellNo ? ', chuồng song sắt <b>số ' + doc.cellNo + '</b>' : '') + '. Bấm nút dưới để chơi tiếp đúng chỗ cũ.';
+          rn.innerHTML = 'Hồ sơ cũ: <b>' + escapeHtml(doc.name || '') + '</b> — ngày ' + (doc.day || 1) + '/' + (doc.sentenceDays || 3) + ', ' + (doc.noodles || 0) + ' mì tôm' + (doc.cellNo ? ', chuồng <b>số ' + doc.cellNo + '</b>' : '') + '. Bấm nút dưới để chơi tiếp.';
           $('btnStart').textContent = 'Vào phòng — chơi tiếp';
         })
         .catch(() => {});
