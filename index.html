@@ -1954,7 +1954,7 @@
       }
       // chào hỏi quản ngục — đứng gần là chào được (và cũng có nút KIẾM CHUYỆN…)
       for(const g of guards){
-        if(g.mode==='fightback' || g.mode==='intervene' || g.mode==='discipline' || g.mode==='assist' || g.mode==='carryFetch' || g.mode==='carryBack' || g.koT > 0) continue;
+        if(g.mode==='fightback' || g.mode==='intervene' || g.mode==='discipline' || g.mode==='assist' || g.mode==='carryFetch' || g.mode==='carryBack' || g.mode==='carryExit' || g.koT > 0) continue;
         consider(g.pos.x, g.pos.z, { label:'Chào '+g.def.name, verb:'Chào hỏi', guard:g, act:()=>{
           if(g.sayCd>0){ showBubble(g, 'Ừ, chào ní. Lo làm việc đi.', 1600); return; }
           g.sayCd = 20;
@@ -2475,31 +2475,75 @@
           if(!moving){ g.targetRot = 0; if(g.sayCd <= 0){ g.sayCd = rand(6, 10); showBubble(g, pick(['ĐIỂM DANH! Đứng nghiêm!','Hô số to lên nào!','Thiếu ai là tui ghi sổ đó nha.','Nhanh gọn, còn đi ăn sáng!']), 2200); } }
         } else if(g.mode==='carryFetch'){
           // chạy tới chỗ người đang ngất, vác lên vai
+          g.taskT += gdt;
+          if(g.taskT > 14){ // kẹt đường quá lâu (tường/phòng ngăn cách): luồn tới sát bên người ngất luôn, khỏi kẹt cứng
+            g.pos.set(player.pos.x + 0.85, 0, player.pos.z + 0.2); g.taskT = 7;
+          }
           const d = guardGoTo(g, player.pos.x, player.pos.z, 3.4, gdt);
           moving = d > 1.0;
           if(d <= 1.05 && G.knocked && !G.carried){
             G.carried = true; g.mode = 'carryBack'; g.taskT = 0;
+            // LỘ TRÌNH VỀ CHUỒNG: phải vòng qua CỔNG sắt của chuồng
+            // (khoảng hở phía +x của mặt song sắt) — đi thẳng về điểm
+            // trong chuồng là đâm đầu vô song sắt, kẹt hoài không tới
+            const cd = cellDefs[clamp((G.cellNo||1)-1, 0, cellDefs.length-1)];
+            const sp = cellSpawn(G.cellNo);
+            g.carryPath = [
+              { x: cd.cx + 0.6, z: cd.frontZ + cd.facing * 0.95 },
+              { x: cd.cx + 0.6, z: cd.frontZ - cd.facing * 0.6 },
+              { x: sp.x, z: sp.z }
+            ];
             showBubble(g, 'Ngất thiệt rồi hả? Lên vai, tui khiêng về chuồng!', 2600);
             SFX.pop();
           }
         } else if(g.mode==='carryBack'){
-          // KHIÊNG VÁC người ngất về tận chuồng của họ: người chơi nằm
-          // ngang trên vai quản ngục, đi theo từng bước chân của ổng
-          const tgt = cellSpawn(G.cellNo);
-          const d = guardGoTo(g, tgt.x, tgt.z, 2.6, gdt);
-          moving = d > 0.5;
+          // KHIÊNG VÁC người ngất về tận chuồng của họ theo lộ trình qua
+          // cổng (g.carryPath): người chơi nằm ngang trên vai quản ngục,
+          // đi theo từng bước chân của ổng; thả xuống trong chuồng xong
+          // ổng còn phải vòng ra lại cổng (carryExit) mới về điểm trực
+          g.taskT += gdt;
+          if(!g.carryPath || !g.carryPath.length){
+            const sp = cellSpawn(G.cellNo);
+            g.carryPath = [{ x: sp.x, z: sp.z }];
+          }
+          const wp = g.carryPath[0];
+          const lastLeg = g.carryPath.length === 1;
+          const d = guardGoTo(g, wp.x, wp.z, lastLeg ? 2.3 : 2.6, gdt);
+          moving = d > 0.45;
+          if(d <= (lastLeg ? 0.6 : 0.5)) g.carryPath.shift();
           if(G.carried){
             player.pos.set(g.pos.x - Math.sin(g.rotY)*0.12, 1.04, g.pos.z - Math.cos(g.rotY)*0.12);
             player.targetRot = g.rotY;
             if(player.mesh) player.mesh.position.copy(player.pos);
           }
-          if(d <= 0.55){
+          if((lastLeg && !g.carryPath.length) || g.taskT > 20){
+            // tới chuồng (hoặc kẹt quá lâu): đặt người ngất xuống trong
+            // chuồng, quản ngục vòng ra cổng theo đường cũ
+            const tgt = cellSpawn(G.cellNo);
+            const cd = cellDefs[clamp((G.cellNo||1)-1, 0, cellDefs.length-1)];
             G.carried = false;
             player.pos.set(tgt.x, 0.05, tgt.z);
             if(player.mesh) player.mesh.position.copy(player.pos);
-            g.mode = g.homeMode; g.waitT = 2; g.taskT = 0;
+            g.mode = 'carryExit'; g.taskT = 0;
+            g.carryPath = [
+              { x: cd.cx + 0.6, z: cd.frontZ - cd.facing * 0.6 },
+              { x: cd.cx + 0.6, z: cd.frontZ + cd.facing * 0.95 }
+            ];
             FIGHT.koPhase = 'rest'; FIGHT.koT = 2.6;
             showBubble(g, 'Về chuồng rồi đó. Nằm nghỉ đi ní!', 2400);
+          }
+        } else if(g.mode==='carryExit'){
+          // thả người ngất xong: đi ngược ra cổng chuồng rồi mới về vị
+          // trí trực — đi thẳng là lại đâm vô song sắt từ phía trong
+          g.taskT += gdt;
+          if(g.carryPath && g.carryPath.length){
+            const wp = g.carryPath[0];
+            const d = guardGoTo(g, wp.x, wp.z, 2.4, gdt);
+            moving = d > 0.4;
+            if(d <= 0.5) g.carryPath.shift();
+          }
+          if((!g.carryPath || !g.carryPath.length) || g.taskT > 8){
+            g.carryPath = null; g.mode = g.homeMode; g.waitT = 1; g.taskT = 0;
           }
         } else if(g.mode==='intervene' || g.mode==='assist'){
           g.taskT += gdt;
