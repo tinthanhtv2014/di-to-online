@@ -376,24 +376,9 @@
         background:linear-gradient(180deg,#ffd34d,var(--noodle)); color:#33230a;
         font-family:inherit; font-size:14.5px; font-weight:800;
       }
-      /* thanh zoom camera — pill nhỏ ở đáy giữa, giữa joystick và nút tương tác */
-      #zoomCtl{
-        position:fixed; left:50%; transform:translateX(-50%);
-        bottom:calc(24px + env(safe-area-inset-bottom)); z-index:26;
-        display:flex; align-items:center; gap:2px; padding:5px 7px; border-radius:99px;
-      }
-      #zoomCtl button{
-        width:30px; height:30px; border-radius:50%; border:0; cursor:pointer; flex:0 0 auto;
-        background:rgba(255,255,255,.12); color:var(--txt); font-family:inherit;
-        font-size:17px; font-weight:800; line-height:1; display:flex; align-items:center; justify-content:center; padding:0;
-      }
-      #zoomCtl button:active{ background:var(--mint); color:#0d2016; }
-      #zoomRange{ width:104px; accent-color:var(--mint); cursor:pointer; }
-      #btnCamFollow{
-        width:auto !important; border-radius:99px !important; padding:0 10px !important;
-        font-size:11.5px !important; white-space:nowrap;
-      }
-      #btnCamFollow.on{ background:var(--mint); color:#0d2016; }
+      /* nút bám lưng camera — icon nhỏ chung hàng nút góc phải trên, đang bật = nền xanh lá.
+         Zoom không còn thanh riêng trên màn hình: người chơi chụm 2 ngón / lăn chuột tự chỉnh. */
+      #btnCamFollow.on{ background:var(--mint); color:#0d2016; border-color:transparent; }
       /* bảng báo đang bị quản ngục rượt — thay chỗ thanh máu khi bỏ chạy */
       #chaseTag{
         position:fixed; left:50%; transform:translateX(-50%);
@@ -450,8 +435,6 @@
         }
         #dialogue{ bottom:calc(112px + env(safe-area-inset-bottom)); }
         #toast{ top:calc(122px + env(safe-area-inset-top)); }
-        #zoomCtl{ bottom:calc(152px + env(safe-area-inset-bottom)); padding:4px 6px; }
-        #zoomRange{ width:84px; }
       }
       /* điện thoại ngang (màn thấp): mọi panel ép gọn về 2 mép, giữa màn hình trống cho nhân vật */
       @media (max-height:500px) and (orientation:landscape){
@@ -477,7 +460,6 @@
         #chatPanel{ bottom:calc(12px + env(safe-area-inset-bottom)); width:min(56vw,380px); }
         #chatMsgs{ max-height:110px; }
         #banner{ top:16%; }
-        #zoomCtl{ bottom:calc(14px + env(safe-area-inset-bottom)); }
       }
       @media (prefers-reduced-motion: reduce){
         #btnInteract.show{ animation:none; }
@@ -501,15 +483,14 @@
           <span id="uiNoodles">3</span>&nbsp;mì tôm
         </div>
         <div id="btnRow">
-          <button class="iconBtn" id="btnSpeed" title="Tua nhanh thời gian">x1</button>
+          <button class="iconBtn on" id="btnCamFollow" title="Camera tự bám sau lưng nhân vật" aria-label="Camera tự bám sau lưng nhân vật">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>
           <button class="iconBtn" id="btnSound" title="Bật / tắt âm thanh">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.2 6a9 9 0 0 1 0 12"/></svg>
           </button>
           <button class="iconBtn hidden" id="btnChat" title="Tám chuyện cả xóm">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-3-.4-4.2-1.1L3 20l1.1-5.3A8.5 8.5 0 1 1 21 11.5Z"/></svg>
-          </button>
-          <button class="iconBtn" id="btnPause" title="Tạm dừng">
-            <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>
           </button>
         </div>
       </div>
@@ -561,13 +542,7 @@
       <div class="chatRow"><input id="chatInp" maxlength="200" placeholder="Nhắn gì đó với bạn tù…" autocomplete="off" /><button id="btnChatSend">Gửi</button></div>
     </div>
 
-    <!-- zoom camera -->
-    <div id="zoomCtl" class="plate hidden">
-      <button id="btnZoomIn" aria-label="Zoom lại gần">+</button>
-      <input id="zoomRange" type="range" min="5" max="14" step="0.1" value="9.5" aria-label="Mức zoom camera" />
-      <button id="btnZoomOut" aria-label="Zoom ra xa">−</button>
-      <button id="btnCamFollow" class="on" aria-label="Camera tự bám sau lưng nhân vật">Bám lưng</button>
-    </div>
+    <!-- zoom camera: không còn thanh zoom trên màn hình — chụm 2 ngón trên điện thoại / lăn chuột trên máy tính -->
 
     <!-- touch controls -->
     <div id="joy" class="hidden"><div id="joyKnob"></div></div>
@@ -591,7 +566,7 @@
         <div class="kit"><span><b>Chung thân</b> — không hẹn ngày ra</span><span>Cải tạo đủ <b>100 điểm</b> là được xét thả</span></div>
         <p class="howto hidden" id="restoreNote"></p>
         <button class="bigBtn" id="btnStart">Nhận số tù &amp; vào phòng</button>
-        <p class="howto"><b>Cách chơi:</b> joystick / WASD để đi · camera tự bám sau lưng ní, kéo màn hình khi muốn xoay tự do · thấy vòng sáng là tới bấm nút vàng. <b>Điện thoại nhớ xoay ngang.</b></p>
+        <p class="howto"><b>Cách chơi:</b> joystick / WASD để đi · camera tự bám sau lưng ní, kéo màn hình khi muốn xoay tự do, chụm 2 ngón để zoom gần xa · thấy vòng sáng là tới bấm nút vàng. <b>Điện thoại nhớ xoay ngang.</b></p>
       </div>
     </div>
 
@@ -696,6 +671,66 @@
       const g=c.createGain(); g.gain.value=vol||0.15;
       src.connect(f); f.connect(g); g.connect(c.destination); src.start();
     }
+    /* ---- GÓI ÂM THANH HÀI: phẹt phẹt / xả nước / ợ hơi, toàn synth ---- */
+    function fartNoise(dur, vol){
+      // lớp hơi xì đi kèm tiếng phẹt: nhiễu qua lowpass hạ dần
+      if(!soundOn) return; const c = audio(); if(!c) return;
+      const t0 = c.currentTime;
+      const n = Math.floor(c.sampleRate*dur), buf = c.createBuffer(1,n,c.sampleRate), ch = buf.getChannelData(0);
+      for(let i=0;i<n;i++) ch[i]=(Math.random()*2-1)*(1-i/n*0.4);
+      const src=c.createBufferSource(); src.buffer=buf;
+      const f=c.createBiquadFilter(); f.type='lowpass'; f.frequency.setValueAtTime(950,t0);
+      f.frequency.exponentialRampToValueAtTime(230, t0+dur);
+      const g=c.createGain(); g.gain.setValueAtTime(vol*0.5, t0);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+      src.connect(f); f.connect(g); g.connect(c.destination); src.start(t0);
+    }
+    function fartSnd(big, vol){
+      // tiếng "PHẸT": cưa răng cưa hạ tông giật cục + gain rung theo nhịp
+      // phẹt-phẹt-phẹt; ngẫu nhiên cỡ/dài nên mỗi lần một kiểu: xì hơi,
+      // phẹt ngắn, hay nguyên một tràng dài rung cả phòng
+      if(!soundOn) return; const c = audio(); if(!c) return;
+      const t0 = c.currentTime;
+      const dur = big ? rand(.7,1.15) : rand(.22,.5);
+      let fr = big ? rand(85,120) : rand(120,190);
+      const v = (vol==null ? .20 : vol);
+      const o = c.createOscillator(); o.type='sawtooth';
+      const f = c.createBiquadFilter(); f.type='lowpass'; f.frequency.value=560; f.Q.value=3;
+      const g = c.createGain(); g.gain.setValueAtTime(0.0001, t0);
+      const steps = Math.max(5, Math.floor(dur*20));
+      o.frequency.setValueAtTime(fr, t0);
+      for(let i=1;i<=steps;i++){
+        fr = clamp(fr*rand(.84,1.1)-3, 38, 300);
+        o.frequency.setValueAtTime(fr, t0 + dur*i/steps);
+      }
+      const fl = Math.max(4, Math.floor(dur*26));
+      for(let i=0;i<=fl;i++){
+        const vv = (i%2===0 ? v : v*0.3) * (1 - i/fl*0.3);
+        g.gain.setValueAtTime(Math.max(0.0001, vv), t0 + dur*i/fl);
+      }
+      g.gain.exponentialRampToValueAtTime(0.0001, t0+dur+0.04);
+      o.connect(f); f.connect(g); g.connect(c.destination);
+      o.start(t0); o.stop(t0+dur+0.1);
+      fartNoise(dur, v);
+    }
+    function flushSnd(){
+      // xả nước bồn cầu: nhiễu trắng gầm lên rồi rút xuống, cuối òng ọc
+      if(!soundOn) return; const c = audio(); if(!c) return;
+      const t0 = c.currentTime, dur = 1.15;
+      const n = Math.floor(c.sampleRate*dur), buf = c.createBuffer(1,n,c.sampleRate), ch = buf.getChannelData(0);
+      for(let i=0;i<n;i++) ch[i]=Math.random()*2-1;
+      const src=c.createBufferSource(); src.buffer=buf;
+      const f=c.createBiquadFilter(); f.type='lowpass';
+      f.frequency.setValueAtTime(2600, t0);
+      f.frequency.exponentialRampToValueAtTime(320, t0+dur*0.72);
+      f.frequency.setValueAtTime(520, t0+dur*0.82);
+      const g=c.createGain();
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(.15, t0+0.08);
+      g.gain.setValueAtTime(.15, t0+dur*0.6);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+      src.connect(f); f.connect(g); g.connect(c.destination); src.start(t0);
+    }
     const SFX = {
       tap(){ tone(520,.07,'triangle',.10); },
       good(){ tone(660,.1,'sine',.12); tone(880,.14,'sine',.12,.09); },
@@ -705,7 +740,13 @@
       pop(){ tone(340,.08,'sine',.14,0,680); },
       snore(){ tone(120,.3,'sawtooth',.035,0,80); },
       bell(){ tone(1174,.5,'sine',.10); tone(1568,.7,'sine',.06,.02); },
-      bad(){ tone(220,.18,'sawtooth',.07,0,160); }
+      bad(){ tone(220,.18,'sawtooth',.07,0,160); },
+      fart(big, vol){ fartSnd(big, vol); },
+      plop(){ tone(320,.15,'sine',.15,0,65); noiseBurst(.06,.06,700); tone(180,.1,'sine',.07,.12,90); },
+      flush(){ flushSnd(); },
+      burp(){ tone(95,.1,'sawtooth',.15,0,150); tone(110,.12,'sawtooth',.14,.09,190); tone(85,.16,'sawtooth',.12,.2,120); },
+      koFall(){ tone(880,.5,'sine',.06,0,140); tone(65,.22,'sine',.2,.48,38); },
+      boing(){ tone(150,.22,'sine',.14,0,540); tone(540,.16,'sine',.08,.2,220); }
     };
 
     /* ---------------- GAME STATE ---------------- */
@@ -1812,11 +1853,12 @@
     }
 
     // camera orbit by dragging on the scene — mặc định lùi xa (9.5) cho khung nhìn rộng,
-    // người chơi tự chỉnh khoảng cách bằng con lăn chuột / pinch 2 ngón / thanh zoom.
+    // người chơi tự chỉnh khoảng cách bằng con lăn chuột / pinch 2 ngón (không còn
+    // thanh zoom trên màn hình nữa, cho đỡ chiếm diện tích).
     // MẶC ĐỊNH camera TỰ BÁM SAU LƯNG nhân vật khi đang chạy (camFollow): khỏi
     // phải kéo xoay liên tục. Kéo tay thì xoay tự do + có quán tính trượt nhẹ
     // cho mượt, và chế độ bám lưng tạm nghỉ 4 giây để không giành camera với
-    // người chơi; nút "Bám lưng" ở thanh zoom tắt/bật hẳn chế độ này.
+    // người chơi; nút camera ở hàng nút góc phải trên tắt/bật hẳn chế độ này.
     const CAM_MIN = 5, CAM_MAX = 14;
     let camYaw = 0.65, camPitch = 0.46, camDist = 9.5;
     let camFollow = true, camHoldUntil = 0, camSpin = 0, camSnap = false;
@@ -1904,7 +1946,8 @@
         }
         const sitKind = G.sitting;
         return { label: sitKind==='wc' ? 'Đứng dậy khỏi bồn cầu' : 'Đứng dậy khỏi ghế', verb:'Đứng dậy', act:()=>{
-          startStand(()=>{ toast(sitKind==='wc' ? 'Đứng dậy, rửa tay rồi đi tiếp ní ơi.' : 'Đứng dậy rồi. Ngồi lâu tê chân thiệt.'); });
+          if(sitKind==='wc' && Math.random()<0.35) setTimeout(()=>SFX.fart(false), 350); // cái xì hơi chia tay
+          startStand(()=>{ toast(sitKind==='wc' ? pick(['Đứng dậy, rửa tay rồi đi tiếp ní ơi.','Xong việc lớn. Rửa tay đàng hoàng nha ní.']) : 'Đứng dậy rồi. Ngồi lâu tê chân thiệt.'); });
         } };
       }
       if(G.busy>0 || G.lying) return null;
@@ -1965,15 +2008,34 @@
       if(!p.meal) consider(SEATS.chair.appX, SEATS.chair.appZ, { label:'Ngồi ghế ở bàn ăn', verb:'Ngồi ghế', act:()=>{
         startSit('chair', ()=>{ showBubble('player','Ngồi ghế đàng hoàng, có khay cơm trước mặt mới giống ăn chứ.', 2200); });
       }});
-      // sit on the toilet in the wash corner
+      // sit on the toilet in the wash corner — cảnh "đi ẻ" huyền thoại:
+      // ngồi xuống là phẹt phẹt liên hoàn (cái cuối to nhất), kết bằng
+      // tiếng "tõm" rồi xả nước òng ọc; bạn tù đứng gần nghe được là chê
       consider(SEATS.wc.appX, SEATS.wc.appZ, { label:'Ngồi bồn cầu đi vệ sinh', verb:'Đi vệ sinh', act:()=>{
         startSit('wc', ()=>{
-          showBubble('player','Ngồi xuống… tập trung…', 1800);
-          startBusy(2.4, ()=>{ if(Math.random()<0.2) noiseBurst(.06,.05,700); }, ()=>{
-            noiseBurst(.35,.14,900); SFX.splash();
+          showBubble('player','Ngồi xuống… tập trung… rặn…', 1500);
+          const nFart = 2 + Math.floor(Math.random()*3); // 2–4 cái
+          const fartLines = ['Phẹt!','Phẹẹẹt…','Phẹt phẹt!','Xììì…','Phẹt…'];
+          let ft = 0.4;
+          for(let i=0;i<nFart;i++){
+            const isLast = i===nFart-1;
+            setTimeout(()=>{
+              if(G.sitting!=='wc') return;
+              SFX.fart(isLast);
+              showBubble('player', isLast ? pick(['PHẸT PHẸT PHẸT!!','Ui da… cái cuối này hơi to…','Phẹẹẹẹt… trời đất…']) : pick(fartLines), 950);
+              if(isLast){
+                const near = npcs.find(n => !n.lying && n.koT<=0 && Math.hypot(n.pos.x-player.pos.x, n.pos.z-player.pos.z) < 5.5);
+                if(near) setTimeout(()=>{ if(near.mesh.visible) showBubble(near, pick(['Ai… ai vừa nổ vậy ní?! 🤢','Nghe như xe tải nổ lốp…','Trời đất, trong đó có chiến tranh hả ní?']), 1900); }, 700);
+              }
+            }, ft*1000);
+            ft += rand(0.45, 0.7);
+          }
+          startBusy(3.0, ()=>{}, ()=>{
+            SFX.plop();
+            setTimeout(()=>{ SFX.flush(); }, 380);
             G.stats.mood = clamp(G.stats.mood+4,0,100); G.stats.health = clamp(G.stats.health+2,0,100);
-            showBubble('player','Xong… nhẹ cả người!', 2000);
-            toast('Xong, đã xả nước.');
+            showBubble('player', pick(['Xong… nhẹ cả người!','Ra hết rồi, nhẹ bụng ghê.','Hú hồn, tưởng không ra nổi…']), 2000);
+            toast(pick(['Xong, đã xả nước. Òng ọc òng ọc…','Xả nước xong. Trong lành trở lại.','Đã xả. Đừng ngoái lại nhìn ní ơi.']));
           });
         });
       }});
@@ -2097,6 +2159,7 @@
         G.stats.hunger = clamp(G.stats.hunger + p.meal, 0, 100);
         G.stats.health = clamp(G.stats.health + 3, 0, 100);
         SFX.good();
+        if(Math.random()<0.55) setTimeout(()=>{ if(G.started && !G.over){ SFX.burp(); showBubble('player', pick(['Ợ… no căng bụng.','Ợợ… cơm trại mà ngon lạ thường.','Ợ… ủa, hơi to. Xin lỗi bàn bên.']), 1300); } }, 300);
         const hasMeat = meatMeshes[0].visible;
         completeTask(hasMeat ? 'Cơm có thịt thiệt nè!' : 'Ăn xong.');
       });
@@ -2309,6 +2372,8 @@
       startClimbUp(()=>{
         G.resting = true;
         showBubble('player','Zzz…', 2200);
+        // ngủ say quá lâu lâu… phẹt trong mơ, chính chủ không hề hay biết
+        setTimeout(()=>{ if(G.resting && Math.random()<0.5){ SFX.fart(false); showBubble('player','…phẹt… (mơ thấy ăn đậu)', 1100); } }, 1500);
         startBusy(3, ()=>{ if(Math.random()<0.3) SFX.snore(); }, ()=>{
           G.resting = false;
           G.stats.health = clamp(G.stats.health+9,0,100);
@@ -2329,6 +2394,7 @@
 
     let currentInteract = null;
     let fightTarget = null;
+    let ambFartT = rand(18, 35); // đồng hồ "xì hơi ambient" của bạn tù
     function tryInteract(){
       if(currentInteract) currentInteract.act();
     }
@@ -2411,7 +2477,8 @@
         toast('Hạ KO bạn tù rồi! +Uy tín (nhẹ tay thôi ní ơi).');
       }
       FIGHT.npc = null; FIGHT.guard = null;
-      SFX.great();
+      SFX.koFall();
+      setTimeout(()=>SFX.great(), 420);
     }
     function playerKO(){
       // người chơi cạn máu: NGẤT XỈU thiệt — nằm đất, sao bay quanh đầu,
@@ -2432,6 +2499,7 @@
       FIGHT.koPhase = 'down'; FIGHT.koT = 1.5;
       showBubble('player', 'Mắt nổ đom đóm… xỉu đây… @.@', 2400);
       toast(wasGuardFight ? 'Ăn đòn quản ngục hết máu — ngất xỉu luôn rồi ní…' : 'Hết máu — ngất xỉu giữa sân rồi ní…', 3600);
+      SFX.koFall();
       SFX.bad();
       camShake = Math.max(camShake, 0.9);
     }
@@ -2607,6 +2675,7 @@
       showBubble('player', 'Đau quá… xỉu… @.@', 2400);
       if(g) showBubble(g, 'Quánh cho chừa cái tội trễ giờ! Vác về quăng lên giường nè!', 2600);
       toast(kind==='rollam' ? 'Ăn dùi cui tới xỉu vì tội trễ điểm danh… Quản ngục vác về quăng lên giường cho nè.' : 'Ăn dùi cui tới xỉu vì tội không về ngủ… Quản ngục vác về quăng lên giường cho nè.', 3800);
+      SFX.koFall();
       SFX.bad();
       camShake = Math.max(camShake, 0.9);
     }
@@ -2661,14 +2730,87 @@
       }
     }
     function guardGoTo(g, x, z, speed, gdt){
-      const dx = x - g.pos.x, dz = z - g.pos.z, d = Math.hypot(dx, dz);
+      // ghi lại ĐÍCH THẬT mỗi lần được gọi — watchdog chống kẹt
+      // (guardUnstick) dựa vào đây để biết ổng đang muốn đi đâu
+      g.wantX = x; g.wantZ = z;
+      let tx = x, tz = z;
+      if(g.detourT > 0){
+        // đang LÁCH tránh vật cản: đi tới điểm lách trước, tới nơi
+        // (hoặc hết giờ lách) mới quay lại đích thật
+        g.detourT -= gdt;
+        const dd = Math.hypot(g.detourX - g.pos.x, g.detourZ - g.pos.z);
+        if(dd < 0.35 || g.detourT <= 0) g.detourT = 0;
+        else { tx = g.detourX; tz = g.detourZ; }
+      }
+      const dx = tx - g.pos.x, dz = tz - g.pos.z, d = Math.hypot(dx, dz);
       if(d > 0.05) g.targetRot = Math.atan2(dx, dz);
       if(d > 0.02){
         const step = Math.min(d, speed * gdt);
         g.pos.x += dx/d * step; g.pos.z += dz/d * step;
         g.walkT += gdt * (speed > 2.5 ? 13 : 9.5);
       }
-      return d;
+      // trả về khoảng cách tới ĐÍCH THẬT (không phải điểm lách) để các
+      // check "tới nơi chưa" của từng mode không bị điểm lách đánh lừa
+      return Math.hypot(x - g.pos.x, z - g.pos.z);
+    }
+    function pointBlocked(x, z, r){
+      if(x < -ROOM.w/2+0.45 || x > ROOM.w/2-0.45 || z < -ROOM.d/2+0.45 || z > ROOM.d/2-0.45) return true;
+      for(const o of obstacles){
+        if(x > o.minX-r && x < o.maxX+r && z > o.minZ-r && z < o.maxZ+r) return true;
+      }
+      return false;
+    }
+    /* CHỐNG KẸT TỔNG cho quản ngục — chạy cho MỌI mode di chuyển
+       (tuần tra, về điểm trực, chủ trì điểm danh, can thiệp, rượt đuổi,
+       săn theo lịch, khiêng người, quay ra sau khi thả người):
+       có đích ở xa mà vị trí THẬT (sau va chạm) gần như không nhúc
+       nhích qua vài nhịp kiểm tra là coi như kẹt, leo thang xử lý:
+       1) lách ngang sang bên trống  2) lách xa hơn / đổi bên
+       3) chốt cuối: tự gỡ tới điểm trống gần nhất trên tuyến tuần
+       tra / điểm trực / đường khiêng của chính mình — không bao
+       giờ đứng chết một chỗ nữa. */
+    function guardUnstick(g, gdt){
+      const hasDest = (g.wantX !== undefined) && Math.hypot(g.wantX-g.pos.x, g.wantZ-g.pos.z) > 0.65;
+      if(!hasDest){ g.stuckT = 0; g.stuckChk = 0; g.lastX = g.pos.x; g.lastZ = g.pos.z; return; }
+      g.stuckChk = (g.stuckChk || 0) + gdt;
+      if(g.stuckChk < 0.5) return;
+      const moved = Math.hypot(g.pos.x-(g.lastX ?? g.pos.x), g.pos.z-(g.lastZ ?? g.pos.z));
+      g.lastX = g.pos.x; g.lastZ = g.pos.z;
+      if(moved >= 0.06){ g.stuckT = 0; if(moved >= 0.3) g.stuckLvl = 0; g.stuckChk = 0; return; }
+      g.stuckT = (g.stuckT || 0) + g.stuckChk; g.stuckChk = 0;
+      if(g.stuckT < 1.2 || g.detourT > 0) return;
+      // --- bị kẹt thiệt: leo thang ---
+      const dx = g.wantX-g.pos.x, dz = g.wantZ-g.pos.z, dl = Math.hypot(dx,dz) || 1;
+      const lvl = g.stuckLvl || 0;
+      let placed = false;
+      if(lvl < 2){
+        // lách sang bên: thử cả 2 phía vuông góc với hướng đi, phía
+        // nào trống thì đi phía đó; lần lách sau xa hơn + ưu tiên bên ngược
+        const px = -dz/dl, pz = dx/dl, off = lvl >= 1 ? 2.3 : 1.25;
+        const sides = (lvl % 2 === 0) ? [1,-1] : [-1,1];
+        for(const s of sides){
+          const cx = g.pos.x + px*s*off + dx/dl*0.4, cz = g.pos.z + pz*s*off + dz/dl*0.4;
+          if(!pointBlocked(cx, cz, 0.35)){ g.detourX = cx; g.detourZ = cz; g.detourT = 1.6; placed = true; break; }
+        }
+      }
+      g.stuckLvl = lvl + 1; g.stuckT = 0;
+      if(!placed){
+        // chốt cuối: tự gỡ tới điểm trống gần nhất thuộc về mình
+        const cands = [];
+        const route = GUARD_ROUTES[g.def.key]; if(route) for(const w of route) cands.push(w);
+        if(g.def.post) cands.push(g.def.post);
+        if(g.def.mealPost) cands.push(g.def.mealPost);
+        if(g.carryPath) for(const w of g.carryPath) cands.push(w);
+        cands.push({ x:g.wantX, z:g.wantZ });
+        let best = null, bd = Infinity;
+        for(const c of cands){
+          if(pointBlocked(c.x, c.z, 0.35)) continue;
+          const dd = Math.hypot(c.x-g.pos.x, c.z-g.pos.z);
+          if(dd < bd){ bd = dd; best = c; }
+        }
+        if(best && bd > 0.05){ g.pos.x = best.x; g.pos.z = best.z; }
+        g.detourT = 0; g.stuckLvl = 0;
+      }
     }
     function updateGuards(gdt, t){
       const p = phase();
@@ -2686,6 +2828,7 @@
         }
         g.sayCd = Math.max(0, g.sayCd - gdt);
         if(g.swingT > 0) g.swingT -= gdt;
+        g.wantX = undefined; // đích tính theo frame: mode nào không gọi guardGoTo frame này thì không bị watchdog coi là kẹt
         let moving = false;
         const chase = (g.mode==='intervene' || g.mode==='assist' || g.mode==='discipline' || g.mode==='fightback' || g.mode==='chase' || g.mode==='hunt' || g.mode==='carryFetch' || g.mode==='carryBack');
         // fightback/chase chạy 3.6 — chậm hơn chân chạy trốn của người chơi
@@ -2768,6 +2911,9 @@
               player.pos.set(tgt.x, 0.05, tgt.z);
             }
             if(player.mesh) player.mesh.position.copy(player.pos);
+            // thả xuống có tiếng: quăng lên giường thì "boing" nảy nệm,
+            // đặt xuống sàn chuồng thì bịch một cái khô khốc
+            if(FIGHT.koDest==='bed'){ SFX.boing(); noiseBurst(.12,.13,300); } else { noiseBurst(.14,.17,240); tone(70,.15,'sine',.12,0,45); }
             g.mode = 'carryExit'; g.taskT = 0;
             g.carryPath = [
               { x: cd.cx + 0.6, z: cd.frontZ - cd.facing * 0.6 },
@@ -2849,6 +2995,7 @@
           }
         }
         collide(g.pos, 0.3);
+        guardUnstick(g, gdt); // chống kẹt tổng: đo độ nhúc nhích THẬT sau va chạm rồi tự thoát
         let dr = g.targetRot - g.rotY;
         while(dr > Math.PI) dr -= Math.PI * 2; while(dr < -Math.PI) dr += Math.PI * 2;
         g.rotY += dr * Math.min(1, gdt * 8);
@@ -3359,6 +3506,23 @@
           for(const cw of cows){ cw.headG.rotation.x = 0.22 + Math.sin(t*0.9 + cw.ph) * 0.2; }
           for(const s of sprouts){ if(s.visible && s.scale.x < 1) s.scale.setScalar(Math.min(1, s.scale.x + gdt*0.25)); }
 
+          /* --- bạn tù lâu lâu… xì hơi giữa sân cho đời thêm vui --- */
+          ambFartT -= gdt;
+          if(ambFartT <= 0){
+            ambFartT = rand(35, 75);
+            const cand = npcs.filter(n => !n.lying && !n.onBed && n.koT<=0 && n.fightT<=0 && n.mesh.visible);
+            if(cand.length){
+              const fn = pick(cand);
+              const fd = Math.hypot(fn.pos.x-player.pos.x, fn.pos.z-player.pos.z);
+              if(fd < 10){
+                SFX.fart(Math.random()<0.3, clamp(.22 - fd*.016, .05, .22));
+                showBubble(fn, pick(['…','Ủa, ai… ai vừa…?','Hồi sáng ăn đậu nhiều quá…','Không phải tui nha!']), 1500);
+                const near = npcs.find(o => o!==fn && !o.lying && o.koT<=0 && Math.hypot(o.pos.x-fn.pos.x, o.pos.z-fn.pos.z) < 3.6);
+                if(near) setTimeout(()=>{ if(near.mesh.visible) showBubble(near, pick(['Trời ơi ní… 🤢','Nghe như nổ lốp xe vậy ní!','Mở cửa sổ… à quên, đang ở tù.']), 1700); }, 900);
+              }
+            }
+          }
+
           /* --- NPCs --- */
           for(const n of npcs){
             n.talkCd = Math.max(0, n.talkCd - gdt);
@@ -3470,8 +3634,6 @@
 
           hudT -= dt;
           if(hudT <= 0){ hudT = 0.15; updateHUD();
-            const zr = $('zoomRange');
-            if(zr && document.activeElement !== zr) zr.value = camDist;
             if(typeof updateRotateHint === 'function') updateRotateHint();
           }
         }
@@ -3554,7 +3716,7 @@
     /* án chung thân cố định — không còn chọn mức án 3/7/30 ngày nữa */
     buildPlayer();
 
-    /* ---------- nhiệm vụ thu gọn + nhắc xoay ngang + zoom ---------- */
+    /* ---------- nhiệm vụ thu gọn + nhắc xoay ngang + camera ---------- */
     let objManual = false;
     function applyObjAuto(){
       if(objManual) return;
@@ -3632,7 +3794,7 @@
     $('btnRotateDismiss').addEventListener('click', ()=>{ rotateDismissed = true; updateRotateHint(); SFX.tap(); });
     addEventListener('orientationchange', ()=> setTimeout(()=>{ updateRotateHint(); applyObjAuto(); }, 80));
     if(screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', ()=> setTimeout(updateRotateHint, 60));
-    $('zoomRange').addEventListener('input', e=>{ camDist = clamp(parseFloat(e.target.value) || 9.5, CAM_MIN, CAM_MAX); });
+    // zoom: chụm 2 ngón / lăn chuột đã xử lý ở phần camera — không còn nút hay thanh zoom trên màn hình.
     $('btnCamFollow').addEventListener('click', ()=>{
       camFollow = !camFollow;
       $('btnCamFollow').classList.toggle('on', camFollow);
@@ -3640,23 +3802,15 @@
       toast(camFollow ? 'Camera tự bám sau lưng ní rồi — chạy là nó theo sau lưng luôn.' : 'Tắt bám lưng: camera để ní tự kéo xoay tự do.');
       SFX.tap();
     });
-    $('btnZoomIn').addEventListener('click', ()=>{ camDist = clamp(camDist - 1.2, CAM_MIN, CAM_MAX); SFX.tap(); });
-    $('btnZoomOut').addEventListener('click', ()=>{ camDist = clamp(camDist + 1.2, CAM_MIN, CAM_MAX); SFX.tap(); });
 
     $('btnStart').addEventListener('click', ()=>{ audio(); tryLockLandscape(); fbStartFlow(); });
 
     $('btnAgain').addEventListener('click', ()=> location.reload());
-    $('btnSpeed').addEventListener('click', function(){
-      G.speed = G.speed===1 ? 2 : 1;
-      this.textContent = 'x'+G.speed; this.classList.toggle('on', G.speed===2);
-    });
+    // không còn nút tua nhanh / tạm dừng: chơi chung xóm thì thời gian chạy thật cho cả xóm,
+    // một mình ní đứng yên hay tua nhanh là lệch hết với anh em.
     $('btnSound').addEventListener('click', function(){
       soundOn = !soundOn; this.classList.toggle('on', !soundOn);
       if(soundOn) SFX.tap();
-    });
-    $('btnPause').addEventListener('click', function(){
-      G.paused = !G.paused; this.classList.toggle('on', G.paused);
-      toast(G.paused ? 'Tạm dừng — phòng giam cũng đứng yên theo.' : 'Chơi tiếp nè.');
     });
     document.addEventListener('gesturestart', e=> e.preventDefault());
 
@@ -4092,6 +4246,16 @@
         r.rotY += dr * Math.min(1, gdt * 10);
         r.mesh.position.copy(r.pos);
         r.mesh.rotation.y = r.rotY;
+        // bạn tù online đang ngồi bồn cầu: máy mình cũng nghe phẹt phẹt
+        // được nếu đứng gần — xa thì nhỏ dần, quá xa thì thôi
+        if(r.sitting === 'wc'){
+          r.fartT = (r.fartT == null ? rand(.3, 1) : r.fartT) - gdt;
+          if(r.fartT <= 0){
+            r.fartT = rand(.7, 2.1);
+            const fd = Math.hypot(r.pos.x - player.pos.x, r.pos.z - player.pos.z);
+            if(fd < 9) SFX.fart(Math.random() < .25, clamp(.2 - fd * .017, .04, .2));
+          }
+        } else r.fartT = null;
         animChibi(r.mesh, r.walkT, moving, t + pid.length, r.sleeping || r.ko, false, false, r.sitting || '');
       }
     }
@@ -4174,7 +4338,7 @@
       npcs.forEach((n, i) => { n.bedIdx = cand[i % cand.length]; });
     }
     function startGame(){
-      ['hudTop','stats','objective','joy','interactWrap','zoomCtl'].forEach(id => $(id).classList.remove('hidden'));
+      ['hudTop','stats','objective','joy','interactWrap'].forEach(id => $(id).classList.remove('hidden'));
       G.started = true;
       tryLockLandscape(); applyObjAuto();
       setTimeout(updateRotateHint, 350);
