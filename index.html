@@ -576,7 +576,7 @@
       <div class="card">
         <h1>Đi Tò <span class="thin">Online 3D</span></h1>
         <p class="sub">Một ngày trong trại, bản chibi. Xóm có <b>100 anh em</b>, mỗi người <b>1 chuồng riêng</b>. Thoát ra vô lại là chơi tiếp chỗ cũ, khỏi làm lại từ đầu.</p>
-        <div class="fieldLab">TÊN CỦA BẠN</div>
+        <div class="fieldLab">TÊN PHẠM NHÂN</div>
         <input id="inpName" maxlength="14" placeholder="Ví dụ: Tý Tò" autocomplete="off" />
         <div class="fieldLab">MÀU ÁO PHẠM NHÂN</div>
         <div class="swatches" id="swatches"></div>
@@ -1901,16 +1901,16 @@
       if(!drag.active || e.pointerId!==drag.id) return;
       const dx = e.clientX-drag.lx, dy = e.clientY-drag.ly;
       if(Math.abs(dx)+Math.abs(dy) > 3) drag.moved = true;
-      camYaw -= dx*0.0072; camPitch = clamp(camPitch + dy*0.0044, 0.14, 1.05);
+      camYaw -= dx*0.0036; camPitch = clamp(camPitch + dy*0.0022, 0.14, 1.05);
       // quán tính: nhớ vận tốc xoay gần nhất để thả tay ra camera trượt thêm chút
       const now = performance.now(), dtEv = Math.max((now - drag.lt)/1000, 0.008);
-      const vel = clamp(-dx*0.0072/dtEv, -7, 7);
+      const vel = clamp(-dx*0.0036/dtEv, -3, 3);
       camSpin = camSpin*0.55 + vel*0.45;
       drag.lt = now;
       camHoldUntil = now + 1800;
       drag.lx = e.clientX; drag.ly = e.clientY;
     });
-    addEventListener('pointerup', e=>{ if(e.pointerId===drag.id){ drag.active=false; camHoldUntil = performance.now() + 1800; if(Math.abs(camSpin) < 0.4) camSpin = 0; } });
+    addEventListener('pointerup', e=>{ if(e.pointerId===drag.id){ drag.active=false; camHoldUntil = performance.now() + 1800; if(Math.abs(camSpin) < 0.2) camSpin = 0; } });
     addEventListener('wheel', e=>{ camDist = clamp(camDist + e.deltaY*0.006, CAM_MIN, CAM_MAX); }, { passive:true });
     // pinch 2 ngón trên canvas để zoom ra / vào
     const camPointers = new Map(); let pinchD0 = 0, pinchDist0 = 0;
@@ -4060,9 +4060,9 @@
           if(keys['KeyD']||keys['ArrowRight']) ix += 1;
           if(keys['KeyW']||keys['ArrowUp']) iy -= 1;
           if(keys['KeyS']||keys['ArrowDown']) iy += 1;
-          if(keys['KeyQ']){ camYaw += dt*2.6; camHoldUntil = performance.now() + 2500; camSpin = 0; }
+          if(keys['KeyQ']){ camYaw += dt*1.4; camHoldUntil = performance.now() + 2500; camSpin = 0; }
           if(keys['KeyE']) {} // interact handled on keydown
-          if(keys['KeyR']){ camYaw -= dt*2.6; camHoldUntil = performance.now() + 2500; camSpin = 0; }
+          if(keys['KeyR']){ camYaw -= dt*1.4; camHoldUntil = performance.now() + 2500; camSpin = 0; }
           /* bed-climb animation drives the player while it runs */
           updateClimb(gdt);
           updateSit(gdt);
@@ -4259,8 +4259,8 @@
         // quán tính xoay: thả tay sau khi kéo thì camera trượt thêm một chút rồi tắt dần
         if(!drag.active && camSpin !== 0){
           camYaw += camSpin * dt;
-          camSpin *= Math.pow(0.002, dt);
-          if(Math.abs(camSpin) < 0.05) camSpin = 0;
+          camSpin *= Math.pow(0.01, dt);
+          if(Math.abs(camSpin) < 0.03) camSpin = 0;
         }
         // TỰ BÁM SAU LƯNG kiểu góc nhìn thứ 3: nhân vật quay/chạy
         // hướng nào là góc camera trôi êm về sau lưng hướng đó (hệ số
@@ -4273,7 +4273,13 @@
           const desired = player.targetRot + Math.PI;
           let dy = desired - camYaw;
           while(dy > Math.PI) dy -= Math.PI*2; while(dy < -Math.PI) dy += Math.PI*2;
-          if(Math.abs(dy) > 0.03) camYaw += dy * (1 - Math.exp(-3.6 * dt));
+          if(Math.abs(dy) > 0.03){
+            // đuổi góc chậm và lướt êm: hệ số mượt thấp + giới hạn tốc độ
+            // xoay tối đa nên camera không bao giờ vút vòng nhanh gây chóng mặt
+            const step = dy * (1 - Math.exp(-1.6 * dt));
+            const maxStep = 1.3 * dt;
+            camYaw += clamp(step, -maxStep, maxStep);
+          }
         }
         const focus = G.started ? player.pos : new THREE.Vector3(0.4,0,0.4);
         const orbitYaw = G.started ? camYaw : (t*0.07);
