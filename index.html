@@ -1170,14 +1170,16 @@
       box(1.6, 0.46, 0.05, mat(0x8a5a33,.8), 0, 1.12, 0, g);
       return g;
     }
-    // ---- PHÒNG ĂN (giữa trại; cửa ra vào ở tường nam, khoảng x -2.6..-0.4) ----
+    // ---- PHÒNG ĂN (giữa trại; cửa ra vào ở tường nam ĐÃ NỚI RỘNG cho
+    // chạy qua không vướng, khoảng hở x -3.2..0.2 — vật cản 2 đoạn tường
+    // nam đã thu ngắn tương ứng nên khoảng hở va chạm khớp đúng cửa) ----
     const dineWallMat = mat(0xeadfc6, .95), wcWallMat = mat(0xcfe0da, .95);
     const dineFloor = box(10.8, 0.03, 6.2, mat(0xd9c9a3, 1), -1.5, 0.02, 3.4, scene, false); dineFloor.castShadow = false;
     roomWall(-1.5, 0.2, 11, 0.14, dineWallMat);
     roomWall(-7, 3.4, 0.14, 6.4, dineWallMat);
     roomWall(4, 3.4, 0.14, 6.4, dineWallMat);
-    roomWall(-4.8, 6.6, 4.4, 0.14, dineWallMat);
-    roomWall(1.8, 6.6, 4.4, 0.14, dineWallMat);
+    roomWall(-5.1, 6.6, 3.8, 0.14, dineWallMat);
+    roomWall(2.1, 6.6, 3.8, 0.14, dineWallMat);
     roomSign('PHÒNG ĂN', -1.5, 7.35, 0);
     // quầy lấy cơm dọc tường bắc + 3 nồi cơm
     box(5.2, 0.95, 0.7, mat(0x9a6b43,.7), -1.5, 0.475, 0.85, scene);
@@ -1226,22 +1228,25 @@
       m.rotation.y = rand(-0.16,0.16); m.visible=false; stackMeshes.push(m);
     }
 
-    // ---- NHÀ VỆ SINH (phía đông phòng ăn; cửa ra vào ở tường tây, khoảng z 2.5..3.9) ----
-    const wcFloor = box(6.2, 0.03, 5.8, mat(0xdcecea, 1), 8.6, 0.02, 3.2, scene, false); wcFloor.castShadow = false;
-    roomWall(8.6, 0.2, 6.4, 0.14, wcWallMat);
-    roomWall(11.8, 3.2, 0.14, 6.0, wcWallMat);
-    roomWall(8.6, 6.2, 6.4, 0.14, wcWallMat);
-    roomWall(5.4, 1.35, 0.14, 2.3, wcWallMat);
-    roomWall(5.4, 5.05, 0.14, 2.3, wcWallMat);
-    roomSign('NHÀ VỆ SINH', 4.6, 3.2, -Math.PI/2);
+    // ---- NHÀ VỆ SINH (ĐÃ DỜI hẳn lên phía bắc sân, tách khu khỏi phòng
+    // ăn ở phía nam cho lối vào thoáng; cửa ra vào ở tường tây ĐÃ NỚI
+    // RỘNG, khoảng hở z -4.4..-2.0 — 2 đoạn tường tây đã thu ngắn tương
+    // ứng nên khoảng hở va chạm khớp đúng cửa mới) ----
+    const wcFloor = box(6.2, 0.03, 5.8, mat(0xdcecea, 1), 8.6, 0.02, -3.2, scene, false); wcFloor.castShadow = false;
+    roomWall(8.6, -6.2, 6.4, 0.14, wcWallMat);
+    roomWall(11.8, -3.2, 0.14, 6.0, wcWallMat);
+    roomWall(8.6, -0.2, 6.4, 0.14, wcWallMat);
+    roomWall(5.4, -5.3, 0.14, 1.8, wcWallMat);
+    roomWall(5.4, -1.1, 0.14, 1.8, wcWallMat);
+    roomSign('NHÀ VỆ SINH', 4.6, -3.2, -Math.PI/2);
     // 3 buồng vệ sinh dọc tường bắc: vách ngăn + cửa hé 2 buồng bên
     const stallMat = mat(0xaebfb8, .8);
     [7.75, 9.45].forEach(px=>{
-      const pv = box(0.08, 1.5, 1.68, stallMat, px, 0.75, 1.11, scene); pv.castShadow = false;
-      addObstacle(px, 1.11, 0.05, 0.84);
+      const pv = box(0.08, 1.5, 1.68, stallMat, px, 0.75, -5.29, scene); pv.castShadow = false;
+      addObstacle(px, -5.29, 0.05, 0.84);
     });
     [6.9, 10.3].forEach(px=>{
-      const dr = box(0.78, 1.45, 0.05, stallMat, px, 0.72, 2.25, scene); dr.rotation.y = 0.7; dr.castShadow = false;
+      const dr = box(0.78, 1.45, 0.05, stallMat, px, 0.72, -4.15, scene); dr.rotation.y = 0.7; dr.castShadow = false;
     });
     function makeToilet(x, z){
       const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
@@ -1252,20 +1257,20 @@
       addObstacle(x, z, 0.35, 0.42);
       return g;
     }
-    makeToilet(6.9, 1.0); const wcGroup = makeToilet(8.6, 1.0); makeToilet(10.3, 1.0);
+    makeToilet(6.9, -5.4); const wcGroup = makeToilet(8.6, -5.4); makeToilet(10.3, -5.4);
     // dãy chậu rửa dọc tường nam nhà vệ sinh (chậu chính có xô đỏ + 1 chậu phụ)
-    const basinGroup = new THREE.Group(); basinGroup.position.set(9.9,0,5.45); scene.add(basinGroup);
+    const basinGroup = new THREE.Group(); basinGroup.position.set(9.9,0,-0.95); scene.add(basinGroup);
     cyl(0.34,0.26,0.5, mat(0xdfe5e2,.35,.15), 0,0.55,0, basinGroup, 22);
     cyl(0.05,0.07,0.32, mat(0xb9c2bd,.4,.3), 0,0.16,0, basinGroup, 12);
     cyl(0.035,0.035,0.28, mat(0x9fb3ad,.35,.5), 0,0.95,-0.3, basinGroup, 10);
     const waterDisc = cyl(0.29,0.29,0.02, new THREE.MeshStandardMaterial({ color:0x7fd4ff, roughness:.15, metalness:.1, transparent:true, opacity:.85 }), 0,0.79,0, basinGroup, 22);
     waterDisc.castShadow=false;
     const bucket = cyl(0.17,0.13,0.3, mat(0xe2543e,.6), 0.62,0.15,0.35, basinGroup, 16);
-    cyl(0.34,0.26,0.5, mat(0xdfe5e2,.35,.15), 7.3,0.55,5.45, scene, 22);
-    cyl(0.05,0.07,0.32, mat(0xb9c2bd,.4,.3), 7.3,0.16,5.45, scene, 12);
-    cyl(0.035,0.035,0.28, mat(0x9fb3ad,.35,.5), 7.3,0.95,5.15, scene, 10);
-    addObstacle(9.9, 5.45, 0.62, 0.5);
-    addObstacle(7.3, 5.45, 0.5, 0.45);
+    cyl(0.34,0.26,0.5, mat(0xdfe5e2,.35,.15), 7.3,0.55,-0.95, scene, 22);
+    cyl(0.05,0.07,0.32, mat(0xb9c2bd,.4,.3), 7.3,0.16,-0.95, scene, 12);
+    cyl(0.035,0.035,0.28, mat(0x9fb3ad,.35,.5), 7.3,0.95,-1.25, scene, 10);
+    addObstacle(9.9, -0.95, 0.62, 0.5);
+    addObstacle(7.3, -0.95, 0.5, 0.45);
 
     /* ================================================================
        KHU LAO ĐỘNG — vườn rau (bên trái sân) + chuồng heo (bên phải sân)
@@ -1484,7 +1489,7 @@
       bed:   { x:0, z:-12.6, label:'Giường trong chuồng của mình' }, // được cập nhật theo số chuồng khi vào game
       door:  { x: 0,    z:-9.4, label:'Sân điểm danh' },
       table: { x:-1.5,  z: 4.55, label:'Bàn ăn trong phòng ăn' },
-      basin: { x: 9.9,  z: 4.7,  label:'Chậu nước trong nhà vệ sinh' },
+      basin: { x: 9.9,  z: -1.7, label:'Chậu nước trong nhà vệ sinh' },
       wall:  { x: 6.8,  z:-10.55, label:'Bảng đếm ngày' },
       garden:{ x:-14.6, z:-4.0, label:'Vườn rau' },
       barrel:{ x:-11.1, z:-2.1, label:'Thùng nước tưới' },
@@ -1662,9 +1667,9 @@
       lunch:    [ {x:-2.3,z:2.55},{x:-0.7,z:2.55},{x:-2.3,z:4.25},{x:-0.7,z:4.25} ],
       nap:      null, // beds
       labor2:   [ {x:14.6,z:-7.4},{x:-12.4,z:-5.2},{x:12.4,z:3.8},{x:-14.5,z:9.3} ],
-      wash:     [ {x:6.6,z:3.2},{x:10.8,z:3.0},{x:7.4,z:4.6},{x:10.4,z:4.8} ],
+      wash:     [ {x:6.6,z:-3.2},{x:10.8,z:-3.4},{x:7.4,z:-1.8},{x:10.4,z:-1.6} ],
       dinner:   [ {x:-2.3,z:2.55},{x:-0.7,z:2.55},{x:-2.3,z:4.25},{x:-0.7,z:4.25} ],
-      free:     [ {x:-4.5,z:-3.2},{x:3.2,z:-2.6},{x:-0.6,z:-4.4},{x:5.8,z:-1.5} ],
+      free:     [ {x:-4.5,z:-3.2},{x:3.2,z:-2.6},{x:-0.6,z:-4.4},{x:5.8,z:1.8} ],
       sleep:    null
     };
     npcs.forEach((n,i)=>{ const s = NPC_SPOTS.free[i]; n.pos.set(s.x,0,s.z); n.target.copy(n.pos); });
@@ -1720,7 +1725,7 @@
         lines:['Ra vô sân lao động qua cổng này hết nghe chưa.','Cổng này tui canh, đừng hòng lẻn.','Đi làm thì đi thẳng, đừng la cà.'] }
     ];
     const GUARD_ROUTES = {
-      gd1: [ {x:-9,z:-8},{x:0,z:-9.8},{x:9,z:-8},{x:11,z:-1.6},{x:6,z:9.8},{x:-6,z:9.8},{x:-10.5,z:2} ],
+      gd1: [ {x:-9,z:-8},{x:0,z:-9.8},{x:9,z:-8},{x:3.2,z:-3.4},{x:6,z:9.8},{x:-6,z:9.8},{x:-10.5,z:2} ],
       gd2: [ {x:-24,z:-11.9},{x:0,z:-11.9},{x:24,z:-11.9},{x:0,z:-11.9} ],
       gd4: [ {x:24,z:11.9},{x:0,z:11.9},{x:-24,z:11.9},{x:0,z:11.9} ],
       gd8: [ {x:-13,z:-8.5},{x:-18,z:3.5},{x:-11.5,z:11},{x:8,z:11.5},{x:12.5,z:9.8},{x:12,z:-6},{x:6,z:-12.6},{x:-8,z:-12.6} ]
@@ -1875,12 +1880,16 @@
     // camera orbit by dragging on the scene — mặc định lùi xa (9.5) cho khung nhìn rộng,
     // người chơi tự chỉnh khoảng cách bằng con lăn chuột / pinch 2 ngón (không còn
     // thanh zoom trên màn hình nữa, cho đỡ chiếm diện tích).
-    // MẶC ĐỊNH camera TỰ BÁM SAU LƯNG nhân vật khi đang chạy (camFollow): khỏi
-    // phải kéo xoay liên tục. Kéo tay thì xoay tự do + có quán tính trượt nhẹ
-    // cho mượt, và chế độ bám lưng tạm nghỉ 4 giây để không giành camera với
-    // người chơi; nút camera ở hàng nút góc phải trên tắt/bật hẳn chế độ này.
-    const CAM_MIN = 5, CAM_MAX = 14;
-    let camYaw = 0.65, camPitch = 0.46, camDist = 9.5;
+    // CAMERA GÓC NHÌN THỨ 3 (mặc định): camera đứng sau lưng + hơi trên
+    // vai nhân vật, nhân vật nằm giữa-dưới khung hình, đi đâu camera
+    // trôi theo sau lưng hướng đó (camFollow) — khỏi kéo xoay liên tục.
+    // Kéo tay thì ngó quanh tự do + có quán tính trượt nhẹ, thả tay
+    // ~1.8 giây là camera tự trả về sau lưng. Camera còn tự rút gần lại
+    // khi có tường/vật cản chắn giữa nó và nhân vật (không xuyên tường
+    // khi ở trong phòng/chuồng). Nút camera ở hàng nút góc phải trên
+    // tắt/bật hẳn chế độ bám lưng này.
+    const CAM_MIN = 4.2, CAM_MAX = 14;
+    let camYaw = 0.65, camPitch = 0.36, camDist = 7.4;
     let camFollow = true, camHoldUntil = 0, camSpin = 0, camSnap = false;
     const drag = { active:false, id:null, lx:0, ly:0, lt:0, moved:false };
     renderer.domElement.addEventListener('pointerdown', e=>{
@@ -1898,10 +1907,10 @@
       const vel = clamp(-dx*0.0072/dtEv, -7, 7);
       camSpin = camSpin*0.55 + vel*0.45;
       drag.lt = now;
-      camHoldUntil = now + 4000;
+      camHoldUntil = now + 1800;
       drag.lx = e.clientX; drag.ly = e.clientY;
     });
-    addEventListener('pointerup', e=>{ if(e.pointerId===drag.id){ drag.active=false; camHoldUntil = performance.now() + 4000; if(Math.abs(camSpin) < 0.4) camSpin = 0; } });
+    addEventListener('pointerup', e=>{ if(e.pointerId===drag.id){ drag.active=false; camHoldUntil = performance.now() + 1800; if(Math.abs(camSpin) < 0.4) camSpin = 0; } });
     addEventListener('wheel', e=>{ camDist = clamp(camDist + e.deltaY*0.006, CAM_MIN, CAM_MAX); }, { passive:true });
     // pinch 2 ngón trên canvas để zoom ra / vào
     const camPointers = new Map(); let pinchD0 = 0, pinchDist0 = 0;
@@ -2108,7 +2117,7 @@
       }
       // chào hỏi quản ngục — đứng gần là chào được (và cũng có nút KIẾM CHUYỆN…)
       for(const g of guards){
-        if(g.mode==='fightback' || g.mode==='intervene' || g.mode==='discipline' || g.mode==='assist' || g.mode==='chase' || g.mode==='hunt' || g.mode==='carryFetch' || g.mode==='carryBack' || g.mode==='carryExit' || g.koT > 0) continue;
+        if(g.mode==='fightback' || g.mode==='intervene' || g.mode==='discipline' || g.mode==='assist' || g.mode==='chase' || g.mode==='hunt' || g.mode==='carryFetch' || g.mode==='carryBack' || g.mode==='carryExit' || g.mode==='seek' || g.mode==='seekroll' || g.koT > 0) continue;
         consider(g.pos.x, g.pos.z, { label:'Chào '+g.def.name, verb:'Chào hỏi', guard:g, act:()=>{
           if(g.sayCd>0){ showBubble(g, 'Ừ, chào ní. Lo làm việc đi.', 1600); return; }
           g.sayCd = 20;
@@ -2376,7 +2385,7 @@
        string so other players see it too). */
     const SEATS = {
       chair: { sit:new THREE.Vector3(-0.7, 0.18, 4.25), appX:-0.7, appZ:4.85, rot:Math.PI }, // ghế phía nam của bàn ăn trong PHÒNG ĂN, mặt hướng vào bàn/khay cơm
-      wc:    { sit:new THREE.Vector3(8.6, 0.17, 1.26), appX:8.6, appZ:1.85, rot:0 }          // bồn cầu buồng giữa trong NHÀ VỆ SINH, mặt quay ra ngoài
+      wc:    { sit:new THREE.Vector3(8.6, 0.17, -5.14), appX:8.6, appZ:-4.55, rot:0 }         // bồn cầu buồng giữa trong NHÀ VỆ SINH (đã dời lên bắc sân), mặt quay ra ngoài
     };
     const SIT = { active:false, t:0, dur:0.55, down:false, kind:'', from:new THREE.Vector3(), to:new THREE.Vector3(), fromRot:0, dRot:0, onDone:null };
     function startSit(kind, onDone){
@@ -2624,9 +2633,9 @@
       CHASE.active = true; CHASE.guard = g; CHASE.reason = reason;
       CHASE.hiddenT = 0; CHASE.t = 0; CHASE.shoutCd = 1.4; CHASE.uiTxt = '';
       CHASE.lastX = player.pos.x; CHASE.lastZ = player.pos.z;
-      g.mode = 'chase'; g.taskT = 0;
+      g.mode = 'chase'; g.taskT = 0; g.chaseRunT = 0; g.tireSaid = false;
       showBubble(g, pick(['Đứng lại! Chạy đi đâu đó?!','Đứng lại cho tui!','Chạy hả ní? Đứng lại!']), 2000);
-      toast('Quản ngục rượt theo kìa! Chạy thật xa, hoặc núp khuất tầm mắt ổng 3 giây là thoát — bị bắt kịp là ghi sổ đó!', 3800);
+      toast('Quản ngục rượt theo kìa! Chạy thật xa, hoặc núp khuất tầm mắt ổng vài giây là thoát — mà ổng rượt lâu cũng hụt hơi chậm lại thôi, đừng để bị bắt kịp là được!', 3800);
       SFX.bad();
     }
     function endChaseEscaped(){
@@ -2671,21 +2680,21 @@
       }
       CHASE.t += gdt;
       const d = Math.hypot(player.pos.x - g.pos.x, player.pos.z - g.pos.z);
-      if(d <= 1.25){ endChaseCaught(); return; }
+      if(d <= 1.05){ endChaseCaught(); return; }
       const sees = guardSeesPlayer(g);
       if(sees){ CHASE.lastX = player.pos.x; CHASE.lastZ = player.pos.z; }
-      const hidden = !sees || d > 15;
+      const hidden = !sees || d > 12.5;
       CHASE.hiddenT = hidden ? CHASE.hiddenT + gdt : Math.max(0, CHASE.hiddenT - gdt*1.5);
       CHASE.shoutCd -= gdt;
       if(sees && CHASE.shoutCd <= 0){ CHASE.shoutCd = rand(3.5, 5.5); showBubble(g, pick(['Đứng lại!','Tui thấy ní đó nha!','Chạy đâu cho thoát!','Đứng lại cho tui!']), 1500); }
       // bảng báo rượt đuổi: đang bị thấy hay sắp thoát thì hiện rõ cho người chơi
       $('chaseTag').classList.remove('hidden');
       const msg = hidden
-        ? ('Ổng mất dấu ní rồi… khuất thêm ' + Math.max(0, 3 - CHASE.hiddenT).toFixed(1) + 's nữa là thoát!')
+        ? ('Ổng mất dấu ní rồi… khuất thêm ' + Math.max(0, 2.4 - CHASE.hiddenT).toFixed(1) + 's nữa là thoát!')
         : 'Ổng đang thấy ní — núp sau dãy chuồng / vô phòng khuất góc lẹ!';
       if(CHASE.uiTxt !== msg){ CHASE.uiTxt = msg; $('chaseTxt').textContent = msg; }
-      if(CHASE.hiddenT >= 3){ endChaseEscaped(); return; }
-      if(CHASE.t > 75){ endChaseEscaped(); return; } // rượt hoài ổng cũng mệt, bỏ cuộc
+      if(CHASE.hiddenT >= 2.4){ endChaseEscaped(); return; }
+      if(CHASE.t > 45){ endChaseEscaped(); return; } // rượt hoài ổng cũng mệt, bỏ cuộc
     }
     /* ---------------- RƯỢT QUÁNH THEO LỊCH (điểm danh / giờ ngủ) ----------------
        Quản ngục CĂNG theo thời khóa biểu: điểm danh mà chưa ra sân, giờ
@@ -2741,6 +2750,7 @@
       if(HUNT.phaseIdx !== G.phaseIdx){
         HUNT.phaseIdx = G.phaseIdx; HUNT.stage = 0; HUNT.timer = 0;
         if(HUNT.active) endHunt(false);
+        seekReset();
       }
       if(HUNT.active){
         const g = HUNT.guard;
@@ -2768,6 +2778,9 @@
         if(HUNT.uiTxt !== msg){ HUNT.uiTxt = msg; $('chaseTxt').textContent = msg; }
         return;
       }
+      // buổi NGỦ TỐI đi đường riêng: điểm danh trước, vắng mặt thì
+      // quản ngục đi TÌM kiểu trốn tìm, thấy tận mắt mới rượt (updateSeek)
+      if(kind === 'sleep'){ updateSeek(gdt); return; }
       // chưa rượt: canh giờ, nhắc trước 5 giây rồi mới rượt thiệt
       if(!kind || !G.started || G.over || G.paused || G.knocked || G.jailT > 0 || FIGHT.active || CHASE.active){ HUNT.stage = 0; HUNT.timer = 0; return; }
       if(huntCompliant(kind)){ HUNT.stage = 0; HUNT.timer = 0; return; }
@@ -2784,6 +2797,151 @@
         const g = nearestGuard(player.pos.x, player.pos.z, true) || guards[0];
         if(g) startHunt(g, kind);
       }
+    }
+    /* ================================================================
+       ĐIỂM DANH TỐI + TRỐN TÌM (chỉ buổi 'sleep') — tới giờ ngủ quản
+       ngục ra ĐIỂM ĐIỂM DANH điểm danh trước: ai CÓ MẶT ở điểm danh
+       (hoặc đã yên vị trên giường) thì thôi. Ai KHÔNG có mặt thì ổng
+       ĐI TÌM khắp trại như chơi trốn tìm: lục chuồng của người đó,
+       nhà vệ sinh, phòng ăn, chuồng heo/gà/bò, vườn rau, sau dãy
+       chuồng… CHỈ KHI NHÌN THẤY TẬN MẮT (trong tầm 14m + đường ngắm
+       không bị vật cản chắn, hoặc đứng sát bên) mới chuyển sang RƯỢT
+       bằng cơ chế săn theo lịch sẵn có (startHunt). Núp kỹ tới khi
+       ổng lục hết các điểm mà không thấy thì ổng bỏ cuộc — thoát
+       buổi điểm danh tối đó, không bị rượt.
+       ================================================================ */
+    const SEEK = { stage:'idle', guard:null, t:0, q:[] };
+    function seekReset(){
+      const g = SEEK.guard;
+      if(g && (g.mode === 'seek' || g.mode === 'seekroll')){ g.mode = g.homeMode; g.waitT = 1; g.taskT = 0; }
+      SEEK.stage = 'idle'; SEEK.guard = null; SEEK.t = 0; SEEK.q = [];
+    }
+    function seekFinish(msg, bubble){
+      const g = SEEK.guard;
+      if(g && bubble) showBubble(g, bubble, 2600);
+      if(msg) toast(msg, 3600);
+      seekReset(); SEEK.stage = 'done';
+    }
+    function buildSeekQueue(g){
+      // mỗi điểm lục soát = vài waypoint (vô phòng thì qua cửa cho
+      // đúng đường) + điểm cuối có 'look' = đứng ngó quanh một lúc
+      const cd = cellDefs[clamp((G.cellNo || 1) - 1, 0, cellDefs.length - 1)];
+      const stops = [
+        [{ x: cd.cx + 0.6, z: cd.frontZ + cd.facing * 0.95, look: 0.9 }],                    // trước cổng chuồng của người chơi
+        [{ x: 4.4, z: -3.2 }, { x: 6.4, z: -3.2 }, { x: 8.6, z: -3.2, look: 1.1 }],            // nhà vệ sinh (vô bằng cửa tây)
+        [{ x: -1.5, z: 7.6 }, { x: -1.5, z: 5.6 }, { x: -1.5, z: 3.4, look: 1.1 }],            // phòng ăn (vô bằng cửa nam)
+        [{ x: 12.0, z: 4.8, look: 0.9 }],                                                      // cổng chuồng heo
+        [{ x: -12.4, z: 8.5, look: 0.9 }],                                                     // chuồng gà
+        [{ x: 12.4, z: -8.8, look: 0.9 }],                                                     // chuồng bò
+        [{ x: -11.0, z: -4.0, look: 0.9 }],                                                    // vườn rau
+        [{ x: 27.55, z: -11.5 }, { x: 27.55, z: -17.25 }, { x: 16, z: -17.25, look: 1.0 }],    // sau dãy chuồng bắc
+        [{ x: 27.55, z: 11.5 }, { x: 27.55, z: 17.25 }, { x: 16, z: 17.25, look: 1.0 }]        // sau dãy chuồng nam
+      ];
+      // lục điểm GẦN quản ngục trước cho kịp buổi ngủ ngắn
+      stops.sort((a, b)=>{
+        const la = a[a.length - 1], lb = b[b.length - 1];
+        return Math.hypot(la.x - g.pos.x, la.z - g.pos.z) - Math.hypot(lb.x - g.pos.x, lb.z - g.pos.z);
+      });
+      const q = [];
+      for(const s of stops) for(const w of s) q.push(w);
+      return q;
+    }
+    function updateSeek(gdt){
+      // điều kiện nền như các buổi khác; đang đánh nhau / bị rượt /
+      // ngất / biệt giam thì gác chuyện điểm danh lại
+      if(!G.started || G.over || G.paused || G.knocked || G.jailT > 0 || FIGHT.active || CHASE.active) return;
+      if(SEEK.stage === 'done') return;
+      const g = SEEK.guard;
+      // đã yên vị trên giường (hoặc xong việc ngủ): coi như ngoan
+      if(huntCompliant('sleep')){
+        if(SEEK.stage === 'roll' || SEEK.stage === 'seek') seekFinish('', 'Về giường rồi hả? Ngoan đó, ngủ đi.');
+        else { seekReset(); SEEK.stage = 'done'; }
+        return;
+      }
+      if(SEEK.stage === 'idle'){
+        SEEK.t += gdt;
+        if(SEEK.t < 1.2) return;
+        const cg = nearestGuard(PRESIDE_SPOT.x, PRESIDE_SPOT.z, true) || guards[0];
+        if(!cg){ SEEK.stage = 'done'; return; }
+        SEEK.guard = cg; cg.mode = 'seekroll'; cg.taskT = 0;
+        SEEK.stage = 'roll'; SEEK.t = 0;
+        showBubble(cg, 'ĐIỂM DANH ĐI NGỦ! Ra sân điểm danh cho tui thấy mặt lẹ lên!', 2800);
+        toast('Tới giờ điểm danh đi ngủ! Ra sân điểm danh cho quản ngục thấy mặt — vắng mặt là ổng đi tìm khắp trại kiểu trốn tìm đó, thấy tận mắt là ổng rượt luôn!', 4400);
+        SFX.bell();
+        return;
+      }
+      if(!g || g.koT > 0){ seekReset(); return; }
+      // quản ngục bị việc khác kéo đi giữa chừng (can đánh nhau…): hủy
+      if(g.mode !== 'seekroll' && g.mode !== 'seek'){ SEEK.guard = null; SEEK.stage = 'done'; SEEK.q = []; return; }
+      if(SEEK.stage === 'roll'){
+        SEEK.t += gdt;
+        // CÓ MẶT ở điểm danh = cho qua buổi tối nay
+        if(Math.hypot(player.pos.x - PRESIDE_SPOT.x, player.pos.z - PRESIDE_SPOT.z) < 5.2){
+          seekFinish('Có mặt điểm danh rồi — quản ngục cho qua. Về giường ngủ thôi ní!', 'Thấy mặt rồi đó. Về giường ngủ đi, đừng la cà nữa!');
+          return;
+        }
+        if(SEEK.t >= 7){ // hết giờ điểm danh mà vẫn vắng mặt: ĐI TÌM
+          SEEK.stage = 'seek'; SEEK.t = 0;
+          SEEK.q = buildSeekQueue(g);
+          g.mode = 'seek'; g.taskT = 0; g.seekWaitT = 0;
+          showBubble(g, 'Thiếu mặt một người! Để tui đi tìm coi núp ở đâu!', 2600);
+          toast('Điểm danh KHÔNG thấy ní — quản ngục bắt đầu đi lục khắp trại rồi! Núp kỹ vô, đừng để lọt vào tầm mắt ổng!', 4200);
+          SFX.bad();
+        }
+        return;
+      }
+      // stage 'seek': đang lục soát — CHỈ khi nhìn thấy tận mắt mới rượt.
+      // Quản ngục đang bị đút lót thì "không thấy gì hết" như thường lệ
+      if(g.bribeT <= 0){
+        const d = Math.hypot(player.pos.x - g.pos.x, player.pos.z - g.pos.z);
+        if(d < 2.1 || (d < 14 && guardSeesPlayer(g))){
+          const hg = g;
+          SEEK.guard = null; SEEK.stage = 'done'; SEEK.q = [];
+          showBubble(hg, 'Thấy rồi nha! Núp đâu cho thoát — đứng lại!', 2200);
+          startHunt(hg, 'sleep');
+          return;
+        }
+      }
+      if(!SEEK.q.length && !(g.seekWaitT > 0)){
+        // lục hết mọi điểm mà không thấy: bỏ cuộc, tha buổi tối nay
+        seekFinish('Quản ngục lục khắp trại mà không thấy ní — qua mặt được buổi điểm danh tối nay rồi đó!', 'Tìm hoài không thấy… thôi, mai tính sổ sau!');
+      }
+    }
+    /* ================================================================
+       DẪN ĐƯỜNG QUA CỬA (NAV) — gốc của lỗi "quản ngục kẹt khi đi vô
+       phòng WC / phòng ăn": trước đây mọi chặng đi đều là đường thẳng
+       tới đích, đích ở trong phòng là ổng đâm thẳng vô tường rồi trượt
+       dọc tường mãi không qua được cửa. Nay: 2 phòng có cửa được khai
+       báo kèm ĐIỂM CỬA trong/ngoài; quản ngục và đích ở 2 phía khác
+       nhau của 1 phòng thì đích tạm được đổi thành điểm cửa (ra cửa
+       phòng mình trước / tới cửa phòng đích trước), qua cửa xong mới
+       đi thẳng tới đích thật. guardNavGoTo trả về khoảng cách tới
+       ĐÍCH THẬT để mọi check "tới nơi chưa" giữ nguyên ngữ nghĩa.
+       ================================================================ */
+    const NAV_ROOMS = [
+      { id:'dine', minX:-7.2, maxX:4.2,  minZ:0.0,  maxZ:6.8,  doorIn:{x:-1.5, z:5.6},  doorOut:{x:-1.5, z:7.6} },
+      { id:'wc',   minX:5.2,  maxX:12.0, minZ:-6.4, maxZ:0.0,  doorIn:{x:6.4,  z:-3.2}, doorOut:{x:4.4,  z:-3.2} }
+    ];
+    function navRoomAt(x, z){
+      for(const r of NAV_ROOMS){ if(x > r.minX && x < r.maxX && z > r.minZ && z < r.maxZ) return r; }
+      return null;
+    }
+    function navTarget(g, tx, tz){
+      const gr = navRoomAt(g.pos.x, g.pos.z), tr = navRoomAt(tx, tz);
+      if(gr === tr) return null; // cùng khu (cùng phòng / cùng ngoài sân): đi thẳng
+      if(gr){ // đang ở trong phòng, đích ở ngoài: ra cửa phòng mình trước
+        return Math.hypot(gr.doorIn.x - g.pos.x, gr.doorIn.z - g.pos.z) > 0.45 ? gr.doorIn : gr.doorOut;
+      }
+      if(tr){ // đích ở trong phòng, mình ở ngoài: tới cửa phòng đó trước
+        return Math.hypot(tr.doorOut.x - g.pos.x, tr.doorOut.z - g.pos.z) > 0.45 ? tr.doorOut : tr.doorIn;
+      }
+      return null;
+    }
+    function guardNavGoTo(g, tx, tz, speed, gdt){
+      const nt = navTarget(g, tx, tz);
+      if(nt) guardGoTo(g, nt.x, nt.z, speed, gdt);
+      else guardGoTo(g, tx, tz, speed, gdt);
+      return Math.hypot(tx - g.pos.x, tz - g.pos.z);
     }
     function guardGoTo(g, x, z, speed, gdt){
       // ghi lại ĐÍCH THẬT mỗi lần được gọi — watchdog chống kẹt
@@ -2893,15 +3051,16 @@
         g.wantX = undefined; // đích tính theo frame: mode nào không gọi guardGoTo frame này thì không bị watchdog coi là kẹt
         let moving = false;
         const chase = (g.mode==='intervene' || g.mode==='assist' || g.mode==='discipline' || g.mode==='fightback' || g.mode==='chase' || g.mode==='hunt' || g.mode==='carryFetch' || g.mode==='carryBack');
-        // fightback/chase chạy 3.6 — chậm hơn chân chạy trốn của người chơi
-        // (2.6 x 1.5 = 3.9) một chút để còn đường thoát thiệt
-        const speed = (g.mode==='fightback' || g.mode==='chase') ? 3.6 : (chase ? 4.1 : 1.5);
+        // fightback/chase chạy 3.35 — chậm hơn chân chạy trốn của người
+        // chơi (2.6 x 1.5 = 3.9) một khoảng rõ rệt để còn thoát được
+        // thiệt, chưa kể rượt lâu là ổng hụt hơi chậm thêm (xem mode chase)
+        const speed = (g.mode==='fightback' || g.mode==='chase') ? 3.35 : (chase ? 4.1 : 1.5);
         if(g.mode==='post'){
           // về đúng điểm trực của mình (bị kéo đi can ngăn xong cũng quay
           // lại điểm); giờ ăn thì quản ngục Chín vô đứng trong phòng ăn
           const spot = (g.def.mealPost && p.meal) ? g.def.mealPost : g.def.post;
           if(spot){
-            const d = guardGoTo(g, spot.x, spot.z, 2.2, gdt);
+            const d = guardNavGoTo(g, spot.x, spot.z, 2.2, gdt);
             moving = d > 0.45;
             if(!moving){
               g.targetRot = spot.rot;
@@ -2919,7 +3078,7 @@
           if(g.taskT > 14){ // kẹt đường quá lâu (tường/phòng ngăn cách): luồn tới sát bên người ngất luôn, khỏi kẹt cứng
             g.pos.set(player.pos.x + 0.85, 0, player.pos.z + 0.2); g.taskT = 7;
           }
-          const d = guardGoTo(g, player.pos.x, player.pos.z, 3.4, gdt);
+          const d = guardNavGoTo(g, player.pos.x, player.pos.z, 3.4, gdt);
           moving = d > 1.0;
           if(d <= 1.05 && G.knocked && !G.carried){
             G.carried = true; g.mode = 'carryBack'; g.taskT = 0;
@@ -2931,11 +3090,17 @@
             // ngất vì bị rượt quánh theo lịch: chặng cuối đi tới sát
             // GIƯỜNG của người ngất để quăng thẳng lên giường
             const fin = FIGHT.koDest==='bed' ? { x: myBed().appX, z: myBed().appZ } : sp;
-            g.carryPath = [
+            g.carryPath = [];
+            // người ngất nằm TRONG phòng ăn / nhà vệ sinh: chặng đầu
+            // phải RA CỬA phòng trước rồi mới vòng về cổng chuồng —
+            // đi thẳng từ trong phòng về cổng là đâm tường kẹt cứng
+            const prm = navRoomAt(player.pos.x, player.pos.z);
+            if(prm) g.carryPath.push({ x: prm.doorIn.x, z: prm.doorIn.z }, { x: prm.doorOut.x, z: prm.doorOut.z });
+            g.carryPath.push(
               { x: cd.cx + 0.6, z: cd.frontZ + cd.facing * 0.95 },
               { x: cd.cx + 0.6, z: cd.frontZ - cd.facing * 0.6 },
               { x: fin.x, z: fin.z }
-            ];
+            );
             showBubble(g, FIGHT.koDest==='bed' ? 'Xỉu rồi hả? Vác về quăng lên giường nè!' : 'Ngất thiệt rồi hả? Lên vai, tui khiêng về chuồng!', 2600);
             SFX.pop();
           }
@@ -3004,47 +3169,84 @@
           else if(g.mode==='intervene' && FIGHT.delay > 0){ /* còn đang phản ứng, chưa can ngay — để 2 bên trao đòn vài nhịp cho có cảm giác thiệt */ }
           else if(g.mode==='assist' && FIGHT.kind==='guard'){
             // đồng nghiệp tới hóng + chực sẵn, không phá trận đấu tay đôi với quản ngục kia
-            const d = guardGoTo(g, player.pos.x, player.pos.z, speed, gdt);
+            const d = guardNavGoTo(g, player.pos.x, player.pos.z, speed, gdt);
             moving = d > 1.9;
           }
           else {
-            const d = guardGoTo(g, player.pos.x, player.pos.z, speed, gdt);
+            const d = guardNavGoTo(g, player.pos.x, player.pos.z, speed, gdt);
             moving = d > 1.15;
             if(d <= 1.2) resolveFightByGuard(g);
           }
         } else if(g.mode==='fightback'){
           // đuổi theo áp sát người chơi; sát thương trao đổi nằm ở updateFight (thanh máu)
-          const d = guardGoTo(g, player.pos.x, player.pos.z, speed, gdt);
+          const d = guardNavGoTo(g, player.pos.x, player.pos.z, speed, gdt);
           moving = d > 1.05;
           g.targetRot = Math.atan2(player.pos.x - g.pos.x, player.pos.z - g.pos.z);
           if(!FIGHT.active && !G.knocked) g.mode = g.homeMode;
         } else if(g.mode==='chase'){
           // RƯỢT người chơi bỏ chạy: còn thấy thì đuổi theo người, mất dấu
           // thì chạy tới điểm cuối cùng còn thấy rồi đứng ngó quanh tìm
-          if(!CHASE.active || CHASE.guard !== g){ g.mode = g.homeMode; g.taskT = 0; }
+          if(!CHASE.active || CHASE.guard !== g){ g.mode = g.homeMode; g.taskT = 0; g.chaseRunT = 0; }
           else {
             const sees = guardSeesPlayer(g);
-            const d = guardGoTo(g, sees ? player.pos.x : CHASE.lastX, sees ? player.pos.z : CHASE.lastZ, sees ? speed : 2.4, gdt);
+            // RƯỢT LÂU LÀ MỆT: dí liên tục quá ~7 giây là quản ngục hụt
+            // hơi, chạy chậm hẳn vài giây (có thoại thở dốc) rồi mới hồi
+            // sức — cửa thoát thiệt cho người chơi, hết cảnh ổng dính
+            // lẹo sau lưng từ đầu sân tới cuối sân không buông
+            g.chaseRunT = (g.chaseRunT || 0) + gdt;
+            let sp = sees ? speed : 2.4;
+            if(sees && g.chaseRunT > 7){
+              const cyc = (g.chaseRunT - 7) % 6.5;
+              if(cyc < 3){ sp = speed * 0.72; if(!g.tireSaid){ g.tireSaid = true; showBubble(g, pick(['Hộc… hộc… đứng lại coi!','Mệt quá… chờ tui chút!','Hộc hộc… ní chạy nhanh thiệt…']), 1500); } }
+              else g.tireSaid = false;
+            }
+            const d = guardNavGoTo(g, sees ? player.pos.x : CHASE.lastX, sees ? player.pos.z : CHASE.lastZ, sp, gdt);
             moving = d > 0.5;
             if(sees) g.targetRot = Math.atan2(player.pos.x - g.pos.x, player.pos.z - g.pos.z);
             else if(d <= 0.55) g.targetRot += gdt * 1.9; // tới nơi mà không thấy ai: xoay ngó tìm
           }
         } else if(g.mode==='hunt'){
-          // RƯỢT QUÁNH theo lịch: đuổi sát người chơi, ra đòn nằm ở updateHunt
+          // RƯỢT QUÁNH theo lịch: đuổi sát người chơi, ra đòn nằm ở
+          // updateHunt. Tốc độ 3.8 — vẫn chậm hơn chân chạy trốn 3.9
+          // của người chơi một chút để chạy về giường/điểm danh kịp,
+          // không còn cảnh ổng nhanh hơn mình dí hoài không thoát
           if(!HUNT.active || HUNT.guard !== g){ g.mode = g.homeMode; g.taskT = 0; }
           else {
-            const d = guardGoTo(g, player.pos.x, player.pos.z, 4.2, gdt);
+            const d = guardNavGoTo(g, player.pos.x, player.pos.z, 3.8, gdt);
             moving = d > 1.35;
             g.targetRot = Math.atan2(player.pos.x - g.pos.x, player.pos.z - g.pos.z);
           }
         } else if(g.mode==='discipline'){
           g.taskT += gdt;
-          const d = guardGoTo(g, player.pos.x, player.pos.z, speed, gdt);
+          const d = guardNavGoTo(g, player.pos.x, player.pos.z, speed, gdt);
           moving = d > 1.15;
           if(d <= 1.2 || g.taskT > 7){
             if(g.taskT > 7 && d > 1.2){ showBubble(g, 'Ê ní kia! Lệch lịch hoài là tui ghi sổ đó!', 2200); G.stats.respect = clamp(G.stats.respect - 2, 0, 100); idleT = 0; disciplineCd = 90; g.mode = g.homeMode; g.waitT = 2; g.taskT = 0; }
             else resolveDiscipline(g);
           }
+        } else if(g.mode==='seekroll'){
+          // ĐIỂM DANH TỐI: ra điểm điểm danh đứng chủ trì chờ điểm mặt
+          // (máy trạng thái nằm ở updateSeek)
+          const d = guardNavGoTo(g, PRESIDE_SPOT.x, PRESIDE_SPOT.z, 2.7, gdt);
+          moving = d > 0.4;
+          if(!moving) g.targetRot = Math.PI; // tới nơi thì quay mặt ra sân chờ
+        } else if(g.mode==='seek'){
+          // TRỐN TÌM: đi lục từng điểm trong SEEK.q; điểm cuối của mỗi
+          // chỗ (có 'look') thì đứng lại xoay ngó quanh một lúc mới đi
+          if(g.seekWaitT > 0){
+            g.seekWaitT -= gdt;
+            g.targetRot += gdt * 1.7; // xoay người ngó quanh tìm
+            moving = false;
+            if(g.seekWaitT <= 0 && SEEK.q.length) SEEK.q.shift();
+          } else if(SEEK.q.length){
+            const wp = SEEK.q[0];
+            const d = guardGoTo(g, wp.x, wp.z, 3.3, gdt);
+            moving = d > 0.5;
+            if(d <= 0.55){
+              if(wp.look) g.seekWaitT = wp.look;
+              else SEEK.q.shift();
+            }
+          } else moving = false;
         } else { // patrol
           const route = GUARD_ROUTES[g.def.key];
           if(g.waitT > 0){
@@ -3870,7 +4072,7 @@
           // đang đánh nhau VẪN chạy được — đứng gần thì trao đòn, bỏ chạy xa
           // thì thành màn rượt đuổi/trốn quản ngục (xem updateFight/updateChase).
           // Bỏ chạy khỏi quản ngục (đang quánh ổng hoặc đang bị rượt) thì
-          // chân nhanh hẳn lên (hồi hộp!) — quản ngục rượt 3.6, mình 3.9.
+          // chân nhanh hẳn lên (hồi hộp!) — quản ngục rượt 3.35, mình 3.9.
           const fleeMul = ((FIGHT.active && FIGHT.kind==='guard') || CHASE.active || HUNT.active) ? 1.5 : 1;
           if(mag > 0.12 && !G.lying && !G.onBed && !G.climbActive && !G.sitting && !G.sitTrans && G.busy<=0 && !(G.jailT > 0) && !G.knocked){
             if(mag>1){ ix/=mag; iy/=mag; }
@@ -4060,22 +4262,50 @@
           camSpin *= Math.pow(0.002, dt);
           if(Math.abs(camSpin) < 0.05) camSpin = 0;
         }
-        // TỰ BÁM SAU LƯNG: đang chạy thì góc camera tự xoay êm về phía sau
-        // lưng nhân vật (ngược hướng mặt nhân vật đang hướng tới). Đứng yên
-        // thì giữ nguyên góc cho người chơi ngắm cảnh; đang kéo tay / mới
-        // kéo tay xong (camHoldUntil) / đang ngất thì không giành camera.
+        // TỰ BÁM SAU LƯNG kiểu góc nhìn thứ 3: nhân vật quay/chạy
+        // hướng nào là góc camera trôi êm về sau lưng hướng đó (hệ số
+        // mượt tính theo thời gian thật nên không giật theo fps). Đứng
+        // yên lâu thì giữ nguyên góc cho người chơi ngắm cảnh; đang
+        // kéo tay / mới kéo tay xong (camHoldUntil) / đang ngất thì
+        // không giành camera.
         if(G.started && camFollow && !drag.active && camSpin === 0 && !G.knocked &&
-           performance.now() > camHoldUntil && performance.now() - lastMoveAt < 250){
+           performance.now() > camHoldUntil && performance.now() - lastMoveAt < 700){
           const desired = player.targetRot + Math.PI;
           let dy = desired - camYaw;
           while(dy > Math.PI) dy -= Math.PI*2; while(dy < -Math.PI) dy += Math.PI*2;
-          if(Math.abs(dy) > 0.05) camYaw += dy * Math.min(1, dt*2.6);
+          if(Math.abs(dy) > 0.03) camYaw += dy * (1 - Math.exp(-3.6 * dt));
         }
         const focus = G.started ? player.pos : new THREE.Vector3(0.4,0,0.4);
         const orbitYaw = G.started ? camYaw : (t*0.07);
-        const cx = focus.x + Math.sin(orbitYaw)*Math.cos(camPitch)*camDist;
-        const cz = focus.z + Math.cos(orbitYaw)*Math.cos(camPitch)*camDist;
-        const cy = 0.8 + Math.sin(camPitch)*camDist;
+        // CHỐNG XUYÊN TƯỜNG: bắn tia ngang từ vị trí nhân vật theo
+        // hướng camera; nếu vật cản đầu tiên ở khoảng ngang th mà
+        // chiều cao camera tại đó vẫn dưới ~2.45 (chưa vượt qua được
+        // tường phòng 2.1 / song sắt 2.5) thì rút khoảng cách lại
+        // ngay trước vật cản — vô phòng/chuồng là camera tự chui vào
+        // theo, hết cảnh đứng ngoài tường nhìn xuyên vào trong
+        let effDist = camDist;
+        if(G.started){
+          const cp = Math.max(Math.cos(camPitch), 0.2);
+          const dirx = Math.sin(orbitYaw), dirz = Math.cos(orbitYaw);
+          let th = Infinity;
+          for(const o of obstacles){
+            let t0 = 0.05, t1 = Infinity, ok = true;
+            if(Math.abs(dirx) < 1e-6){ if(focus.x < o.minX || focus.x > o.maxX) ok = false; }
+            else { let ta = (o.minX - focus.x)/dirx, tb = (o.maxX - focus.x)/dirx; if(ta > tb){ const tt = ta; ta = tb; tb = tt; } t0 = Math.max(t0, ta); t1 = Math.min(t1, tb); if(t0 > t1) ok = false; }
+            if(ok){
+              if(Math.abs(dirz) < 1e-6){ if(focus.z < o.minZ || focus.z > o.maxZ) ok = false; }
+              else { let ta = (o.minZ - focus.z)/dirz, tb = (o.maxZ - focus.z)/dirz; if(ta > tb){ const tt = ta; ta = tb; tb = tt; } t0 = Math.max(t0, ta); t1 = Math.min(t1, tb); if(t0 > t1) ok = false; }
+            }
+            if(ok && t0 < th) th = t0;
+          }
+          if(th < Infinity){
+            const yAtHit = 0.8 + Math.sin(camPitch) * (th / cp);
+            if(yAtHit < 2.45) effDist = Math.min(effDist, Math.max(0.9, (th - 0.28) / cp));
+          }
+        }
+        const cx = focus.x + Math.sin(orbitYaw)*Math.cos(camPitch)*effDist;
+        const cz = focus.z + Math.cos(orbitYaw)*Math.cos(camPitch)*effDist;
+        const cy = 0.8 + Math.sin(camPitch)*effDist;
         camTarget.set(
           clamp(cx, -ROOM.w/2+0.35, ROOM.w/2-0.35),
           clamp(cy, 1.1, 11),
@@ -4087,8 +4317,13 @@
           camShake = Math.max(0, camShake - dt * 2.2);
         }
         if(camSnap){ camera.position.copy(camTarget); camSnap = false; }
-        else camera.position.lerp(camTarget, G.started ? 0.12 : 0.03);
-        camera.lookAt(focus.x, 0.75, focus.z);
+        else camera.position.lerp(camTarget, 1 - Math.exp(-(G.started ? 9 : 2.2) * dt));
+        if(G.started){
+          // ngắm vào đầu nhân vật + lệch nhẹ về phía mặt đang hướng:
+          // nhân vật nằm giữa-dưới khung hình, thấy được đường phía
+          // trước — đúng khung hình góc nhìn thứ 3 quen thuộc
+          camera.lookAt(focus.x + Math.sin(player.rotY) * 0.55, 1.02, focus.z + Math.cos(player.rotY) * 0.55);
+        } else camera.lookAt(focus.x, 0.75, focus.z);
 
         if(!G.started){
           // idle life behind the start card
@@ -4781,7 +5016,7 @@
       if(!G.restoredPos) player.pos.copy(cellSpawn(G.cellNo));
       player.mesh.position.copy(player.pos);
       // vào game là camera đứng sẵn sau lưng nhân vật, khỏi xoay tìm hướng
-      camYaw = player.rotY + Math.PI; camPitch = 0.46; camSpin = 0; camHoldUntil = 0; camSnap = true;
+      camYaw = player.rotY + Math.PI; camPitch = 0.36; camSpin = 0; camHoldUntil = 0; camSnap = true;
       // chơi tiếp đúng buổi đang dở (tiến trình đã lưu), không bắt đầu lại từ sáng
       const resumeIdx = clamp(G.phaseIdx || 0, 0, PHASES.length - 1);
       const resumeT = G.phaseT || 0, resumeDone = !!G.taskDone;
