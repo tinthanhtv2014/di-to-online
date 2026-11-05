@@ -389,6 +389,20 @@
       }
       #zoomCtl button:active{ background:var(--mint); color:#0d2016; }
       #zoomRange{ width:104px; accent-color:var(--mint); cursor:pointer; }
+      #btnCamFollow{
+        width:auto !important; border-radius:99px !important; padding:0 10px !important;
+        font-size:11.5px !important; white-space:nowrap;
+      }
+      #btnCamFollow.on{ background:var(--mint); color:#0d2016; }
+      /* bảng báo đang bị quản ngục rượt — thay chỗ thanh máu khi bỏ chạy */
+      #chaseTag{
+        position:fixed; left:50%; transform:translateX(-50%);
+        top:calc(58px + env(safe-area-inset-top)); z-index:28; width:min(86vw,360px);
+        padding:8px 12px 9px; pointer-events:none; text-align:center;
+        border:1px solid rgba(255,93,115,.65);
+      }
+      #chaseTag .ctTitle{ font-size:13.5px; font-weight:800; color:#ff8fa0; letter-spacing:.4px; }
+      #chaseTag .ctSub{ font-size:12px; font-weight:700; color:var(--txt); margin-top:2px; line-height:1.35; }
 
       /* nhắc xoay ngang — phủ toàn màn khi cầm dọc lúc đang chơi, tắt được */
       #rotateHint{
@@ -528,6 +542,10 @@
       <div class="fhRow"><span id="fhPName">Ní</span><div class="fhBar"><i id="fhPBar" style="width:100%"></i></div><b id="fhPNum">100</b></div>
       <div class="fhRow"><span id="fhOName">Đối thủ</span><div class="fhBar foe"><i id="fhOBar" style="width:100%"></i></div><b id="fhONum">100</b></div>
     </div>
+    <div id="chaseTag" class="plate hidden">
+      <div class="ctTitle">ĐANG BỊ QUẢN NGỤC RƯỢT!</div>
+      <div class="ctSub" id="chaseTxt">Ổng đang thấy ní — chạy khuất góc lẹ!</div>
+    </div>
     <div id="hitFlash"></div>
 
     <div id="banner"><div class="bClock" id="bannerClock">05:30</div><div class="bName" id="bannerName">Thức dậy</div></div>
@@ -548,6 +566,7 @@
       <button id="btnZoomIn" aria-label="Zoom lại gần">+</button>
       <input id="zoomRange" type="range" min="5" max="14" step="0.1" value="9.5" aria-label="Mức zoom camera" />
       <button id="btnZoomOut" aria-label="Zoom ra xa">−</button>
+      <button id="btnCamFollow" class="on" aria-label="Camera tự bám sau lưng nhân vật">Bám lưng</button>
     </div>
 
     <!-- touch controls -->
@@ -572,7 +591,7 @@
         <div class="kit"><span><b>Chung thân</b> — không hẹn ngày ra</span><span>Cải tạo đủ <b>100 điểm</b> là được xét thả</span></div>
         <p class="howto hidden" id="restoreNote"></p>
         <button class="bigBtn" id="btnStart">Nhận số tù &amp; vào phòng</button>
-        <p class="howto"><b>Cách chơi:</b> joystick / WASD để đi · kéo màn hình xoay camera · thấy vòng sáng là tới bấm nút vàng. <b>Điện thoại nhớ xoay ngang.</b></p>
+        <p class="howto"><b>Cách chơi:</b> joystick / WASD để đi · camera tự bám sau lưng ní, kéo màn hình khi muốn xoay tự do · thấy vòng sáng là tới bấm nút vàng. <b>Điện thoại nhớ xoay ngang.</b></p>
       </div>
     </div>
 
@@ -1663,7 +1682,17 @@
     // php/ohp = máu 2 bên (hiện thanh máu), atkT = nhịp ra đòn, delay =
     // thời gian quản ngục phản ứng, koPhase = chuỗi ngất xỉu -> khiêng về chuồng}
     const FIGHT = { active:false, kind:'', npc:null, guard:null, hits:0, t:0, bubCd:0,
-      php:100, ohp:100, oMax:100, atkT:0, turn:false, delay:0, koPhase:'', koT:0, carrier:null };
+      php:100, ohp:100, oMax:100, atkT:0, turn:false, delay:0, koPhase:'', koT:0, carrier:null,
+      koDest:'', hunter:null };
+    // koDest='bed': ngất vì bị rượt quánh theo lịch (điểm danh / giờ ngủ)
+    // thì quản ngục khiêng về QUĂNG THẲNG LÊN GIƯỜNG chuồng mình, không
+    // phải thả sàn chuồng như ngất vì đánh nhau; hunter = ông đã rượt mình.
+    /* RƯỢT ĐUỔI: bỏ chạy khỏi quản ngục (đang quánh ổng hoặc ổng tới can
+       trận đánh nhau) -> ổng chuyển sang mode 'chase' rượt theo. Chạy đủ
+       xa (>15) hoặc khuất tầm nhìn đủ 3 giây liên tục = ổng mất dấu, bỏ
+       cuộc về điểm trực, KHÔNG ghi sổ. Bị áp sát <=1.25 = bắt tại trận,
+       chịu phạt như cũ. lastX/lastZ = điểm cuối cùng ổng còn thấy mình. */
+    const CHASE = { active:false, guard:null, reason:'', hiddenT:0, t:0, shoutCd:0, lastX:0, lastZ:0, uiTxt:'' };
     /* hiệu ứng trúng đòn: tia sao văng ra khi ăn đòn + sao bay quanh đầu
        lúc ngất + rung camera. Nhanh mà có lực, vẫn chibi hài, không máu me. */
     let camShake = 0;
@@ -1783,22 +1812,34 @@
     }
 
     // camera orbit by dragging on the scene — mặc định lùi xa (9.5) cho khung nhìn rộng,
-    // người chơi tự chỉnh khoảng cách bằng con lăn chuột / pinch 2 ngón / thanh zoom
+    // người chơi tự chỉnh khoảng cách bằng con lăn chuột / pinch 2 ngón / thanh zoom.
+    // MẶC ĐỊNH camera TỰ BÁM SAU LƯNG nhân vật khi đang chạy (camFollow): khỏi
+    // phải kéo xoay liên tục. Kéo tay thì xoay tự do + có quán tính trượt nhẹ
+    // cho mượt, và chế độ bám lưng tạm nghỉ 4 giây để không giành camera với
+    // người chơi; nút "Bám lưng" ở thanh zoom tắt/bật hẳn chế độ này.
     const CAM_MIN = 5, CAM_MAX = 14;
     let camYaw = 0.65, camPitch = 0.46, camDist = 9.5;
-    const drag = { active:false, id:null, lx:0, ly:0, moved:false };
+    let camFollow = true, camHoldUntil = 0, camSpin = 0, camSnap = false;
+    const drag = { active:false, id:null, lx:0, ly:0, lt:0, moved:false };
     renderer.domElement.addEventListener('pointerdown', e=>{
       audio();
-      drag.active = true; drag.id = e.pointerId; drag.lx = e.clientX; drag.ly = e.clientY; drag.moved = false;
+      drag.active = true; drag.id = e.pointerId; drag.lx = e.clientX; drag.ly = e.clientY; drag.lt = performance.now(); drag.moved = false;
+      camSpin = 0;
     });
     addEventListener('pointermove', e=>{
       if(!drag.active || e.pointerId!==drag.id) return;
       const dx = e.clientX-drag.lx, dy = e.clientY-drag.ly;
       if(Math.abs(dx)+Math.abs(dy) > 3) drag.moved = true;
-      camYaw -= dx*0.0052; camPitch = clamp(camPitch + dy*0.003, 0.14, 1.05);
+      camYaw -= dx*0.0072; camPitch = clamp(camPitch + dy*0.0044, 0.14, 1.05);
+      // quán tính: nhớ vận tốc xoay gần nhất để thả tay ra camera trượt thêm chút
+      const now = performance.now(), dtEv = Math.max((now - drag.lt)/1000, 0.008);
+      const vel = clamp(-dx*0.0072/dtEv, -7, 7);
+      camSpin = camSpin*0.55 + vel*0.45;
+      drag.lt = now;
+      camHoldUntil = now + 4000;
       drag.lx = e.clientX; drag.ly = e.clientY;
     });
-    addEventListener('pointerup', e=>{ if(e.pointerId===drag.id) drag.active=false; });
+    addEventListener('pointerup', e=>{ if(e.pointerId===drag.id){ drag.active=false; camHoldUntil = performance.now() + 4000; if(Math.abs(camSpin) < 0.4) camSpin = 0; } });
     addEventListener('wheel', e=>{ camDist = clamp(camDist + e.deltaY*0.006, CAM_MIN, CAM_MAX); }, { passive:true });
     // pinch 2 ngón trên canvas để zoom ra / vào
     const camPointers = new Map(); let pinchD0 = 0, pinchDist0 = 0;
@@ -1846,7 +1887,7 @@
     }
 
     function nearestInteract(){
-      if(!G.started || G.over || G.paused || G.climbActive || G.sitTrans || FIGHT.active || G.jailT > 0 || G.knocked) return null;
+      if(!G.started || G.over || G.paused || G.climbActive || G.sitTrans || FIGHT.active || CHASE.active || HUNT.active || G.jailT > 0 || G.knocked) return null;
       // up on the bed: the one thing you can do is climb back down
       if(G.onBed){
         if(G.busy>0 || G.resting) return null;
@@ -1954,7 +1995,7 @@
       }
       // chào hỏi quản ngục — đứng gần là chào được (và cũng có nút KIẾM CHUYỆN…)
       for(const g of guards){
-        if(g.mode==='fightback' || g.mode==='intervene' || g.mode==='discipline' || g.mode==='assist' || g.mode==='carryFetch' || g.mode==='carryBack' || g.mode==='carryExit' || g.koT > 0) continue;
+        if(g.mode==='fightback' || g.mode==='intervene' || g.mode==='discipline' || g.mode==='assist' || g.mode==='chase' || g.mode==='hunt' || g.mode==='carryFetch' || g.mode==='carryBack' || g.mode==='carryExit' || g.koT > 0) continue;
         consider(g.pos.x, g.pos.z, { label:'Chào '+g.def.name, verb:'Chào hỏi', guard:g, act:()=>{
           if(g.sayCd>0){ showBubble(g, 'Ừ, chào ní. Lo làm việc đi.', 1600); return; }
           g.sayCd = 20;
@@ -2316,10 +2357,10 @@
       return bg;
     }
     function guardsResetModes(){
-      for(const g of guards) if(g.mode==='intervene' || g.mode==='assist' || g.mode==='discipline' || g.mode==='fightback'){ g.mode = g.homeMode; g.waitT = rand(1.5, 3); g.taskT = 0; }
+      for(const g of guards) if(g.mode==='intervene' || g.mode==='assist' || g.mode==='discipline' || g.mode==='fightback' || g.mode==='chase' || g.mode==='hunt'){ g.mode = g.homeMode; g.waitT = rand(1.5, 3); g.taskT = 0; }
     }
     function startFightNpc(n){
-      if(FIGHT.active || G.jailT > 0 || G.knocked) return;
+      if(FIGHT.active || CHASE.active || HUNT.active || G.jailT > 0 || G.knocked) return;
       FIGHT.active = true; FIGHT.kind = 'npc'; FIGHT.npc = n; FIGHT.guard = null; FIGHT.t = 0; FIGHT.hits = 0; FIGHT.bubCd = 0;
       FIGHT.php = 100; FIGHT.ohp = 85; FIGHT.oMax = 85; FIGHT.atkT = 0.7; FIGHT.turn = false; FIGHT.delay = 1.6; FIGHT.koPhase = '';
       n.fightT = 999; n.talkCd = 20;
@@ -2332,7 +2373,7 @@
       SFX.bad();
     }
     function startFightGuard(g){
-      if(FIGHT.active || G.jailT > 0 || G.knocked) return;
+      if(FIGHT.active || CHASE.active || HUNT.active || G.jailT > 0 || G.knocked) return;
       FIGHT.active = true; FIGHT.kind = 'guard'; FIGHT.guard = g; FIGHT.npc = null; FIGHT.t = 0; FIGHT.hits = 0; FIGHT.bubCd = 0;
       FIGHT.php = 100; FIGHT.ohp = 170; FIGHT.oMax = 170; FIGHT.atkT = 0.8; FIGHT.turn = false; FIGHT.delay = 0; FIGHT.koPhase = '';
       showFightHud(g.def.name);
@@ -2387,6 +2428,7 @@
       G.stats.respect = clamp(G.stats.respect - 3, 0, 100);
       G.stats.mood = clamp(G.stats.mood - 5, 0, 100);
       addReform(-4);
+      FIGHT.koDest = ''; FIGHT.hunter = null;
       FIGHT.koPhase = 'down'; FIGHT.koT = 1.5;
       showBubble('player', 'Mắt nổ đom đóm… xỉu đây… @.@', 2400);
       toast(wasGuardFight ? 'Ăn đòn quản ngục hết máu — ngất xỉu luôn rồi ní…' : 'Hết máu — ngất xỉu giữa sân rồi ní…', 3600);
@@ -2427,6 +2469,197 @@
       idleT = 0; disciplineCd = 90;
       g.mode = g.homeMode; g.waitT = 2; g.taskT = 0;
     }
+    /* tầm nhìn quản ngục: đoạn thẳng quản ngục -> người chơi có bị vật
+       cản nào (tường phòng, dãy chuồng, song sắt, bàn ghế…) chắn ngang
+       không — chắn là KHUẤT, núp sau đó đủ lâu là ổng mất dấu */
+    function guardSeesPlayer(g){
+      const x1 = g.pos.x, z1 = g.pos.z, dx = player.pos.x - x1, dz = player.pos.z - z1;
+      for(const o of obstacles){
+        let t0 = 0.03, t1 = 0.97, blocked = true;
+        if(Math.abs(dx) < 1e-6){ if(x1 < o.minX || x1 > o.maxX) blocked = false; }
+        else {
+          let ta = (o.minX - x1)/dx, tb = (o.maxX - x1)/dx;
+          if(ta > tb){ const tt = ta; ta = tb; tb = tt; }
+          t0 = Math.max(t0, ta); t1 = Math.min(t1, tb);
+          if(t0 > t1) blocked = false;
+        }
+        if(blocked){
+          if(Math.abs(dz) < 1e-6){ if(z1 < o.minZ || z1 > o.maxZ) blocked = false; }
+          else {
+            let ta = (o.minZ - z1)/dz, tb = (o.maxZ - z1)/dz;
+            if(ta > tb){ const tt = ta; ta = tb; tb = tt; }
+            t0 = Math.max(t0, ta); t1 = Math.min(t1, tb);
+            if(t0 > t1) blocked = false;
+          }
+        }
+        if(blocked) return false;
+      }
+      return true;
+    }
+    function startChase(g, reason){
+      if(CHASE.guard && CHASE.guard !== g && CHASE.guard.mode==='chase'){ CHASE.guard.mode = CHASE.guard.homeMode; CHASE.guard.taskT = 0; }
+      CHASE.active = true; CHASE.guard = g; CHASE.reason = reason;
+      CHASE.hiddenT = 0; CHASE.t = 0; CHASE.shoutCd = 1.4; CHASE.uiTxt = '';
+      CHASE.lastX = player.pos.x; CHASE.lastZ = player.pos.z;
+      g.mode = 'chase'; g.taskT = 0;
+      showBubble(g, pick(['Đứng lại! Chạy đi đâu đó?!','Đứng lại cho tui!','Chạy hả ní? Đứng lại!']), 2000);
+      toast('Quản ngục rượt theo kìa! Chạy thật xa, hoặc núp khuất tầm mắt ổng 3 giây là thoát — bị bắt kịp là ghi sổ đó!', 3800);
+      SFX.bad();
+    }
+    function endChaseEscaped(){
+      const g = CHASE.guard;
+      CHASE.active = false; CHASE.guard = null; CHASE.uiTxt = '';
+      $('chaseTag').classList.add('hidden');
+      if(g && g.mode==='chase'){ g.mode = g.homeMode; g.waitT = 2; g.taskT = 0; showBubble(g, pick(['Mất dấu rồi… đâu mất tiêu?!','Hừ, trốn nhanh thiệt. Tha cho lần này đó!','Đâu rồi…? Thôi, tha đó!']), 2600); }
+      toast('Thoát rồi ní! Quản ngục mất dấu, bỏ cuộc về điểm trực — không bị ghi sổ, không bị áp giải.', 3800);
+      SFX.good();
+    }
+    function endChaseCaught(){
+      const g = CHASE.guard, reason = CHASE.reason;
+      CHASE.active = false; CHASE.guard = null; CHASE.uiTxt = '';
+      $('chaseTag').classList.add('hidden');
+      if(!g) return;
+      if(reason === 'guard'){
+        // bắt lại sau khi dám quánh quản ngục rồi bỏ chạy: phạt y như cũ
+        FIGHT.guard = g; FIGHT.active = true;
+        resolveGuardFight(g);
+        toast('Chạy không thoát rồi ní… Bắt tại trận luôn!', 3200);
+      } else {
+        // bắt lại sau khi bỏ chạy khỏi trận đánh nhau bị tới can: ghi sổ như bị can thiệp
+        g.swingT = 0.45; bonkFX();
+        showBubble(g, pick(['Chạy hả? Bắt được rồi nha!','Hết đường chạy rồi — ghi sổ!']), 2400);
+        playerBonk(0, 4, g.pos, ['Ối… dạ, tui biết lỗi rồi…','Dạ dạ, hết chạy rồi…']);
+        G.stats.mood = clamp(G.stats.mood - 3, 0, 100);
+        addReform(-5);
+        guardsResetModes();
+        toast('Bị bắt lại rồi: đánh nhau bị trừ uy tín đó ní.');
+        SFX.bad();
+      }
+    }
+    function updateChase(gdt){
+      if(!CHASE.active) return;
+      const g = CHASE.guard;
+      if(!g || G.knocked || G.jailT > 0 || FIGHT.active){
+        CHASE.active = false; CHASE.guard = null;
+        if(g && g.mode==='chase') g.mode = g.homeMode;
+        $('chaseTag').classList.add('hidden');
+        return;
+      }
+      CHASE.t += gdt;
+      const d = Math.hypot(player.pos.x - g.pos.x, player.pos.z - g.pos.z);
+      if(d <= 1.25){ endChaseCaught(); return; }
+      const sees = guardSeesPlayer(g);
+      if(sees){ CHASE.lastX = player.pos.x; CHASE.lastZ = player.pos.z; }
+      const hidden = !sees || d > 15;
+      CHASE.hiddenT = hidden ? CHASE.hiddenT + gdt : Math.max(0, CHASE.hiddenT - gdt*1.5);
+      CHASE.shoutCd -= gdt;
+      if(sees && CHASE.shoutCd <= 0){ CHASE.shoutCd = rand(3.5, 5.5); showBubble(g, pick(['Đứng lại!','Tui thấy ní đó nha!','Chạy đâu cho thoát!','Đứng lại cho tui!']), 1500); }
+      // bảng báo rượt đuổi: đang bị thấy hay sắp thoát thì hiện rõ cho người chơi
+      $('chaseTag').classList.remove('hidden');
+      const msg = hidden
+        ? ('Ổng mất dấu ní rồi… khuất thêm ' + Math.max(0, 3 - CHASE.hiddenT).toFixed(1) + 's nữa là thoát!')
+        : 'Ổng đang thấy ní — núp sau dãy chuồng / vô phòng khuất góc lẹ!';
+      if(CHASE.uiTxt !== msg){ CHASE.uiTxt = msg; $('chaseTxt').textContent = msg; }
+      if(CHASE.hiddenT >= 3){ endChaseEscaped(); return; }
+      if(CHASE.t > 75){ endChaseEscaped(); return; } // rượt hoài ổng cũng mệt, bỏ cuộc
+    }
+    /* ---------------- RƯỢT QUÁNH THEO LỊCH (điểm danh / giờ ngủ) ----------------
+       Quản ngục CĂNG theo thời khóa biểu: điểm danh mà chưa ra sân, giờ
+       ngủ (cả ngủ trưa) mà chưa lên giường -> NHẮC TRƯỚC 5 giây (thoại +
+       toast) -> còn không về là 1 quản ngục cầm dùi cui RƯỢT QUÁNH thiệt
+       (mode 'hunt', mỗi đòn -20 máu rượt). Về kịp (ra sân điểm danh / leo
+       lên giường) là ổng bỏ qua. Ăn đủ 5 đòn XỈU tại chỗ -> ổng vác về
+       QUĂNG THẲNG LÊN GIƯỜNG chuồng mình (FIGHT.koDest='bed'). */
+    const HUNT = { active:false, guard:null, kind:'', hp:100, atkCd:0, phaseIdx:-1, stage:0, timer:0, uiTxt:'' };
+    function huntCompliant(kind){
+      if(G.taskDone) return true;
+      if(kind==='rollam'){ const s = STATIONS.door; return Math.hypot(player.pos.x - s.x, player.pos.z - s.z) < 2.8; }
+      return G.onBed || G.lying || G.climbActive; // đang leo lên giường cũng tính là đang về ngủ
+    }
+    function startHunt(g, kind){
+      HUNT.active = true; HUNT.guard = g; HUNT.kind = kind; HUNT.hp = 100; HUNT.atkCd = 0.9; HUNT.uiTxt = '';
+      g.mode = 'hunt'; g.taskT = 0;
+      showBubble(g, kind==='rollam' ? 'Điểm danh mà còn lảng vảng hả? Ăn dùi cui nè!' : 'Giờ ngủ mà còn đi đâu?! Về giường, không tui quánh thiệt đó!', 2600);
+      toast(kind==='rollam' ? 'Quản ngục RƯỢT QUÁNH vì chưa ra điểm danh! Chạy ra sân điểm danh lẹ — ăn đủ đòn là xỉu, bị vác về quăng lên giường đó!' : 'Quản ngục RƯỢT QUÁNH vì chưa về giường ngủ! Chạy về leo lên giường lẹ — ăn đủ đòn là xỉu, bị quăng lên giường luôn đó!', 4200);
+      SFX.bad();
+    }
+    function endHunt(complied){
+      const g = HUNT.guard;
+      HUNT.active = false; HUNT.guard = null; HUNT.stage = 0; HUNT.timer = 0; HUNT.uiTxt = '';
+      if(!CHASE.active) $('chaseTag').classList.add('hidden');
+      if(g && g.mode==='hunt'){ g.mode = g.homeMode; g.waitT = 1.5; g.taskT = 0; }
+      if(complied && g){
+        showBubble(g, 'Đó! Đúng giờ có phải yên không. Lần sau lẹ lên nghe chưa!', 2400);
+        toast('Về kịp rồi — quản ngục bỏ qua lần này. Lần sau đúng giờ nha ní.');
+        SFX.good();
+      }
+    }
+    function huntKO(){
+      const g = HUNT.guard, kind = HUNT.kind;
+      HUNT.active = false; HUNT.guard = null; HUNT.uiTxt = '';
+      $('chaseTag').classList.add('hidden');
+      G.knocked = true; G.carried = false;
+      player.pos.y = 0.05;
+      G.stats.health = Math.max(15, G.stats.health - 8);
+      G.stats.mood = clamp(G.stats.mood - 5, 0, 100);
+      addReform(-3);
+      FIGHT.koDest = 'bed'; FIGHT.hunter = g; FIGHT.koPhase = 'down'; FIGHT.koT = 1.5;
+      showBubble('player', 'Đau quá… xỉu… @.@', 2400);
+      if(g) showBubble(g, 'Quánh cho chừa cái tội trễ giờ! Vác về quăng lên giường nè!', 2600);
+      toast(kind==='rollam' ? 'Ăn dùi cui tới xỉu vì tội trễ điểm danh… Quản ngục vác về quăng lên giường cho nè.' : 'Ăn dùi cui tới xỉu vì tội không về ngủ… Quản ngục vác về quăng lên giường cho nè.', 3800);
+      SFX.bad();
+      camShake = Math.max(camShake, 0.9);
+    }
+    function updateHunt(gdt){
+      const p = phase();
+      const kind = p.id==='rollam' ? 'rollam' : (p.id==='sleep' ? 'sleep' : (p.id==='nap' ? 'nap' : ''));
+      if(HUNT.phaseIdx !== G.phaseIdx){
+        HUNT.phaseIdx = G.phaseIdx; HUNT.stage = 0; HUNT.timer = 0;
+        if(HUNT.active) endHunt(false);
+      }
+      if(HUNT.active){
+        const g = HUNT.guard;
+        if(!g || g.koT > 0 || !kind || G.knocked){ endHunt(false); return; }
+        if(huntCompliant(kind)){ endHunt(true); return; }
+        HUNT.atkCd -= gdt;
+        const d = Math.hypot(player.pos.x - g.pos.x, player.pos.z - g.pos.z);
+        if(d <= 1.6 && HUNT.atkCd <= 0){
+          HUNT.atkCd = 0.85;
+          g.swingT = 0.45; bonkFX(); hitFlashFx();
+          camShake = Math.max(camShake, 0.5);
+          burstHit(player.pos.x, 0.95, player.pos.z);
+          HUNT.hp -= 20;
+          G.stats.health = Math.max(18, G.stats.health - 2);
+          const kx = player.pos.x - g.pos.x, kz = player.pos.z - g.pos.z, kl = Math.hypot(kx, kz) || 1;
+          player.pos.x += kx/kl * 0.3; player.pos.z += kz/kl * 0.3;
+          collide(player.pos, 0.3);
+          showBubble('player', pick(['Ái da! Dạ dạ, về liền!','Đau! Tui về đây, về đây!','Dạ! Đừng quánh nữa!']), 1100);
+          if(HUNT.hp <= 0){ huntKO(); return; }
+        }
+        $('chaseTag').classList.remove('hidden');
+        const msg = kind==='rollam'
+          ? 'Quản ngục rượt quánh vì chưa điểm danh — chạy ra sân điểm danh lẹ!'
+          : 'Quản ngục rượt quánh vì chưa lên giường — chạy về leo lên giường lẹ!';
+        if(HUNT.uiTxt !== msg){ HUNT.uiTxt = msg; $('chaseTxt').textContent = msg; }
+        return;
+      }
+      // chưa rượt: canh giờ, nhắc trước 5 giây rồi mới rượt thiệt
+      if(!kind || !G.started || G.over || G.paused || G.knocked || G.jailT > 0 || FIGHT.active || CHASE.active){ HUNT.stage = 0; HUNT.timer = 0; return; }
+      if(huntCompliant(kind)){ HUNT.stage = 0; HUNT.timer = 0; return; }
+      HUNT.timer += gdt;
+      const grace = kind==='rollam' ? 6 : 7, warnWin = 5;
+      if(HUNT.stage === 0 && HUNT.timer >= grace){
+        HUNT.stage = 1; HUNT.timer = 0;
+        const g = nearestGuard(player.pos.x, player.pos.z, false);
+        if(g) showBubble(g, kind==='rollam' ? 'Ê! Còn 5 giây ra điểm danh — không ra là tui rượt quánh đó!' : 'Ê! Còn 5 giây lên giường ngủ — không về là tui rượt quánh đó!', 2600);
+        toast(kind==='rollam' ? 'Sắp điểm danh rồi, ra sân lẹ đi ní! Trễ là quản ngục cầm dùi cui rượt quánh thiệt đó.' : 'Sắp tới giờ ngủ rồi, về leo lên giường lẹ đi ní! Trễ là quản ngục cầm dùi cui rượt quánh thiệt đó.', 3800);
+        SFX.bell();
+      } else if(HUNT.stage === 1 && HUNT.timer >= warnWin){
+        HUNT.stage = 2;
+        const g = nearestGuard(player.pos.x, player.pos.z, true) || guards[0];
+        if(g) startHunt(g, kind);
+      }
+    }
     function guardGoTo(g, x, z, speed, gdt){
       const dx = x - g.pos.x, dz = z - g.pos.z, d = Math.hypot(dx, dz);
       if(d > 0.05) g.targetRot = Math.atan2(dx, dz);
@@ -2454,8 +2687,10 @@
         g.sayCd = Math.max(0, g.sayCd - gdt);
         if(g.swingT > 0) g.swingT -= gdt;
         let moving = false;
-        const chase = (g.mode==='intervene' || g.mode==='assist' || g.mode==='discipline' || g.mode==='fightback' || g.mode==='carryFetch' || g.mode==='carryBack');
-        const speed = chase ? 4.1 : 1.5;
+        const chase = (g.mode==='intervene' || g.mode==='assist' || g.mode==='discipline' || g.mode==='fightback' || g.mode==='chase' || g.mode==='hunt' || g.mode==='carryFetch' || g.mode==='carryBack');
+        // fightback/chase chạy 3.6 — chậm hơn chân chạy trốn của người chơi
+        // (2.6 x 1.5 = 3.9) một chút để còn đường thoát thiệt
+        const speed = (g.mode==='fightback' || g.mode==='chase') ? 3.6 : (chase ? 4.1 : 1.5);
         if(g.mode==='post'){
           // về đúng điểm trực của mình (bị kéo đi can ngăn xong cũng quay
           // lại điểm); giờ ăn thì quản ngục Chín vô đứng trong phòng ăn
@@ -2488,12 +2723,15 @@
             // trong chuồng là đâm đầu vô song sắt, kẹt hoài không tới
             const cd = cellDefs[clamp((G.cellNo||1)-1, 0, cellDefs.length-1)];
             const sp = cellSpawn(G.cellNo);
+            // ngất vì bị rượt quánh theo lịch: chặng cuối đi tới sát
+            // GIƯỜNG của người ngất để quăng thẳng lên giường
+            const fin = FIGHT.koDest==='bed' ? { x: myBed().appX, z: myBed().appZ } : sp;
             g.carryPath = [
               { x: cd.cx + 0.6, z: cd.frontZ + cd.facing * 0.95 },
               { x: cd.cx + 0.6, z: cd.frontZ - cd.facing * 0.6 },
-              { x: sp.x, z: sp.z }
+              { x: fin.x, z: fin.z }
             ];
-            showBubble(g, 'Ngất thiệt rồi hả? Lên vai, tui khiêng về chuồng!', 2600);
+            showBubble(g, FIGHT.koDest==='bed' ? 'Xỉu rồi hả? Vác về quăng lên giường nè!' : 'Ngất thiệt rồi hả? Lên vai, tui khiêng về chuồng!', 2600);
             SFX.pop();
           }
         } else if(g.mode==='carryBack'){
@@ -2519,18 +2757,24 @@
           if((lastLeg && !g.carryPath.length) || g.taskT > 20){
             // tới chuồng (hoặc kẹt quá lâu): đặt người ngất xuống trong
             // chuồng, quản ngục vòng ra cổng theo đường cũ
-            const tgt = cellSpawn(G.cellNo);
             const cd = cellDefs[clamp((G.cellNo||1)-1, 0, cellDefs.length-1)];
             G.carried = false;
-            player.pos.set(tgt.x, 0.05, tgt.z);
+            if(FIGHT.koDest==='bed'){
+              // QUĂNG THẲNG LÊN GIƯỜNG chuồng của người ngất
+              const b = myBed();
+              player.pos.set(b.x, b.lieY, b.z);
+            } else {
+              const tgt = cellSpawn(G.cellNo);
+              player.pos.set(tgt.x, 0.05, tgt.z);
+            }
             if(player.mesh) player.mesh.position.copy(player.pos);
             g.mode = 'carryExit'; g.taskT = 0;
             g.carryPath = [
               { x: cd.cx + 0.6, z: cd.frontZ - cd.facing * 0.6 },
               { x: cd.cx + 0.6, z: cd.frontZ + cd.facing * 0.95 }
             ];
-            FIGHT.koPhase = 'rest'; FIGHT.koT = 2.6;
-            showBubble(g, 'Về chuồng rồi đó. Nằm nghỉ đi ní!', 2400);
+            FIGHT.koPhase = 'rest'; FIGHT.koT = FIGHT.koDest==='bed' ? 3.2 : 2.6;
+            showBubble(g, FIGHT.koDest==='bed' ? 'Quăng lên giường rồi đó! Ngủ cho đàng hoàng nghe chưa!' : 'Về chuồng rồi đó. Nằm nghỉ đi ní!', 2400);
           }
         } else if(g.mode==='carryExit'){
           // thả người ngất xong: đi ngược ra cổng chuồng rồi mới về vị
@@ -2565,6 +2809,25 @@
           moving = d > 1.05;
           g.targetRot = Math.atan2(player.pos.x - g.pos.x, player.pos.z - g.pos.z);
           if(!FIGHT.active && !G.knocked) g.mode = g.homeMode;
+        } else if(g.mode==='chase'){
+          // RƯỢT người chơi bỏ chạy: còn thấy thì đuổi theo người, mất dấu
+          // thì chạy tới điểm cuối cùng còn thấy rồi đứng ngó quanh tìm
+          if(!CHASE.active || CHASE.guard !== g){ g.mode = g.homeMode; g.taskT = 0; }
+          else {
+            const sees = guardSeesPlayer(g);
+            const d = guardGoTo(g, sees ? player.pos.x : CHASE.lastX, sees ? player.pos.z : CHASE.lastZ, sees ? speed : 2.4, gdt);
+            moving = d > 0.5;
+            if(sees) g.targetRot = Math.atan2(player.pos.x - g.pos.x, player.pos.z - g.pos.z);
+            else if(d <= 0.55) g.targetRot += gdt * 1.9; // tới nơi mà không thấy ai: xoay ngó tìm
+          }
+        } else if(g.mode==='hunt'){
+          // RƯỢT QUÁNH theo lịch: đuổi sát người chơi, ra đòn nằm ở updateHunt
+          if(!HUNT.active || HUNT.guard !== g){ g.mode = g.homeMode; g.taskT = 0; }
+          else {
+            const d = guardGoTo(g, player.pos.x, player.pos.z, 4.2, gdt);
+            moving = d > 1.35;
+            g.targetRot = Math.atan2(player.pos.x - g.pos.x, player.pos.z - g.pos.z);
+          }
         } else if(g.mode==='discipline'){
           g.taskT += gdt;
           const d = guardGoTo(g, player.pos.x, player.pos.z, speed, gdt);
@@ -2614,7 +2877,9 @@
         if(FIGHT.koPhase === 'down'){
           FIGHT.koT -= gdt;
           if(FIGHT.koT <= 0){
-            let carrier = (FIGHT.kind === 'guard' && FIGHT.guard && !(FIGHT.guard.koT > 0)) ? FIGHT.guard : nearestGuard(player.pos.x, player.pos.z, false);
+            let carrier = (FIGHT.koDest === 'bed' && FIGHT.hunter && !(FIGHT.hunter.koT > 0)) ? FIGHT.hunter
+              : (FIGHT.kind === 'guard' && FIGHT.guard && !(FIGHT.guard.koT > 0)) ? FIGHT.guard
+              : nearestGuard(player.pos.x, player.pos.z, false);
             if(!carrier) carrier = guards[0];
             FIGHT.carrier = carrier;
             if(carrier){ carrier.mode = 'carryFetch'; carrier.taskT = 0; showBubble(carrier, 'Ê! Có người ngất xỉu kìa!', 1800); }
@@ -2624,10 +2889,22 @@
           FIGHT.koT -= gdt;
           if(FIGHT.koT <= 0){
             FIGHT.koPhase = '';
-            G.knocked = false; player.pos.y = 0;
+            G.knocked = false;
             G.stats.health = Math.max(G.stats.health, 38);
-            showBubble('player', 'Tỉnh rồi… đầu còn ong ong…', 2200);
-            toast('Được khiêng về chuồng rồi đó. Nằm nghỉ một lát là khỏe lại thôi ní.');
+            if(FIGHT.koDest === 'bed'){
+              // tỉnh dậy NGAY TRÊN GIƯỜNG của mình (bị quăng lên đó mà)
+              const b = myBed();
+              player.pos.set(b.x, b.lieY, b.z);
+              if(player.mesh) player.mesh.position.copy(player.pos);
+              G.onBed = true; G.lying = true; player.targetRot = 0; player.rotY = 0;
+              FIGHT.koDest = ''; FIGHT.hunter = null;
+              showBubble('player', 'Ủa… sao tui nằm trên giường rồi… đầu còn ong ong…', 2400);
+              toast('Bị quản ngục quăng lên giường đó ní. Tỉnh rồi thì nhớ: đúng giờ là khỏi ăn dùi cui.');
+            } else {
+              player.pos.y = 0;
+              showBubble('player', 'Tỉnh rồi… đầu còn ong ong…', 2200);
+              toast('Được khiêng về chuồng rồi đó. Nằm nghỉ một lát là khỏe lại thôi ní.');
+            }
             SFX.good();
           }
         }
@@ -2639,6 +2916,28 @@
       if(!opp){ FIGHT.active = false; hideFightHud(); return; }
       const oppPos = opp.pos;
       const dist = Math.hypot(player.pos.x - oppPos.x, player.pos.z - oppPos.z);
+      /* BỎ CHẠY: chạy xa khỏi đối thủ > 3.4 là thoát khỏi trận đấu —
+         quánh quản ngục thì ổng chuyển sang RƯỢT bắt lại; đánh bạn tù
+         thì quản ngục đang tới can chuyển sang rượt theo luôn */
+      if(FIGHT.kind === 'guard' && dist > 3.4){
+        const g = FIGHT.guard;
+        FIGHT.active = false; FIGHT.guard = null;
+        hideFightHud();
+        for(const o of guards){ if(o.mode==='assist'){ o.mode = o.homeMode; o.taskT = 0; } }
+        if(g && !(g.koT > 0)) startChase(g, 'guard');
+        return;
+      }
+      if(FIGHT.kind === 'npc' && dist > 3.4){
+        const n = FIGHT.npc;
+        if(n){ n.fightT = 0; n.talkCd = 12; }
+        FIGHT.active = false; FIGHT.npc = null;
+        hideFightHud();
+        let chaser = null;
+        for(const o of guards){ if(o.mode==='intervene'){ chaser = o; break; } }
+        if(chaser) startChase(chaser, 'fight');
+        else toast('Bỏ chạy khỏi trận đánh rồi — may quá, chưa ông quản ngục nào kịp thấy.');
+        return;
+      }
       // giằng co hài: 2 bên rung rung, chửi qua chửi lại trong lúc áp sát
       player.pos.x += rand(-0.014, 0.014); player.pos.z += rand(-0.014, 0.014);
       FIGHT.bubCd -= gdt;
@@ -3008,24 +3307,29 @@
           if(keys['KeyD']||keys['ArrowRight']) ix += 1;
           if(keys['KeyW']||keys['ArrowUp']) iy -= 1;
           if(keys['KeyS']||keys['ArrowDown']) iy += 1;
-          if(keys['KeyQ']) camYaw += dt*1.8;
+          if(keys['KeyQ']){ camYaw += dt*2.6; camHoldUntil = performance.now() + 2500; camSpin = 0; }
           if(keys['KeyE']) {} // interact handled on keydown
-          if(keys['KeyR']) camYaw -= dt*1.8;
+          if(keys['KeyR']){ camYaw -= dt*2.6; camHoldUntil = performance.now() + 2500; camSpin = 0; }
           /* bed-climb animation drives the player while it runs */
           updateClimb(gdt);
           updateSit(gdt);
 
           const mag = Math.hypot(ix, iy);
           let moving = false;
-          if(mag > 0.12 && !G.lying && !G.onBed && !G.climbActive && !G.sitting && !G.sitTrans && G.busy<=0 && !FIGHT.active && !(G.jailT > 0) && !G.knocked){
+          // đang đánh nhau VẪN chạy được — đứng gần thì trao đòn, bỏ chạy xa
+          // thì thành màn rượt đuổi/trốn quản ngục (xem updateFight/updateChase).
+          // Bỏ chạy khỏi quản ngục (đang quánh ổng hoặc đang bị rượt) thì
+          // chân nhanh hẳn lên (hồi hộp!) — quản ngục rượt 3.6, mình 3.9.
+          const fleeMul = ((FIGHT.active && FIGHT.kind==='guard') || CHASE.active || HUNT.active) ? 1.5 : 1;
+          if(mag > 0.12 && !G.lying && !G.onBed && !G.climbActive && !G.sitting && !G.sitTrans && G.busy<=0 && !(G.jailT > 0) && !G.knocked){
             if(mag>1){ ix/=mag; iy/=mag; }
             const s = Math.sin(camYaw), c = Math.cos(camYaw);
             // camera forward on ground = -(sin,cos); input iy: up on stick = -1 (forward)
             const fx = -s, fz = -c, rx = -fz, rz = fx;
             const mx = fx*(-iy) + rx*ix, mz = fz*(-iy) + rz*ix;
             const ml = Math.hypot(mx,mz) || 1;
-            player.pos.x += (mx/ml) * player.speed * gdt * Math.min(mag,1);
-            player.pos.z += (mz/ml) * player.speed * gdt * Math.min(mag,1);
+            player.pos.x += (mx/ml) * player.speed * fleeMul * gdt * Math.min(mag,1);
+            player.pos.z += (mz/ml) * player.speed * fleeMul * gdt * Math.min(mag,1);
             collide(player.pos, 0.3);
             player.targetRot = Math.atan2(mx, mz);
             player.walkT += gdt*10.5;
@@ -3148,6 +3452,8 @@
           /* quản ngục đi tuần + can thiệp, đánh nhau, nhắc lệch lịch */
           updateGuards(gdt, t);
           updateFight(gdt);
+          updateChase(gdt);
+          updateHunt(gdt);
           updateHitFx(gdt);
           updateScheduleWatch(gdt);
 
@@ -3171,6 +3477,23 @@
         }
 
         /* camera follow */
+        // quán tính xoay: thả tay sau khi kéo thì camera trượt thêm một chút rồi tắt dần
+        if(!drag.active && camSpin !== 0){
+          camYaw += camSpin * dt;
+          camSpin *= Math.pow(0.002, dt);
+          if(Math.abs(camSpin) < 0.05) camSpin = 0;
+        }
+        // TỰ BÁM SAU LƯNG: đang chạy thì góc camera tự xoay êm về phía sau
+        // lưng nhân vật (ngược hướng mặt nhân vật đang hướng tới). Đứng yên
+        // thì giữ nguyên góc cho người chơi ngắm cảnh; đang kéo tay / mới
+        // kéo tay xong (camHoldUntil) / đang ngất thì không giành camera.
+        if(G.started && camFollow && !drag.active && camSpin === 0 && !G.knocked &&
+           performance.now() > camHoldUntil && performance.now() - lastMoveAt < 250){
+          const desired = player.targetRot + Math.PI;
+          let dy = desired - camYaw;
+          while(dy > Math.PI) dy -= Math.PI*2; while(dy < -Math.PI) dy += Math.PI*2;
+          if(Math.abs(dy) > 0.05) camYaw += dy * Math.min(1, dt*2.6);
+        }
         const focus = G.started ? player.pos : new THREE.Vector3(0.4,0,0.4);
         const orbitYaw = G.started ? camYaw : (t*0.07);
         const cx = focus.x + Math.sin(orbitYaw)*Math.cos(camPitch)*camDist;
@@ -3186,7 +3509,8 @@
           camTarget.y += rand(-1,1) * camShake * 0.09;
           camShake = Math.max(0, camShake - dt * 2.2);
         }
-        camera.position.lerp(camTarget, G.started ? 0.12 : 0.03);
+        if(camSnap){ camera.position.copy(camTarget); camSnap = false; }
+        else camera.position.lerp(camTarget, G.started ? 0.12 : 0.03);
         camera.lookAt(focus.x, 0.75, focus.z);
 
         if(!G.started){
@@ -3309,6 +3633,13 @@
     addEventListener('orientationchange', ()=> setTimeout(()=>{ updateRotateHint(); applyObjAuto(); }, 80));
     if(screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', ()=> setTimeout(updateRotateHint, 60));
     $('zoomRange').addEventListener('input', e=>{ camDist = clamp(parseFloat(e.target.value) || 9.5, CAM_MIN, CAM_MAX); });
+    $('btnCamFollow').addEventListener('click', ()=>{
+      camFollow = !camFollow;
+      $('btnCamFollow').classList.toggle('on', camFollow);
+      camHoldUntil = 0; camSpin = 0;
+      toast(camFollow ? 'Camera tự bám sau lưng ní rồi — chạy là nó theo sau lưng luôn.' : 'Tắt bám lưng: camera để ní tự kéo xoay tự do.');
+      SFX.tap();
+    });
     $('btnZoomIn').addEventListener('click', ()=>{ camDist = clamp(camDist - 1.2, CAM_MIN, CAM_MAX); SFX.tap(); });
     $('btnZoomOut').addEventListener('click', ()=>{ camDist = clamp(camDist + 1.2, CAM_MIN, CAM_MAX); SFX.tap(); });
 
@@ -3854,6 +4185,8 @@
       else npcs.forEach(n => { n.mesh.visible = false; });
       if(!G.restoredPos) player.pos.copy(cellSpawn(G.cellNo));
       player.mesh.position.copy(player.pos);
+      // vào game là camera đứng sẵn sau lưng nhân vật, khỏi xoay tìm hướng
+      camYaw = player.rotY + Math.PI; camPitch = 0.46; camSpin = 0; camHoldUntil = 0; camSnap = true;
       // chơi tiếp đúng buổi đang dở (tiến trình đã lưu), không bắt đầu lại từ sáng
       const resumeIdx = clamp(G.phaseIdx || 0, 0, PHASES.length - 1);
       const resumeT = G.phaseT || 0, resumeDone = !!G.taskDone;
