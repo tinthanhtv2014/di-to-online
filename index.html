@@ -104,6 +104,25 @@
       #objToggle svg{ width:15px; height:15px; transition:transform .25s ease; }
       #objective.collapsed #objToggle svg{ transform:rotate(180deg); }
 
+      /* thanh máu đánh nhau + chớp đỏ khi trúng đòn */
+      #fightHud{
+        position:fixed; left:50%; transform:translateX(-50%);
+        top:calc(58px + env(safe-area-inset-top)); z-index:28; width:min(80vw,330px);
+        padding:8px 12px 9px; pointer-events:none;
+      }
+      .fhRow{ display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+      .fhRow:last-child{ margin-bottom:0; }
+      .fhRow span{ font-size:12px; font-weight:800; width:86px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .fhRow b{ font-size:12px; font-variant-numeric:tabular-nums; width:26px; text-align:right; }
+      .fhBar{ flex:1; height:9px; border-radius:99px; background:rgba(255,255,255,.16); overflow:hidden; }
+      .fhBar i{ display:block; height:100%; border-radius:99px; background:#5fd68b; transition:width .18s ease; }
+      .fhBar.foe i{ background:#ff5d73; }
+      #hitFlash{
+        position:fixed; inset:0; z-index:24; pointer-events:none; opacity:0;
+        background:radial-gradient(ellipse at center, transparent 52%, rgba(255,40,40,.5) 100%);
+        transition:opacity .45s ease;
+      }
+
       /* phase banner + toast */
       #banner{
         position:fixed; left:50%; top:24%; transform:translate(-50%,-8px); z-index:30;
@@ -277,12 +296,13 @@
         text-decoration:none;
       }
       .ghostBtn:active{ transform:scale(.98); }
+      /* sảnh chỉ còn 1 dòng trạng thái ngắn, không hộp chồng hộp nữa */
       .fbStatus{
-        margin:12px 0 2px; padding:9px 12px; border-radius:12px; font-size:13.5px; font-weight:700; line-height:1.45;
-        background:rgba(255,255,255,.07); border:1px solid var(--line); color:var(--dim);
+        margin:10px 0 0; font-size:13.5px; font-weight:700; line-height:1.4;
+        color:var(--dim); text-align:center;
       }
-      .fbStatus.ok{ color:#a9ecc2; border-color:rgba(95,214,139,.45); background:rgba(95,214,139,.10); }
-      .fbStatus.bad{ color:#ffb3a6; border-color:rgba(255,93,115,.5); background:rgba(255,93,115,.10); }
+      .fbStatus.ok{ color:#a9ecc2; }
+      .fbStatus.bad{ color:#ffb3a6; }
       .codeRow{ display:flex; gap:8px; }
       .codeRow input{
         flex:1; min-width:0; padding:11px 14px; border-radius:12px; border:1px solid var(--line);
@@ -296,15 +316,6 @@
         font-family:inherit; font-size:16px; font-weight:800;
       }
       .lobbyMsg{ min-height:20px; margin:10px 0 0; font-size:14px; font-weight:700; color:var(--sky); line-height:1.4; }
-      #rejoinBox{
-        margin-top:12px; padding:11px 13px; border-radius:13px; font-size:14.5px; font-weight:700; line-height:1.45;
-        background:rgba(127,212,255,.10); border:1px solid rgba(127,212,255,.4);
-      }
-      #rejoinBox button{
-        width:100%; margin-top:8px; padding:10px; border:0; border-radius:11px; cursor:pointer;
-        background:linear-gradient(180deg,#9adcff,var(--sky)); color:#0b2a3d;
-        font-family:inherit; font-size:15.5px; font-weight:800;
-      }
       #roomPanel{
         position:fixed; right:10px; top:calc(104px + env(safe-area-inset-top)); z-index:20;
         width:198px; padding:8px 10px 9px; font-size:12px;
@@ -511,6 +522,12 @@
       </button>
     </div>
 
+    <div id="fightHud" class="plate hidden">
+      <div class="fhRow"><span id="fhPName">Ní</span><div class="fhBar"><i id="fhPBar" style="width:100%"></i></div><b id="fhPNum">100</b></div>
+      <div class="fhRow"><span id="fhOName">Đối thủ</span><div class="fhBar foe"><i id="fhOBar" style="width:100%"></i></div><b id="fhONum">100</b></div>
+    </div>
+    <div id="hitFlash"></div>
+
     <div id="banner"><div class="bClock" id="bannerClock">05:30</div><div class="bName" id="bannerName">Thức dậy</div></div>
     <div id="toast" class="plate"></div>
 
@@ -544,7 +561,7 @@
     <div class="overlay" id="startOverlay">
       <div class="card">
         <h1>Đi Tò <span class="thin">Online 3D</span></h1>
-        <p class="sub">Một ngày trong trại, bản chibi. Cả trại gom về <b>1 xóm tới 100 anh em</b>, mỗi người <b>1 chuồng riêng</b>. Tiến trình <b>tự lưu</b>.</p>
+        <p class="sub">Một ngày trong trại, bản chibi. Xóm có <b>100 anh em</b>, mỗi người <b>1 chuồng riêng</b>. Thoát ra vô lại là chơi tiếp chỗ cũ, khỏi làm lại từ đầu.</p>
         <div class="fieldLab">TÊN CỦA NÍ</div>
         <input id="inpName" maxlength="14" placeholder="Ví dụ: Tý Tò" autocomplete="off" />
         <div class="fieldLab">MÀU ÁO PHẠM NHÂN</div>
@@ -557,7 +574,7 @@
         </div>
         <p class="howto hidden" id="restoreNote"></p>
         <button class="bigBtn" id="btnStart">Nhận số tù &amp; vào phòng</button>
-        <p class="howto"><b>Cách chơi:</b> joystick / WASD để đi · kéo màn hình xoay camera · tới gần điểm phát sáng, bấm nút vàng. <b>Điện thoại: xoay ngang</b> cho dễ chơi.</p>
+        <p class="howto"><b>Cách chơi:</b> joystick / WASD để đi · kéo màn hình xoay camera · thấy vòng sáng là tới bấm nút vàng. <b>Điện thoại nhớ xoay ngang.</b></p>
       </div>
     </div>
 
@@ -586,7 +603,6 @@
         <h1>Xóm <span class="thin">Tò</span></h1>
         <p class="sub" id="lobbyInfo">Cả trại ở chung một xóm, chứa tới 100 anh em.</p>
         <div class="fbStatus" id="fbStatus">Đang nối vô xóm…</div>
-        <div id="rejoinBox" class="hidden">Chuồng <b id="rejoinCode">—</b> vẫn giữ nguyên cho ní — vô tiếp chỗ cũ nè.<button id="btnRejoin">Vào Tò đi ní</button></div>
         <button class="bigBtn" id="btnEnterServer">Vào Tò đi ní</button>
         <p class="lobbyMsg" id="lobbyMsg"></p>
         <button class="ghostBtn" id="btnSolo">Chơi một mình (bạn tù máy)</button>
@@ -614,6 +630,14 @@
     <script>
     'use strict';
     window.addEventListener('error', function(e){
+      // Bộ lọc: chỉ hiện lỗi của CHÍNH game. Lỗi từ script bên thứ ba mà
+      // trình duyệt trong app (Zalo, Messenger…) tự chèn vào trang — như
+      // "zaloJSV2 is not defined" từ tham số zarsrc/utm_source=zalo —
+      // không phải lỗi game, hiện lên chỉ làm người chơi hoang mang.
+      var msg = String(e.message || ''), fn = String(e.filename || '');
+      if(/zalo|zarsrc/i.test(msg) || /zalo|zarsrc/i.test(fn)) return;
+      if(msg === 'Script error.' || (!msg && !fn)) return; // lỗi cross-origin không thuộc trang
+      if(fn && fn.indexOf('three.min.js') < 0 && fn.indexOf(location.origin) !== 0) return; // script lạ từ nguồn khác
       var b = document.getElementById('errBox');
       b.style.display = 'block';
       b.textContent = 'Lỗi: ' + (e.message || e.type) + (e.filename ? ' @ ' + e.filename.split('/').pop() + ':' + e.lineno : '');
@@ -675,7 +699,8 @@
       cellNo:0, serverId:'', restoredPos:false,
       playerName:'Tý Tò', number:'T-0000', shirt:0x5b8def,
       busy:0, lying:false, onBed:false, resting:false, climbActive:false, elapsed:0, eventCd:0,
-      sitting:'', sitTrans:false, workPose:''
+      sitting:'', sitTrans:false, workPose:'',
+      jailT:0, knocked:false, carried:false
     };
 
     const PHASES = [
@@ -1035,17 +1060,69 @@
       const bc = $('btnCopyCode'); if(bc) bc.textContent = 'Chuồng ' + c.no;
     }
 
-    // table + stools in the middle
-    const tableGroup = new THREE.Group(); tableGroup.position.set(0.6,0,0.2); scene.add(tableGroup);
+    /* ================================================================
+       PHÒNG ĂN + NHÀ VỆ SINH — 2 phòng chức năng riêng có tường bao,
+       biển tên và cửa ra vào đàng hoàng, thay cho cảnh bàn ăn / bồn
+       cầu / chậu nước quăng lẻ giữa sân như trước. Tường cao 2.1 và
+       KHÔNG lợp mái để camera nhìn được vào trong như nhà búp bê.
+       ================================================================ */
+    function roomWall(x, z, w, d, material){
+      const m = box(w, 2.1, d, material, x, 1.05, z, scene);
+      m.castShadow = false;
+      addObstacle(x, z, w/2, d/2);
+      return m;
+    }
+    function roomSign(txt, x, z, ry){
+      const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry || 0; scene.add(g);
+      box(0.07, 1.0, 0.07, mat(0x6e4e2f,.8), -0.55, 0.5, 0, g);
+      box(0.07, 1.0, 0.07, mat(0x6e4e2f,.8),  0.55, 0.5, 0, g);
+      const tex = canvasTex(512, 128, (c)=>{
+        c.fillStyle = '#f3e5c3'; c.fillRect(0,0,512,128);
+        c.strokeStyle = '#8a5a33'; c.lineWidth = 8; c.strokeRect(6,6,500,116);
+        c.fillStyle = '#5d4020'; c.textAlign = 'center'; c.font = '800 52px "Baloo 2", sans-serif';
+        c.fillText(txt, 256, 84);
+      });
+      const p = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.38), new THREE.MeshStandardMaterial({ map:tex, roughness:.9 }));
+      p.position.set(0, 1.12, 0.03); g.add(p);
+      box(1.6, 0.46, 0.05, mat(0x8a5a33,.8), 0, 1.12, 0, g);
+      return g;
+    }
+    // ---- PHÒNG ĂN (giữa trại; cửa ra vào ở tường nam, khoảng x -2.6..-0.4) ----
+    const dineWallMat = mat(0xeadfc6, .95), wcWallMat = mat(0xcfe0da, .95);
+    const dineFloor = box(10.8, 0.03, 6.2, mat(0xd9c9a3, 1), -1.5, 0.02, 3.4, scene, false); dineFloor.castShadow = false;
+    roomWall(-1.5, 0.2, 11, 0.14, dineWallMat);
+    roomWall(-7, 3.4, 0.14, 6.4, dineWallMat);
+    roomWall(4, 3.4, 0.14, 6.4, dineWallMat);
+    roomWall(-4.8, 6.6, 4.4, 0.14, dineWallMat);
+    roomWall(1.8, 6.6, 4.4, 0.14, dineWallMat);
+    roomSign('PHÒNG ĂN', -1.5, 7.35, 0);
+    // quầy lấy cơm dọc tường bắc + 3 nồi cơm
+    box(5.2, 0.95, 0.7, mat(0x9a6b43,.7), -1.5, 0.475, 0.85, scene);
+    addObstacle(-1.5, 0.85, 2.6, 0.35);
+    [-3.4, -1.5, 0.4].forEach(px=>{
+      cyl(0.3, 0.26, 0.24, mat(0xb9c2bd,.35,.5), px, 1.07, 0.85, scene, 16);
+      cyl(0.31, 0.31, 0.04, mat(0x8f9a94,.35,.5), px, 1.2, 0.85, scene, 16);
+    });
+    // bàn ăn chính + ghế đẩu (giữa phòng ăn)
+    const tableGroup = new THREE.Group(); tableGroup.position.set(-1.5,0,3.4); scene.add(tableGroup);
     box(2.3,0.09,1.15, mat(0x9a6b43,.7), 0,0.74,0, tableGroup);
     [[-1.05,-0.48],[1.05,-0.48],[-1.05,0.48],[1.05,0.48]].forEach(p=> cyl(0.04,0.04,0.72, mat(0x6e4e2f,.7), p[0],0.37,p[1], tableGroup, 10));
     [[-0.8,0.85],[0.8,0.85],[-0.8,-0.85],[0.8,-0.85]].forEach(p=>{
       cyl(0.21,0.21,0.05, mat(0x7a5a38,.7), p[0],0.46,p[1], tableGroup, 18);
       cyl(0.035,0.035,0.44, mat(0x6e4e2f,.7), p[0],0.22,p[1], tableGroup, 10);
     });
-    addObstacle(0.6, 0.2, 1.25, 0.68);
+    addObstacle(-1.5, 3.4, 1.25, 0.68);
+    // bàn dài phụ phía tây phòng ăn — nhà ăn tập thể thì phải có dãy bàn dài
+    const table2 = new THREE.Group(); table2.position.set(-4.9,0,3.4); scene.add(table2);
+    box(1.15,0.09,2.3, mat(0x9a6b43,.7), 0,0.74,0, table2);
+    [[-0.48,-1.05],[0.48,-1.05],[-0.48,1.05],[0.48,1.05]].forEach(p=> cyl(0.04,0.04,0.72, mat(0x6e4e2f,.7), p[0],0.37,p[1], table2, 10));
+    [[-0.85,-0.8],[0.85,-0.8],[-0.85,0.8],[0.85,0.8]].forEach(p=>{
+      cyl(0.21,0.21,0.05, mat(0x7a5a38,.7), p[0],0.46,p[1], table2, 18);
+      cyl(0.035,0.035,0.44, mat(0x6e4e2f,.7), p[0],0.22,p[1], table2, 10);
+    });
+    addObstacle(-4.9, 3.4, 0.68, 1.25);
     // meal trays (visible at mealtimes)
-    const trayGroup = new THREE.Group(); trayGroup.position.set(0.6,0.79,0.2); scene.add(trayGroup);
+    const trayGroup = new THREE.Group(); trayGroup.position.set(-1.5,0.79,3.4); scene.add(trayGroup);
     const trayMat = mat(0xc8ccd2,.4,.6), foodMat = mat(0xf3e3bb,.9), vegMat = mat(0x69a84f,.9), meatMat = mat(0xa8542f,.85);
     const meatMeshes = [];
     for(let i=0;i<4;i++){
@@ -1058,7 +1135,7 @@
     }
     trayGroup.visible = false;
     // box stack (folded cardboard boxes during labor)
-    const boxStack = new THREE.Group(); boxStack.position.set(1.55,0.79,0.55); scene.add(boxStack);
+    const boxStack = new THREE.Group(); boxStack.position.set(-0.55,0.79,3.75); scene.add(boxStack);
     const cardMat = mat(0xc9a06b,.9);
     const stackMeshes = [];
     for(let i=0;i<12;i++){
@@ -1066,21 +1143,46 @@
       m.rotation.y = rand(-0.16,0.16); m.visible=false; stackMeshes.push(m);
     }
 
-    // wash corner: basin + bucket + toilet (front-right)
-    const basinGroup = new THREE.Group(); basinGroup.position.set(3.5,0,-2.5); scene.add(basinGroup);
+    // ---- NHÀ VỆ SINH (phía đông phòng ăn; cửa ra vào ở tường tây, khoảng z 2.5..3.9) ----
+    const wcFloor = box(6.2, 0.03, 5.8, mat(0xdcecea, 1), 8.6, 0.02, 3.2, scene, false); wcFloor.castShadow = false;
+    roomWall(8.6, 0.2, 6.4, 0.14, wcWallMat);
+    roomWall(11.8, 3.2, 0.14, 6.0, wcWallMat);
+    roomWall(8.6, 6.2, 6.4, 0.14, wcWallMat);
+    roomWall(5.4, 1.35, 0.14, 2.3, wcWallMat);
+    roomWall(5.4, 5.05, 0.14, 2.3, wcWallMat);
+    roomSign('NHÀ VỆ SINH', 4.6, 3.2, -Math.PI/2);
+    // 3 buồng vệ sinh dọc tường bắc: vách ngăn + cửa hé 2 buồng bên
+    const stallMat = mat(0xaebfb8, .8);
+    [7.75, 9.45].forEach(px=>{
+      const pv = box(0.08, 1.5, 1.68, stallMat, px, 0.75, 1.11, scene); pv.castShadow = false;
+      addObstacle(px, 1.11, 0.05, 0.84);
+    });
+    [6.9, 10.3].forEach(px=>{
+      const dr = box(0.78, 1.45, 0.05, stallMat, px, 0.72, 2.25, scene); dr.rotation.y = 0.7; dr.castShadow = false;
+    });
+    function makeToilet(x, z){
+      const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
+      box(0.52,0.62,0.4, mat(0xe8ecea,.3,.1), 0,0.31,-0.34, g);
+      cyl(0.21,0.17,0.4, mat(0xe8ecea,.3,.1), 0,0.2,0.02, g, 18);
+      cyl(0.235,0.235,0.05, mat(0xd5dbd8,.35,.1), 0,0.43,0.02, g, 18);
+      box(0.3,0.05,0.05, mat(0xb9c2bd,.4,.3), 0,0.68,-0.34, g);
+      addObstacle(x, z, 0.35, 0.42);
+      return g;
+    }
+    makeToilet(6.9, 1.0); const wcGroup = makeToilet(8.6, 1.0); makeToilet(10.3, 1.0);
+    // dãy chậu rửa dọc tường nam nhà vệ sinh (chậu chính có xô đỏ + 1 chậu phụ)
+    const basinGroup = new THREE.Group(); basinGroup.position.set(9.9,0,5.45); scene.add(basinGroup);
     cyl(0.34,0.26,0.5, mat(0xdfe5e2,.35,.15), 0,0.55,0, basinGroup, 22);
     cyl(0.05,0.07,0.32, mat(0xb9c2bd,.4,.3), 0,0.16,0, basinGroup, 12);
     cyl(0.035,0.035,0.28, mat(0x9fb3ad,.35,.5), 0,0.95,-0.3, basinGroup, 10);
     const waterDisc = cyl(0.29,0.29,0.02, new THREE.MeshStandardMaterial({ color:0x7fd4ff, roughness:.15, metalness:.1, transparent:true, opacity:.85 }), 0,0.79,0, basinGroup, 22);
     waterDisc.castShadow=false;
     const bucket = cyl(0.17,0.13,0.3, mat(0xe2543e,.6), 0.62,0.15,0.35, basinGroup, 16);
-    // toilet
-    const wcGroup = new THREE.Group(); wcGroup.position.set(3.6,0,2.6); scene.add(wcGroup);
-    box(0.52,0.62,0.4, mat(0xe8ecea,.3,.1), 0,0.31,-0.14, wcGroup);
-    cyl(0.21,0.17,0.4, mat(0xe8ecea,.3,.1), 0,0.2,0.22, wcGroup, 18);
-    const seat = cyl(0.235,0.235,0.05, mat(0xd5dbd8,.35,.1), 0,0.43,0.22, wcGroup, 18);
-    addObstacle(3.55,-2.55, 0.62, 0.6);
-    addObstacle(3.6, 2.6, 0.5, 0.5);
+    cyl(0.34,0.26,0.5, mat(0xdfe5e2,.35,.15), 7.3,0.55,5.45, scene, 22);
+    cyl(0.05,0.07,0.32, mat(0xb9c2bd,.4,.3), 7.3,0.16,5.45, scene, 12);
+    cyl(0.035,0.035,0.28, mat(0x9fb3ad,.35,.5), 7.3,0.95,5.15, scene, 10);
+    addObstacle(9.9, 5.45, 0.62, 0.5);
+    addObstacle(7.3, 5.45, 0.5, 0.45);
 
     /* ================================================================
        KHU LAO ĐỘNG — vườn rau (bên trái sân) + chuồng heo (bên phải sân)
@@ -1298,8 +1400,8 @@
     const STATIONS = {
       bed:   { x:0, z:-12.6, label:'Giường trong chuồng của mình' }, // được cập nhật theo số chuồng khi vào game
       door:  { x: 0,    z:-9.4, label:'Sân điểm danh' },
-      table: { x: 0.6,  z: 1.25, label:'Bàn sinh hoạt' },
-      basin: { x: 2.75, z:-2.45, label:'Chậu nước' },
+      table: { x:-1.5,  z: 4.55, label:'Bàn ăn trong phòng ăn' },
+      basin: { x: 9.9,  z: 4.7,  label:'Chậu nước trong nhà vệ sinh' },
       wall:  { x: 6.8,  z:-10.55, label:'Bảng đếm ngày' },
       garden:{ x:-14.6, z:-4.0, label:'Vườn rau' },
       barrel:{ x:-11.1, z:-2.1, label:'Thùng nước tưới' },
@@ -1472,14 +1574,14 @@
     const NPC_SPOTS = {
       wake:     [ {x:-2.5,z:-1.7},{x:-2.5,z:1.9},{x:-1.2,z:2.6},{x:0.4,z:-2.8} ],
       rollam:   [ {x:-1.8,z:-8.3},{x:-0.6,z:-8.1},{x:0.6,z:-8.1},{x:1.8,z:-8.3} ],
-      breakfast:[ {x:-0.2,z:-0.6},{x:1.4,z:-0.6},{x:-0.2,z:1.0},{x:1.4,z:1.0} ],
+      breakfast:[ {x:-2.3,z:2.55},{x:-0.7,z:2.55},{x:-2.3,z:4.25},{x:-0.7,z:4.25} ],
       labor:    [ {x:-12.2,z:-3.2},{x:12.6,z:5.6},{x:-14.5,z:9.3},{x:14.6,z:-7.4} ],
-      lunch:    [ {x:-0.2,z:-0.6},{x:1.4,z:-0.6},{x:-0.2,z:1.0},{x:1.4,z:1.0} ],
+      lunch:    [ {x:-2.3,z:2.55},{x:-0.7,z:2.55},{x:-2.3,z:4.25},{x:-0.7,z:4.25} ],
       nap:      null, // beds
       labor2:   [ {x:14.6,z:-7.4},{x:-12.4,z:-5.2},{x:12.4,z:3.8},{x:-14.5,z:9.3} ],
-      wash:     [ {x:2.6,z:-1.7},{x:2.5,z:2.0},{x:1.9,z:-2.7},{x:2.6,z:1.2} ],
-      dinner:   [ {x:-0.2,z:-0.6},{x:1.4,z:-0.6},{x:-0.2,z:1.0},{x:1.4,z:1.0} ],
-      free:     [ {x:-1.6,z:0.8},{x:1.8,z:-1.4},{x:-0.6,z:-2.4},{x:2.2,z:2.2} ],
+      wash:     [ {x:6.6,z:3.2},{x:10.8,z:3.0},{x:7.4,z:4.6},{x:10.4,z:4.8} ],
+      dinner:   [ {x:-2.3,z:2.55},{x:-0.7,z:2.55},{x:-2.3,z:4.25},{x:-0.7,z:4.25} ],
+      free:     [ {x:-4.5,z:-3.2},{x:3.2,z:-2.6},{x:-0.6,z:-4.4},{x:5.8,z:-1.5} ],
       sleep:    null
     };
     npcs.forEach((n,i)=>{ const s = NPC_SPOTS.free[i]; n.pos.set(s.x,0,s.z); n.target.copy(n.pos); });
@@ -1517,7 +1619,7 @@
       { key:'gd3', name:'Quản ngục Bảy', skin:0xffd9ae, lines:['Tui đứng đây thấy hết đó nha.','Tháp canh này mắt tui là radar.','Gió mát quá, xém ngủ gật… ơ, ai đó?'] }
     ];
     const GUARD_ROUTES = {
-      gd1: [ {x:-9,z:-8},{x:0,z:-9.8},{x:9,z:-8},{x:10.5,z:2},{x:6,z:9.8},{x:-6,z:9.8},{x:-10.5,z:2} ],
+      gd1: [ {x:-9,z:-8},{x:0,z:-9.8},{x:9,z:-8},{x:11,z:-1.6},{x:6,z:9.8},{x:-6,z:9.8},{x:-10.5,z:2} ],
       gd2: [ {x:-22,z:-11.9},{x:22,z:-11.9},{x:22,z:11.9},{x:-22,z:11.9} ]
     };
     const guards = GUARD_DEFS.map((def, i)=>{
@@ -1526,15 +1628,73 @@
       scene.add(mesh);
       const start = i===0 ? {x:-9,z:-8} : (i===1 ? {x:-22,z:-11.9} : {x:24.8,z:-9.2});
       const g = { def, mesh, pos:new THREE.Vector3(start.x, 0, start.z), rotY: i===2 ? -1.2 : 0, targetRot: i===2 ? -1.2 : 0,
-        walkT: rand(0,9), wp:0, waitT: rand(0,2), sayCd: rand(4,14), swingT:0, atkCd:0, taskT:0,
+        walkT: rand(0,9), wp:0, waitT: rand(0,2), sayCd: rand(4,14), swingT:0, atkCd:0, taskT:0, koT:0,
         mode: i===2 ? 'post' : 'patrol', homeMode: i===2 ? 'post' : 'patrol' };
       mesh.position.copy(g.pos);
       const d = document.createElement('div'); d.className='bubble'; $('bubbles').appendChild(d);
       bubbleEls[def.key] = d;
       return g;
     });
-    // trạng thái đánh nhau: {kind:'npc'|'guard', npc, guard, hits, t, bubCd}
-    const FIGHT = { active:false, kind:'', npc:null, guard:null, hits:0, t:0, bubCd:0 };
+    // trạng thái đánh nhau: {kind:'npc'|'guard', npc, guard, t, bubCd,
+    // php/ohp = máu 2 bên (hiện thanh máu), atkT = nhịp ra đòn, delay =
+    // thời gian quản ngục phản ứng, koPhase = chuỗi ngất xỉu -> khiêng về chuồng}
+    const FIGHT = { active:false, kind:'', npc:null, guard:null, hits:0, t:0, bubCd:0,
+      php:100, ohp:100, oMax:100, atkT:0, turn:false, delay:0, koPhase:'', koT:0, carrier:null };
+    /* hiệu ứng trúng đòn: tia sao văng ra khi ăn đòn + sao bay quanh đầu
+       lúc ngất + rung camera. Nhanh mà có lực, vẫn chibi hài, không máu me. */
+    let camShake = 0;
+    const hitPool = [];
+    for(let i=0;i<22;i++){
+      const s = sph(0.035, new THREE.MeshBasicMaterial({ color: i%3===0 ? 0xffffff : (i%2 ? 0xffd34d : 0xff8c2e) }), 0,-10,0, scene, 8);
+      s.castShadow = false; hitPool.push({ m:s, v:new THREE.Vector3(), life:0 });
+    }
+    function burstHit(x,y,z){
+      let n = 0;
+      for(const p of hitPool){
+        if(p.life > 0) continue;
+        p.m.position.set(x+rand(-.12,.12), y+rand(-.1,.15), z+rand(-.12,.12));
+        p.v.set(rand(-1.4,1.4), rand(0.8,2.4), rand(-1.4,1.4)); p.life = rand(.3,.5);
+        if(++n >= 8) break;
+      }
+    }
+    const koStars = new THREE.Group(); koStars.visible = false; scene.add(koStars);
+    for(let i=0;i<3;i++){
+      const st = sph(0.05, new THREE.MeshBasicMaterial({ color:0xffd34d }), Math.cos(i*2.1)*0.3, 0, Math.sin(i*2.1)*0.3, koStars, 8);
+      st.castShadow = false;
+    }
+    function updateHitFx(gdt){
+      for(const p of hitPool){
+        if(p.life <= 0) continue;
+        p.life -= gdt;
+        p.v.y -= 5.5 * gdt;
+        p.m.position.addScaledVector(p.v, gdt);
+        if(p.life <= 0) p.m.position.y = -10;
+      }
+      koStars.visible = !!G.knocked;
+      if(G.knocked){
+        koStars.position.set(player.pos.x, player.pos.y + (G.carried ? 0.35 : 0.95), player.pos.z);
+        koStars.rotation.y = performance.now() / 240;
+      }
+    }
+    function punchSfx(hard){ noiseBurst(.07,.15, hard ? 280 : 480); tone(hard ? 110 : 150, .09, 'square', .12, 0, 55); }
+    function hitFlashFx(){
+      const f = $('hitFlash'); if(!f) return;
+      f.style.transition = 'none'; f.style.opacity = .85;
+      requestAnimationFrame(()=>{ f.style.transition = 'opacity .45s ease'; f.style.opacity = 0; });
+    }
+    function showFightHud(oppName){
+      $('fhPName').textContent = G.playerName || 'Ní';
+      $('fhOName').textContent = oppName || 'Đối thủ';
+      $('fightHud').classList.remove('hidden');
+      updateFightHud();
+    }
+    function hideFightHud(){ $('fightHud').classList.add('hidden'); }
+    function updateFightHud(){
+      $('fhPBar').style.width = clamp(FIGHT.php / 100 * 100, 0, 100) + '%';
+      $('fhOBar').style.width = clamp(FIGHT.ohp / (FIGHT.oMax || 100) * 100, 0, 100) + '%';
+      $('fhPNum').textContent = Math.ceil(FIGHT.php);
+      $('fhONum').textContent = Math.ceil(FIGHT.ohp);
+    }
     function showBubble(target, text, dur){
       const el = target==='player' ? playerBubble : bubbleEls[target.def.key];
       el.textContent = text; el.classList.add('show');
@@ -1662,7 +1822,7 @@
     }
 
     function nearestInteract(){
-      if(!G.started || G.over || G.paused || G.climbActive || G.sitTrans || FIGHT.active || G.jailT > 0) return null;
+      if(!G.started || G.over || G.paused || G.climbActive || G.sitTrans || FIGHT.active || G.jailT > 0 || G.knocked) return null;
       // up on the bed: the one thing you can do is climb back down
       if(G.onBed){
         if(G.busy>0 || G.resting) return null;
@@ -1734,7 +1894,7 @@
       consider(STATIONS.wall.x, STATIONS.wall.z, { label:'Đếm ngày trên tường', verb:'Đếm ngày', act:doWall });
       // basin free wash
       if(p.id!=='wash') consider(STATIONS.basin.x, STATIONS.basin.z, { label:'Rửa mặt cho tỉnh', verb:'Rửa mặt', act:()=>{
-        startBusy(0.9, t=>{}, ()=>{ splash(3.3,0.85,-2.5); G.stats.mood=clamp(G.stats.mood+4,0,100); SFX.splash(); toast('Rửa mặt cái, tỉnh cả người.'); });
+        startBusy(0.9, t=>{}, ()=>{ splash(9.75,0.85,5.3); G.stats.mood=clamp(G.stats.mood+4,0,100); SFX.splash(); toast('Rửa mặt cái, tỉnh cả người.'); });
       }});
       // sit on the dining chair — during a meal phase this is how you eat
       if(!p.meal) consider(SEATS.chair.appX, SEATS.chair.appZ, { label:'Ngồi ghế ở bàn ăn', verb:'Ngồi ghế', act:()=>{
@@ -1770,7 +1930,7 @@
       }
       // chào hỏi quản ngục — đứng gần là chào được (và cũng có nút KIẾM CHUYỆN…)
       for(const g of guards){
-        if(g.mode==='fightback' || g.mode==='intervene' || g.mode==='discipline' || g.mode==='assist') continue;
+        if(g.mode==='fightback' || g.mode==='intervene' || g.mode==='discipline' || g.mode==='assist' || g.mode==='carryFetch' || g.mode==='carryBack' || g.koT > 0) continue;
         consider(g.pos.x, g.pos.z, { label:'Chào '+g.def.name, verb:'Chào hỏi', guard:g, act:()=>{
           if(g.sayCd>0){ showBubble(g, 'Ừ, chào ní. Lo làm việc đi.', 1600); return; }
           g.sayCd = 20;
@@ -1849,7 +2009,7 @@
         case 'nap': { enterLie('Ngủ trưa ngon… dậy người khoẻ hẳn ra.'); break; }
         case 'wash': {
           startBusy(1.6, ()=>{}, ()=>{
-            splash(3.3,0.85,-2.5);
+            splash(9.75,0.85,5.3);
             G.stats.health = clamp(G.stats.health+5,0,100);
             G.stats.mood = clamp(G.stats.mood+5,0,100);
             completeTask('Tắm rửa sạch sẽ.');
@@ -2020,8 +2180,8 @@
        player is locked in the seated pose (synced to the server as a state
        string so other players see it too). */
     const SEATS = {
-      chair: { sit:new THREE.Vector3(1.4, 0.18, 1.05), appX:1.4, appZ:1.52, rot:Math.PI }, // ghế phía nam của bàn ăn, mặt hướng vào bàn/khay cơm
-      wc:    { sit:new THREE.Vector3(3.6, 0.17, 2.82), appX:3.6, appZ:3.38, rot:0 }        // bồn cầu góc vệ sinh, mặt quay ra ngoài
+      chair: { sit:new THREE.Vector3(-0.7, 0.18, 4.25), appX:-0.7, appZ:4.85, rot:Math.PI }, // ghế phía nam của bàn ăn trong PHÒNG ĂN, mặt hướng vào bàn/khay cơm
+      wc:    { sit:new THREE.Vector3(8.6, 0.17, 1.26), appX:8.6, appZ:1.85, rot:0 }          // bồn cầu buồng giữa trong NHÀ VỆ SINH, mặt quay ra ngoài
     };
     const SIT = { active:false, t:0, dur:0.55, down:false, kind:'', from:new THREE.Vector3(), to:new THREE.Vector3(), fromRot:0, dRot:0, onDone:null };
     function startSit(kind, onDone){
@@ -2119,19 +2279,23 @@
       for(const g of guards) if(g.mode==='intervene' || g.mode==='assist' || g.mode==='discipline' || g.mode==='fightback'){ g.mode = g.homeMode; g.waitT = rand(1.5, 3); g.taskT = 0; }
     }
     function startFightNpc(n){
-      if(FIGHT.active || G.jailT > 0) return;
+      if(FIGHT.active || G.jailT > 0 || G.knocked) return;
       FIGHT.active = true; FIGHT.kind = 'npc'; FIGHT.npc = n; FIGHT.guard = null; FIGHT.t = 0; FIGHT.hits = 0; FIGHT.bubCd = 0;
+      FIGHT.php = 100; FIGHT.ohp = 85; FIGHT.oMax = 85; FIGHT.atkT = 0.7; FIGHT.turn = false; FIGHT.delay = 1.6; FIGHT.koPhase = '';
       n.fightT = 999; n.talkCd = 20;
       showBubble('player', 'Ngon thì nhào vô!', 1500);
       showBubble(n, 'Ê ê, ní ngon ha?!', 1500);
       noiseBurst(.1,.12,500);
+      showFightHud(n.def.name);
       const g = nearestGuard(player.pos.x, player.pos.z, true) || guards[1];
       if(g){ g.mode = 'intervene'; g.taskT = 0; }
       SFX.bad();
     }
     function startFightGuard(g){
-      if(FIGHT.active || G.jailT > 0) return;
+      if(FIGHT.active || G.jailT > 0 || G.knocked) return;
       FIGHT.active = true; FIGHT.kind = 'guard'; FIGHT.guard = g; FIGHT.npc = null; FIGHT.t = 0; FIGHT.hits = 0; FIGHT.bubCd = 0;
+      FIGHT.php = 100; FIGHT.ohp = 170; FIGHT.oMax = 170; FIGHT.atkT = 0.8; FIGHT.turn = false; FIGHT.delay = 0; FIGHT.koPhase = '';
+      showFightHud(g.def.name);
       g.mode = 'fightback'; g.atkCd = 0.45; g.taskT = 0;
       showBubble('player', 'Ní ngon thì đỡ nè!', 1400);
       showBubble(g, pick(['Ối giời, dám đánh quản ngục hả?!','Được, để tui dạy ní lễ độ!','Dùi cui này không phải để trưng đâu!']), 2200);
@@ -2139,13 +2303,54 @@
       SFX.bad();
     }
     function startFightTarget(it){
-      if(!it || FIGHT.active) return;
+      if(!it || FIGHT.active || G.knocked) return;
       if(it.npc) startFightNpc(it.npc);
       else if(it.guard) startFightGuard(it.guard);
       else if(it.remote){
         showBubble('player', 'Ê ní, kiếm chuyện hả? Lại đây!', 1800);
         fbChatSay('Ê ní, kiếm chuyện hả? Lại đây nè!');
       }
+    }
+    function oppKO(){
+      // đối thủ cạn máu trước: nằm xỉu tại chỗ vài giây, người chơi thắng
+      const opp = FIGHT.kind === 'guard' ? FIGHT.guard : FIGHT.npc;
+      FIGHT.active = false;
+      hideFightHud();
+      if(FIGHT.kind === 'guard' && opp){
+        opp.koT = 5; opp.mode = opp.homeMode;
+        for(const o of guards){ if(o.mode==='assist'){ o.mode = o.homeMode; o.taskT = 0; } }
+        G.stats.respect = clamp(G.stats.respect + 6, 0, 100);
+        showBubble(opp, 'Xỉu… xỉu thiệt rồi… @.@', 2600);
+        toast('Ní hạ KO quản ngục luôn?! +Uy tín — mà liệu hồn, ổng tỉnh dậy là nhớ mặt đó.');
+      } else if(opp){
+        opp.fightT = 0; opp.koT = 6; opp.talkCd = 25;
+        showBubble(opp, 'Xỉu… thôi tui thua… @.@', 2600);
+        G.stats.respect = clamp(G.stats.respect + 3, 0, 100);
+        guardsResetModes();
+        toast('Hạ KO bạn tù rồi! +Uy tín (nhẹ tay thôi ní ơi).');
+      }
+      FIGHT.npc = null; FIGHT.guard = null;
+      SFX.great();
+    }
+    function playerKO(){
+      // người chơi cạn máu: NGẤT XỈU thiệt — nằm đất, sao bay quanh đầu,
+      // khóa điều khiển; quản ngục sẽ tới KHIÊNG VÁC về chuồng của mình
+      // (chuỗi 'down' -> 'fetch' -> carryBack -> 'rest' chạy trong updateFight/updateGuards)
+      const wasGuardFight = FIGHT.kind === 'guard';
+      FIGHT.active = false;
+      hideFightHud();
+      if(FIGHT.npc){ FIGHT.npc.fightT = 0; FIGHT.npc.talkCd = 20; }
+      for(const o of guards){ if(o.mode==='assist'){ o.mode = o.homeMode; o.taskT = 0; } }
+      G.knocked = true; G.carried = false;
+      player.pos.y = 0.05;
+      G.stats.health = Math.max(15, G.stats.health - 10);
+      G.stats.respect = clamp(G.stats.respect - 3, 0, 100);
+      G.stats.mood = clamp(G.stats.mood - 5, 0, 100);
+      FIGHT.koPhase = 'down'; FIGHT.koT = 1.5;
+      showBubble('player', 'Mắt nổ đom đóm… xỉu đây… @.@', 2400);
+      toast(wasGuardFight ? 'Ăn đòn quản ngục hết máu — ngất xỉu luôn rồi ní…' : 'Hết máu — ngất xỉu giữa sân rồi ní…', 3600);
+      SFX.bad();
+      camShake = Math.max(camShake, 0.9);
     }
     function resolveFightByGuard(g){
       if(!FIGHT.active) { g.mode = g.homeMode; return; }
@@ -2155,6 +2360,7 @@
       playerBonk(0, 4, g.pos, ['Ối… dạ, tui biết lỗi rồi…','Dạ dạ, hết đánh rồi…']);
       G.stats.mood = clamp(G.stats.mood - 3, 0, 100);
       FIGHT.active = false; FIGHT.npc = null; FIGHT.guard = null;
+      hideFightHud();
       guardsResetModes();
       toast('Quản ngục can thiệp: đánh nhau bị trừ uy tín đó ní.');
     }
@@ -2193,10 +2399,18 @@
       if(guards[0].mode==='patrol' && p.id==='rollam' && !FIGHT.active) guards[0].mode = 'preside';
       if(guards[0].mode==='preside' && p.id!=='rollam') guards[0].mode = 'patrol';
       for(const g of guards){
+        if(g.koT > 0){ // quản ngục bị hạ KO: nằm xỉu vài giây rồi tự gượng dậy
+          g.koT -= gdt;
+          g.mesh.position.set(g.pos.x, 0.05, g.pos.z);
+          g.mesh.rotation.y = g.rotY;
+          animChibi(g.mesh, g.walkT, false, t, true, false, false, '', '');
+          if(g.koT <= 0) showBubble(g, 'Dám hạ KO tui hả… nhớ mặt đó nha!', 2400);
+          continue;
+        }
         g.sayCd = Math.max(0, g.sayCd - gdt);
         if(g.swingT > 0) g.swingT -= gdt;
         let moving = false;
-        const chase = (g.mode==='intervene' || g.mode==='assist' || g.mode==='discipline' || g.mode==='fightback');
+        const chase = (g.mode==='intervene' || g.mode==='assist' || g.mode==='discipline' || g.mode==='fightback' || g.mode==='carryFetch' || g.mode==='carryBack');
         const speed = chase ? 4.1 : 1.5;
         if(g.mode==='post'){
           if(Math.random() < gdt * 0.06) g.targetRot = -1.2 + rand(-0.7, 0.7);
@@ -2205,25 +2419,54 @@
           const d = guardGoTo(g, PRESIDE_SPOT.x, PRESIDE_SPOT.z, 2.2, gdt);
           moving = d > 0.35;
           if(!moving){ g.targetRot = 0; if(g.sayCd <= 0){ g.sayCd = rand(6, 10); showBubble(g, pick(['ĐIỂM DANH! Đứng nghiêm!','Hô số to lên nào!','Thiếu ai là tui ghi sổ đó nha.','Nhanh gọn, còn đi ăn sáng!']), 2200); } }
+        } else if(g.mode==='carryFetch'){
+          // chạy tới chỗ người đang ngất, vác lên vai
+          const d = guardGoTo(g, player.pos.x, player.pos.z, 3.4, gdt);
+          moving = d > 1.0;
+          if(d <= 1.05 && G.knocked && !G.carried){
+            G.carried = true; g.mode = 'carryBack'; g.taskT = 0;
+            showBubble(g, 'Ngất thiệt rồi hả? Lên vai, tui khiêng về chuồng!', 2600);
+            SFX.pop();
+          }
+        } else if(g.mode==='carryBack'){
+          // KHIÊNG VÁC người ngất về tận chuồng của họ: người chơi nằm
+          // ngang trên vai quản ngục, đi theo từng bước chân của ổng
+          const tgt = cellSpawn(G.cellNo);
+          const d = guardGoTo(g, tgt.x, tgt.z, 2.6, gdt);
+          moving = d > 0.5;
+          if(G.carried){
+            player.pos.set(g.pos.x - Math.sin(g.rotY)*0.12, 1.04, g.pos.z - Math.cos(g.rotY)*0.12);
+            player.targetRot = g.rotY;
+            if(player.mesh) player.mesh.position.copy(player.pos);
+          }
+          if(d <= 0.55){
+            G.carried = false;
+            player.pos.set(tgt.x, 0.05, tgt.z);
+            if(player.mesh) player.mesh.position.copy(player.pos);
+            g.mode = g.homeMode; g.waitT = 2; g.taskT = 0;
+            FIGHT.koPhase = 'rest'; FIGHT.koT = 2.6;
+            showBubble(g, 'Về chuồng rồi đó. Nằm nghỉ đi ní!', 2400);
+          }
         } else if(g.mode==='intervene' || g.mode==='assist'){
           g.taskT += gdt;
           if(!FIGHT.active){ g.mode = g.homeMode; }
+          else if(g.mode==='intervene' && FIGHT.delay > 0){ /* còn đang phản ứng, chưa can ngay — để 2 bên trao đòn vài nhịp cho có cảm giác thiệt */ }
+          else if(g.mode==='assist' && FIGHT.kind==='guard'){
+            // đồng nghiệp tới hóng + chực sẵn, không phá trận đấu tay đôi với quản ngục kia
+            const d = guardGoTo(g, player.pos.x, player.pos.z, speed, gdt);
+            moving = d > 1.9;
+          }
           else {
             const d = guardGoTo(g, player.pos.x, player.pos.z, speed, gdt);
             moving = d > 1.15;
             if(d <= 1.2) resolveFightByGuard(g);
           }
         } else if(g.mode==='fightback'){
+          // đuổi theo áp sát người chơi; sát thương trao đổi nằm ở updateFight (thanh máu)
           const d = guardGoTo(g, player.pos.x, player.pos.z, speed, gdt);
           moving = d > 1.05;
           g.targetRot = Math.atan2(player.pos.x - g.pos.x, player.pos.z - g.pos.z);
-          g.atkCd -= gdt;
-          if(d <= 1.35 && g.atkCd <= 0){
-            g.atkCd = 0.75; g.swingT = 0.45; bonkFX();
-            FIGHT.hits++;
-            playerBonk(3, 3, g.pos);
-            if(FIGHT.hits >= 3) resolveGuardFight(g);
-          }
+          if(!FIGHT.active && !G.knocked) g.mode = g.homeMode;
         } else if(g.mode==='discipline'){
           g.taskT += gdt;
           const d = guardGoTo(g, player.pos.x, player.pos.z, speed, gdt);
@@ -2255,6 +2498,10 @@
           const k = clamp(1 - g.swingT / 0.45, 0, 1);
           g.mesh.userData.armR.rotation.x = -2.3 * Math.sin(Math.PI * k);
         }
+        if(g.mode==='carryBack'){ // một tay giữ người ngất trên vai, tay kia để thõng
+          g.mesh.userData.armR.rotation.x = -2.9;
+          g.mesh.userData.armL.rotation.x = -0.35;
+        }
       }
     }
     function updateFight(gdt){
@@ -2263,26 +2510,81 @@
         G.jailT -= gdt;
         if(G.jailT <= 0){ G.jailT = 0; toast('Hết giờ biệt giam! Ra sân đi ní — đừng dại đánh quản ngục nữa.'); }
       }
+      FIGHT.delay = Math.max(0, (FIGHT.delay || 0) - gdt);
+      /* --- chuỗi NGẤT XỈU: nằm đất ngắm sao -> quản ngục tới khiêng -> về chuồng -> tỉnh --- */
+      if(FIGHT.koPhase){
+        if(FIGHT.koPhase === 'down'){
+          FIGHT.koT -= gdt;
+          if(FIGHT.koT <= 0){
+            let carrier = (FIGHT.kind === 'guard' && FIGHT.guard && !(FIGHT.guard.koT > 0)) ? FIGHT.guard : nearestGuard(player.pos.x, player.pos.z, false);
+            if(!carrier) carrier = guards[0];
+            FIGHT.carrier = carrier;
+            if(carrier){ carrier.mode = 'carryFetch'; carrier.taskT = 0; showBubble(carrier, 'Ê! Có người ngất xỉu kìa!', 1800); }
+            FIGHT.koPhase = 'fetch';
+          }
+        } else if(FIGHT.koPhase === 'rest'){
+          FIGHT.koT -= gdt;
+          if(FIGHT.koT <= 0){
+            FIGHT.koPhase = '';
+            G.knocked = false; player.pos.y = 0;
+            G.stats.health = Math.max(G.stats.health, 38);
+            showBubble('player', 'Tỉnh rồi… đầu còn ong ong…', 2200);
+            toast('Được khiêng về chuồng rồi đó. Nằm nghỉ một lát là khỏe lại thôi ní.');
+            SFX.good();
+          }
+        }
+        return;
+      }
       if(!FIGHT.active) return;
       FIGHT.t += gdt;
-      if(FIGHT.kind==='npc'){
-        // giằng co hài: 2 bên rung rung, bụi bay, chửi qua chửi lại
-        player.pos.x += rand(-0.016, 0.016); player.pos.z += rand(-0.016, 0.016);
-        FIGHT.bubCd -= gdt;
-        if(FIGHT.bubCd <= 0){
-          FIGHT.bubCd = 0.55;
-          if(Math.random() < 0.6) noiseBurst(.05, .07, 600);
-          const who = Math.random() < 0.5 ? 'player' : FIGHT.npc;
-          if(who) showBubble(who, pick(['Bốp!','Ái da!','Ngon ha?!','Đỡ nè!','Ê ê ê!']), 700);
+      const opp = FIGHT.kind === 'guard' ? FIGHT.guard : FIGHT.npc;
+      if(!opp){ FIGHT.active = false; hideFightHud(); return; }
+      const oppPos = opp.pos;
+      const dist = Math.hypot(player.pos.x - oppPos.x, player.pos.z - oppPos.z);
+      // giằng co hài: 2 bên rung rung, chửi qua chửi lại trong lúc áp sát
+      player.pos.x += rand(-0.014, 0.014); player.pos.z += rand(-0.014, 0.014);
+      FIGHT.bubCd -= gdt;
+      if(FIGHT.bubCd <= 0){
+        FIGHT.bubCd = 0.8;
+        const who = Math.random() < 0.5 ? 'player' : opp;
+        if(who) showBubble(who, pick(['Bốp!','Ái da!','Ngon ha?!','Đỡ nè!','Ê ê ê!','Trúng nè!']), 650);
+      }
+      /* ra đòn QUA LẠI theo thanh máu, nhịp nhanh 0.42s/đòn khi đã áp sát:
+         trúng đòn là nảy người + sao văng + rung máy + (bên mình) chớp đỏ */
+      if(dist < 2.0){
+        FIGHT.atkT -= gdt;
+        if(FIGHT.atkT <= 0){
+          FIGHT.atkT = 0.42;
+          FIGHT.turn = !FIGHT.turn;
+          if(FIGHT.turn){
+            const dmg = FIGHT.kind === 'guard' ? Math.round(rand(5, 10)) : Math.round(rand(9, 16));
+            FIGHT.ohp = Math.max(0, FIGHT.ohp - dmg);
+            punchSfx(false); burstHit(oppPos.x, 0.95, oppPos.z);
+            camShake = Math.max(camShake, 0.35);
+            const kx = oppPos.x - player.pos.x, kz = oppPos.z - player.pos.z, kl = Math.hypot(kx, kz) || 1;
+            oppPos.x += kx/kl * 0.14; oppPos.z += kz/kl * 0.14;
+          } else {
+            const dmg = FIGHT.kind === 'guard' ? Math.round(rand(12, 19)) : Math.round(rand(7, 13));
+            FIGHT.php = Math.max(0, FIGHT.php - dmg);
+            punchSfx(true); burstHit(player.pos.x, 0.95, player.pos.z);
+            camShake = Math.max(camShake, 0.6);
+            hitFlashFx();
+            G.stats.health = Math.max(20, G.stats.health - 1);
+            const kx = player.pos.x - oppPos.x, kz = player.pos.z - oppPos.z, kl = Math.hypot(kx, kz) || 1;
+            player.pos.x += kx/kl * 0.16; player.pos.z += kz/kl * 0.16;
+            collide(player.pos, 0.3);
+            if(FIGHT.kind === 'guard') opp.swingT = 0.45;
+          }
+          updateFightHud();
+          if(FIGHT.ohp <= 0){ oppKO(); return; }
+          if(FIGHT.php <= 0){ playerKO(); return; }
         }
-        if(FIGHT.t > 10){ // quản ngục kẹt đường quá lâu thì 2 bên tự mệt, giải tán
-          if(FIGHT.npc) FIGHT.npc.fightT = 0;
-          FIGHT.active = false; FIGHT.npc = null;
-          guardsResetModes();
-          toast('Đánh hồi mệt quá, 2 bên tự giải tán…');
-        }
-      } else if(FIGHT.kind==='guard' && FIGHT.t > 8){
-        resolveGuardFight(FIGHT.guard || guards[0]);
+      }
+      if(FIGHT.kind === 'npc' && FIGHT.t > 14){ // đánh quá lâu mà chưa phân thắng bại thì 2 bên tự mệt
+        if(FIGHT.npc) FIGHT.npc.fightT = 0;
+        FIGHT.active = false; FIGHT.npc = null;
+        guardsResetModes(); hideFightHud();
+        toast('Đánh hồi mệt quá, 2 bên tự giải tán…');
       }
     }
     function updateScheduleWatch(gdt){
@@ -2397,6 +2699,7 @@
       fade.classList.add('show');
       G.lying = false; G.onBed = false; G.resting = false; G.climbActive = false; CLIMB.active = false;
       G.sitting = ''; G.sitTrans = false; SIT.active = false; G.workPose = '';
+      G.knocked = false; G.carried = false; FIGHT.koPhase = ''; hideFightHud();
       npcs.forEach(n=>{ n.onBed = false; n.climbing = false; n.pos.y = 0; });
       // overnight recovery / costs
       G.stats.hunger = clamp(G.stats.hunger-18, 5, 100);
@@ -2585,6 +2888,7 @@
             s.health = Math.max(s.health, 42); s.mood = Math.max(s.mood, 45); s.hunger = Math.max(s.hunger, 30);
             G.lying = false; G.onBed = false; G.resting = false; G.climbActive = false; CLIMB.active = false;
             G.sitting = ''; G.sitTrans = false; SIT.active = false; G.workPose = ''; G.busy = 0; G.busyDone = null; G.busyTick = null;
+            G.knocked = false; G.carried = false; FIGHT.koPhase = ''; hideFightHud();
             $('actionProg').classList.remove('show');
             player.pos.copy(cellSpawn(G.cellNo));
             toast('Kiệt sức… cả phòng dìu ní về giường nghỉ, ăn mì lấy sức.', 3600);
@@ -2606,7 +2910,7 @@
 
           const mag = Math.hypot(ix, iy);
           let moving = false;
-          if(mag > 0.12 && !G.lying && !G.onBed && !G.climbActive && !G.sitting && !G.sitTrans && G.busy<=0 && !FIGHT.active && !(G.jailT > 0)){
+          if(mag > 0.12 && !G.lying && !G.onBed && !G.climbActive && !G.sitting && !G.sitTrans && G.busy<=0 && !FIGHT.active && !(G.jailT > 0) && !G.knocked){
             if(mag>1){ ix/=mag; iy/=mag; }
             const s = Math.sin(camYaw), c = Math.cos(camYaw);
             // camera forward on ground = -(sin,cos); input iy: up on stick = -1 (forward)
@@ -2628,7 +2932,7 @@
           player.mesh.rotation.y = player.rotY;
           player.blinkT -= gdt;
           if(player.blinkT < -0.12) player.blinkT = rand(1.8, 4.2);
-          animChibi(player.mesh, player.walkT, moving, t + 1.3, G.onBed, player.blinkT < 0, G.climbActive, G.sitting, FIGHT.active ? 'fight' : G.workPose);
+          animChibi(player.mesh, player.walkT, moving, t + 1.3, G.onBed || G.knocked, player.blinkT < 0, G.climbActive, G.sitting, FIGHT.active ? 'fight' : G.workPose);
 
           /* đạo cụ lao động + heo + mầm cây */
           if(G.workPose && WORK_PROPS[G.workPose]){
@@ -2647,6 +2951,13 @@
           /* --- NPCs --- */
           for(const n of npcs){
             n.talkCd = Math.max(0, n.talkCd - gdt);
+            if(n.koT > 0){ // bị hạ KO: nằm xỉu tại chỗ vài giây rồi mới gượng dậy
+              n.koT -= gdt; n.fightT = 0;
+              n.mesh.position.set(n.pos.x, 0.05, n.pos.z);
+              n.mesh.rotation.y = n.rotY;
+              animChibi(n.mesh, n.walkT, false, t + n.walkT, true, false, false, '', '');
+              continue;
+            }
             if(n.fightT > 0){ n.fightT -= gdt; n.target.copy(n.pos); } // đang đánh nhau: đứng tại chỗ giằng co
             const bed = beds[n.bedIdx];
             let nMoving = false; n.climbing = false;
@@ -2687,7 +2998,7 @@
                 n.targetRot = Math.atan2(dx, dz); n.walkT += gdt*9.5; nMoving = true;
               } else {
                 // face the room / table (đang đánh nhau thì quay mặt về phía người chơi)
-                n.targetRot = n.fightT > 0 ? Math.atan2(player.pos.x - n.pos.x, player.pos.z - n.pos.z) : Math.atan2(0.6 - n.pos.x, 0.2 - n.pos.z);
+                n.targetRot = n.fightT > 0 ? Math.atan2(player.pos.x - n.pos.x, player.pos.z - n.pos.z) : Math.atan2(-1.5 - n.pos.x, 3.4 - n.pos.z);
                 n.waitT -= gdt;
                 if(n.waitT <= 0){
                   n.waitT = rand(6, 14);
@@ -2730,6 +3041,7 @@
           /* quản ngục đi tuần + can thiệp, đánh nhau, nhắc lệch lịch */
           updateGuards(gdt, t);
           updateFight(gdt);
+          updateHitFx(gdt);
           updateScheduleWatch(gdt);
 
           /* lighting by clock */
@@ -2762,6 +3074,11 @@
           clamp(cy, 1.1, 11),
           clamp(cz, -ROOM.d/2+0.35, ROOM.d/2-0.35)
         );
+        if(camShake > 0.01){ // rung máy khi trúng đòn / bị hạ KO
+          camTarget.x += rand(-1,1) * camShake * 0.13;
+          camTarget.y += rand(-1,1) * camShake * 0.09;
+          camShake = Math.max(0, camShake - dt * 2.2);
+        }
         camera.position.lerp(camTarget, G.started ? 0.12 : 0.03);
         camera.lookAt(focus.x, 0.75, focus.z);
 
@@ -2769,7 +3086,7 @@
           // idle life behind the start card
           for(const n of npcs){
             n.mesh.position.set(n.pos.x, 0, n.pos.z);
-            n.mesh.rotation.y = Math.atan2(0.6-n.pos.x, 0.2-n.pos.z);
+            n.mesh.rotation.y = Math.atan2(-1.5-n.pos.x, 3.4-n.pos.z);
             animChibi(n.mesh, n.walkT, false, t + n.walkT, false, false);
           }
         }
@@ -3161,7 +3478,7 @@
         FB.online = false;
         showLobby();
         const st = $('fbStatus');
-        st.textContent = 'Nối vô xóm không được (' + (e.message || 'lỗi mạng') + '). Xóm tạm nghỉ — ní cứ chơi một mình với bạn tù máy, lần mở sau vô xóm tiếp.';
+        st.textContent = 'Mạng yếu, nối xóm chưa được. Chơi một mình đỡ đi ní.';
         st.className = 'fbStatus bad';
       }
       btn.disabled = false; btn.textContent = old;
@@ -3174,14 +3491,12 @@
     function showLobby(){
       $('startOverlay').classList.add('hidden');
       $('lobbyOverlay').classList.remove('hidden');
-      $('lobbyInfo').innerHTML = 'Xin chào <b>' + escapeHtml(G.playerName) + '</b> — số tù <b>' + escapeHtml(G.number) + '</b>, mức án ' + G.totalDays + ' ngày, đang ở ngày ' + G.day + '/' + G.totalDays + '. Cả trại gom về <b>một xóm (tới 100 anh em)</b>; chuồng song sắt của ní là <b>chuồng số ' + (G.cellNo || '?') + '</b>. Tiến trình tự lưu vô hồ sơ của ní.';
+      $('lobbyInfo').innerHTML = '<b>' + escapeHtml(G.playerName) + '</b> · số tù <b>' + escapeHtml(G.number) + '</b> · chuồng <b>số ' + (G.cellNo || '?') + '</b> · ngày ' + G.day + '/' + G.totalDays + '<br>Xóm chứa tới 100 anh em, ai vô cũng ở chung một sân.';
       if(FB.online){
         const st = $('fbStatus');
-        st.textContent = 'Đã nối vô xóm rồi — xóm Tò sẵn sàng đón ní.';
+        st.textContent = 'Nối xóm xong rồi đó ní.';
         st.className = 'fbStatus ok';
       }
-      if(G.cellNo){ $('rejoinBox').classList.remove('hidden'); $('rejoinCode').textContent = 'số ' + G.cellNo; }
-      else $('rejoinBox').classList.add('hidden');
       setLobbyMsg('');
       updateServerCount();
     }
@@ -3191,7 +3506,7 @@
         const ps = await fbQueryField('players', 'serverId', SERVER_ID, 150);
         const n = ps.filter(p => isFresh(p, 25000)).length;
         const st = $('fbStatus');
-        st.textContent = 'Đã nối vô xóm — xóm đang có ' + n + '/' + SERVER_CAP + ' anh em online. Tiến trình của ní đã được lưu.';
+        st.textContent = 'Trong xóm đang có ' + n + '/' + SERVER_CAP + ' anh em.';
         st.className = 'fbStatus ok';
       }catch(e){}
     }
@@ -3224,7 +3539,7 @@
         startPresence();
         pollMembers();
         chatPoll();
-        toast('Vô Tò rồi ní! Chuồng song sắt số ' + (G.cellNo || '?') + ' là của ní — anh em người thật khắp xóm sẽ hiện dần quanh sân chung.');
+        toast('Vô Tò rồi! Chuồng số ' + (G.cellNo || '?') + ' là của ní đó.');
       }catch(e){
         setLobbyMsg('Vô xóm lỗi: ' + (e.message || e), true);
       }
@@ -3234,11 +3549,12 @@
       roomMode = false; roomCode = null;
       $('lobbyOverlay').classList.add('hidden');
       startGame();
-      if(!FB.online) toast('Đang chơi một mình với bạn tù máy — lần sau nối được thì vô xóm chơi chung nha.');
+      if(!FB.online) toast('Chơi một mình với bạn tù máy đỡ vậy.');
     }
 
     /* ---------- hiện diện + đồng bộ ---------- */
     function playerStateStr(){
+      if(G.knocked) return 'ko';
       if(G.onBed || G.resting) return 'sleep';
       if(G.sitting === 'wc') return 'wc';
       if(G.sitting === 'chair') return phase().meal ? 'eat' : 'sit';
@@ -3307,6 +3623,7 @@
       r.cellNo = p.cellNo || r.cellNo || 0;
       r.tag.textContent = (p.name || 'Bạn tù') + ' · ' + (p.prisonerNo || '') + (p.cellNo ? ' · chuồng ' + p.cellNo : '');
       r.sleeping = (p.state === 'sleep' || !!p.inBed);
+      r.ko = (p.state === 'ko');
       r.sitting = p.state === 'wc' ? 'wc' : ((p.state === 'sit' || p.state === 'eat') ? 'chair' : '');
       if(r.sleeping && r.cellNo >= 1 && r.cellNo <= 100){
         const b = beds[r.cellNo - 1];
@@ -3321,7 +3638,7 @@
         const dx = r.target.x - r.pos.x, dz = r.target.z - r.pos.z;
         const dist = Math.hypot(dx, dz);
         let moving = false;
-        if(r.sleeping){
+        if(r.sleeping || r.ko){
           const k = Math.min(1, gdt * 3);
           r.pos.x = lerp(r.pos.x, r.target.x, k);
           r.pos.z = lerp(r.pos.z, r.target.z, k);
@@ -3340,14 +3657,14 @@
         r.rotY += dr * Math.min(1, gdt * 10);
         r.mesh.position.copy(r.pos);
         r.mesh.rotation.y = r.rotY;
-        animChibi(r.mesh, r.walkT, moving, t + pid.length, r.sleeping, false, false, r.sitting || '');
+        animChibi(r.mesh, r.walkT, moving, t + pid.length, r.sleeping || r.ko, false, false, r.sitting || '');
       }
     }
     function positionNameTags(){
       for(const pid in remotes){
         const r = remotes[pid];
         if(!r.tag) continue;
-        _v.set(r.pos.x, (r.sleeping ? r.pos.y + 1.2 : (r.sitting ? r.pos.y + 1.5 : 1.88)), r.pos.z).project(camera);
+        _v.set(r.pos.x, ((r.sleeping || r.ko) ? r.pos.y + 1.2 : (r.sitting ? r.pos.y + 1.5 : 1.88)), r.pos.z).project(camera);
         if(_v.z > 1){ r.tag.style.display = 'none'; continue; }
         r.tag.style.display = '';
         r.tag.style.left = clamp((_v.x * 0.5 + 0.5) * innerWidth, 70, innerWidth - 70) + 'px';
@@ -3361,7 +3678,7 @@
       let html = sorted.slice(0, 24).map(p => {
         const me = p.__pid === FB.uid;
         const left = Math.max(0, (p.sentenceDays || 3) - (p.daysServed || 0));
-        const st = p.state === 'sleep' ? 'đang ngủ trong chuồng' : p.state === 'wc' ? 'đang ngồi bồn cầu' : p.state === 'eat' ? 'đang ngồi ghế ăn cơm' : p.state === 'sit' ? 'đang ngồi ghế' : (p.state === 'walk' ? 'đang đi lại' : 'đang ở trong trại');
+        const st = p.state === 'sleep' ? 'đang ngủ trong chuồng' : p.state === 'ko' ? 'đang ngất, chờ quản ngục khiêng về chuồng' : p.state === 'wc' ? 'đang ngồi bồn cầu' : p.state === 'eat' ? 'đang ngồi ghế ăn cơm' : p.state === 'sit' ? 'đang ngồi ghế' : (p.state === 'walk' ? 'đang đi lại' : 'đang ở trong trại');
         return '<div class="rpMember"><span class="dot"></span><span class="rpName">' + escapeHtml(p.name || 'Bạn tù') + (me ? ' (ní)' : '') + '</span><span class="rpMeta">' + escapeHtml(p.prisonerNo || '') + ' · chuồng ' + (p.cellNo || '?') + ' · còn ' + left + ' ngày · ' + st + '</span></div>';
       }).join('');
       if(sorted.length > 24) html += '<div class="rpMore">… và ' + (sorted.length - 24) + ' anh em nữa trong xóm</div>';
@@ -3456,11 +3773,10 @@
     /* ---------- wiring: sảnh / máy chủ chung / chat ---------- */
     function needOnline(){
       if(FB.online && FB.uid) return true;
-      setLobbyMsg('Chưa nối được vô xóm. Kiểm tra mạng, hoặc chơi một mình đỡ nha.', true);
+      setLobbyMsg('Chưa nối được xóm đâu ní. Coi lại mạng, hoặc chơi một mình đỡ.', true);
       return false;
     }
     $('btnEnterServer').addEventListener('click', () => { audio(); tryLockLandscape(); enterServer(); });
-    $('btnRejoin').addEventListener('click', () => { audio(); tryLockLandscape(); enterServer(); });
     $('btnSolo').addEventListener('click', () => { audio(); tryLockLandscape(); enterSolo(); });
     $('btnCopyCode').addEventListener('click', () => { toast('Chuồng của ní: số ' + (G.cellNo || '?') + '.'); });
     $('btnLeaveRoom').addEventListener('click', async () => {
@@ -3489,8 +3805,8 @@
           G.totalDays = doc.sentenceDays || 3;
           const rn = $('restoreNote');
           rn.classList.remove('hidden');
-          rn.innerHTML = 'Hồ sơ cũ: <b>' + escapeHtml(doc.name || '') + '</b> — ngày ' + (doc.day || 1) + '/' + (doc.sentenceDays || 3) + ', ' + (doc.noodles || 0) + ' mì tôm' + (doc.cellNo ? ', chuồng <b>số ' + doc.cellNo + '</b>' : '') + '. Bấm nút dưới để chơi tiếp.';
-          $('btnStart').textContent = 'Vào phòng — chơi tiếp';
+          rn.innerHTML = 'Quay lại rồi hả ní? <b>' + escapeHtml(doc.name || '') + '</b> đang ở ngày ' + (doc.day || 1) + '/' + (doc.sentenceDays || 3) + ', còn ' + (doc.noodles || 0) + ' gói mì' + (doc.cellNo ? ', chuồng <b>số ' + doc.cellNo + '</b> còn nguyên' : '') + '. Vô chơi tiếp đi.';
+          $('btnStart').textContent = 'Vô chơi tiếp nè';
         })
         .catch(() => {});
     })();
