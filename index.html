@@ -76,6 +76,7 @@
       #barHealth i{ background:#ff5d73; }
       #barMood i{ background:var(--sky); }
       #barRespect i{ background:var(--noodle); }
+      #barReform i{ background:#ffa94d; }
       .stat.low .lab{ color:#ff9d8f; }
       .stat.low .bar i{ animation:pulse .7s infinite alternate; }
       @keyframes pulse{ from{ filter:brightness(.8);} to{ filter:brightness(1.35);} }
@@ -476,7 +477,7 @@
     <!-- HUD -->
     <div id="hudTop" class="hidden">
       <div id="clockPlate" class="plate">
-        <div class="day">Ngày <span id="uiDay">1</span><small> / <span id="uiTotal">3</span></small></div>
+        <div class="day">Ngày <span id="uiDay">1</span><small> · chung thân</small></div>
         <div class="clock"><span id="uiClock">05:30</span> · <span id="uiRoomLabel">Xóm Tò</span></div>
         <div class="phase" id="uiPhase">Thức dậy</div>
       </div>
@@ -505,6 +506,7 @@
       <div class="stat" id="stHealth"><div class="lab"><span>Sức khỏe</span><b id="vHealth">90</b></div><div class="bar" id="barHealth"><i style="width:90%"></i></div></div>
       <div class="stat" id="stMood"><div class="lab"><span>Tinh thần</span><b id="vMood">85</b></div><div class="bar" id="barMood"><i style="width:85%"></i></div></div>
       <div class="stat" id="stRespect"><div class="lab"><span>Uy tín phòng</span><b id="vRespect">20</b></div><div class="bar" id="barRespect"><i style="width:20%"></i></div></div>
+      <div class="stat" id="stReform"><div class="lab"><span>Cải tạo tốt</span><b id="vReform">0/100</b></div><div class="bar" id="barReform"><i style="width:0%"></i></div></div>
     </div>
 
     <div id="roomPanel" class="plate hidden mini">
@@ -567,11 +569,7 @@
         <div class="fieldLab">MÀU ÁO PHẠM NHÂN</div>
         <div class="swatches" id="swatches"></div>
         <div class="fieldLab">MỨC ÁN</div>
-        <div class="terms" id="terms">
-          <button class="term sel" data-days="3"><b>3 ngày</b><span>chơi nhanh</span></button>
-          <button class="term" data-days="7"><b>7 ngày</b><span>cho quen nếp</span></button>
-          <button class="term" data-days="30"><b>30 ngày</b><span>ở thiệt luôn</span></button>
-        </div>
+        <div class="kit"><span><b>Chung thân</b> — không hẹn ngày ra</span><span>Cải tạo đủ <b>100 điểm</b> là được xét thả</span></div>
         <p class="howto hidden" id="restoreNote"></p>
         <button class="bigBtn" id="btnStart">Nhận số tù &amp; vào phòng</button>
         <p class="howto"><b>Cách chơi:</b> joystick / WASD để đi · kéo màn hình xoay camera · thấy vòng sáng là tới bấm nút vàng. <b>Điện thoại nhớ xoay ngang.</b></p>
@@ -581,7 +579,7 @@
     <!-- END -->
     <div class="overlay hidden" id="endOverlay">
       <div class="card" id="endCard">
-        <h1>Hết án — <span class="thin">được thả!</span></h1>
+        <h1>Cải tạo tốt — <span class="thin">được ra tù!</span></h1>
         <p class="sub" id="endSub">Cánh cửa mở ra, nắng ngoài sân chói chang…</p>
         <div id="endRank">Tù nhân gương mẫu</div>
         <div class="rows">
@@ -591,6 +589,7 @@
           <div class="row"><span>Lần đếm ngày trên tường</span><b id="endTallies">0</b></div>
           <div class="row"><span>Việc trong lịch làm xong</span><b id="endTasks">0</b></div>
           <div class="row"><span>Uy tín lúc ra về</span><b id="endRespect">0</b></div>
+          <div class="row"><span>Điểm cải tạo</span><b id="endReform">0</b></div>
         </div>
         <p class="verdict">Tự do không phải điều hiển nhiên — giữ gìn nó nhé ní.</p>
         <button class="bigBtn" id="btnAgain">Chơi lại từ đầu</button>
@@ -693,7 +692,7 @@
     /* ---------------- GAME STATE ---------------- */
     const G = {
       started:false, over:false, paused:false, speed:1,
-      day:1, totalDays:3, phaseIdx:0, phaseT:0, taskDone:false,
+      day:1, reform:0, phaseIdx:0, phaseT:0, taskDone:false,
       stats:{ hunger:80, health:92, mood:85, respect:15 },
       noodles:3, noodlesEarned:0, boxes:0, boxesTotal:0, tallies:0, tasksDone:0, tasksTotal:0,
       cellNo:0, serverId:'', restoredPos:false,
@@ -703,6 +702,10 @@
       jailT:0, knocked:false, carried:false
     };
 
+    /* ÁN CHUNG THÂN: không còn mức án 3/7/30 ngày nữa. Ở tù tới khi nào
+       CẢI TẠO TỐT đủ 100 điểm mới được xét ra: làm xong việc theo lịch
+       +3 điểm, mỗi lượt lao động +1; đánh nhau / bị quản ngục xử thì trừ. */
+    const REFORM_TARGET = 100;
     const PHASES = [
       { id:'wake',     name:'Thức dậy & gấp chăn',   clock:[5.5,6.0],  dur:26, station:'bed',   task:'Gấp chăn cho vuông vức',        verb:'Gấp chăn' },
       { id:'rollam',   name:'Điểm danh buổi sáng',   clock:[6.0,6.5],  dur:20, station:'door',  task:'Ra sân điểm danh',              verb:'Điểm danh' },
@@ -1609,27 +1612,48 @@
 
     /* ---------------- QUẢN NGỤC (cai ngục) ----------------
        Đồng phục xanh đậm không sọc + mũ kêpi + dùi cui, khác hẳn tù nhân.
-       gd1 tuần sân giữa, gd2 tuần dọc dãy chuồng, gd3 gác cạnh tháp canh.
+       Đội hình 8 người cho trại 100 chuồng: gd1 tuần sân giữa + chủ trì
+       điểm danh, gd2/gd4 tuần dọc 2 dãy chuồng Bắc/Nam, gd8 tuần vòng
+       khu vườn + chăn nuôi, gd3 gác tháp canh, gd5 trực sân lao động,
+       gd6 trực phòng ăn (giờ ăn thì vô đứng trong phòng), gd7 gác cổng
+       ra sân lao động. Các tuyến không dẫm lên nhau.
        Luôn hiện (kể cả trong Xóm Tò — quản ngục là người của trại, không
        phải bạn tù người thật). Việc chính: chủ trì điểm danh, nhắc nhở
-       ai lệch lịch, chạy tới can đánh nhau và xử ai dám đánh quản ngục. */
+       ai lệch lịch, chạy tới can đánh nhau và xử ai dám đánh quản ngục —
+       khi có biến, quản ngục RẢNH gần nhất chạy tới như cũ. */
     const GUARD_DEFS = [
-      { key:'gd1', name:'Quản ngục Tư', skin:0xf2c79b, lines:['Đi đứng đàng hoàng nha mấy ní.','Sân sạch, chuồng gọn là tui vui.','Đừng để tui phải ghi sổ đó.','Tui hiền lắm, đừng chọc tui.','Trời đẹp, ra sân lao động cho khỏe.'] },
-      { key:'gd2', name:'Quản ngục Năm', skin:0xeab88a, lines:['Lao động tốt là mau được về đó.','Đếm đủ người là tui yên tâm.','Đừng chạy lung tung, tui mệt.','Ở đây cãi tui là thiệt thòi à.','Chuồng nào gọn gàng tui khen chuồng đó.'] },
-      { key:'gd3', name:'Quản ngục Bảy', skin:0xffd9ae, lines:['Tui đứng đây thấy hết đó nha.','Tháp canh này mắt tui là radar.','Gió mát quá, xém ngủ gật… ơ, ai đó?'] }
+      { key:'gd1', name:'Quản ngục Tư', skin:0xf2c79b, mode:'patrol', start:{x:-9,z:-8},
+        lines:['Đi đứng đàng hoàng nha mấy ní.','Sân sạch, chuồng gọn là tui vui.','Đừng để tui phải ghi sổ đó.','Tui hiền lắm, đừng chọc tui.','Trời đẹp, ra sân lao động cho khỏe.'] },
+      { key:'gd2', name:'Quản ngục Năm', skin:0xeab88a, mode:'patrol', start:{x:-22,z:-11.9},
+        lines:['Lao động tốt là mau được về đó.','Đếm đủ người là tui yên tâm.','Đừng chạy lung tung, tui mệt.','Ở đây cãi tui là thiệt thòi à.','Chuồng nào gọn gàng tui khen chuồng đó.'] },
+      { key:'gd4', name:'Quản ngục Sáu', skin:0xffdcbb, mode:'patrol', start:{x:22,z:11.9},
+        lines:['Dãy Nam để tui lo, đừng hòng lọt mắt tui.','Đi nhẹ nói khẽ thôi mấy ní.','Chuồng sạch là tui khoái lắm.','Ai trốn việc là tui biết liền đó.'] },
+      { key:'gd8', name:'Quản ngục Ba', skin:0xe8b48c, mode:'patrol', start:{x:-13,z:-8.5},
+        lines:['Vườn rau xanh tốt là nhờ tui canh đó.','Heo gà bò cũng phải có kỷ luật chớ.','Lao động ngoài sân nhớ đội nón nghe chưa.','Ai lười là tui dắt đi làm chung luôn.'] },
+      { key:'gd3', name:'Quản ngục Bảy', skin:0xffd9ae, mode:'post', start:{x:24.8,z:-9.2}, post:{x:24.8,z:-9.2,rot:-1.2},
+        lines:['Tui đứng đây thấy hết đó nha.','Tháp canh này mắt tui là radar.','Gió mát quá, xém ngủ gật… ơ, ai đó?'] },
+      { key:'gd5', name:'Quản ngục Tám', skin:0xf2c79b, mode:'post', start:{x:4.2,z:-10.2}, post:{x:4.2,z:-10.2,rot:0.5},
+        lines:['Ra sân lao động đàng hoàng nha.','Chỉ tiêu chưa đủ là chưa được nghỉ đâu.','Làm tốt là điểm cải tạo tăng vù vù đó.','Đứng ì ở đây là tui nhắc đó nghe.'] },
+      { key:'gd6', name:'Quản ngục Chín', skin:0xeab88a, mode:'post', start:{x:-1.5,z:8.4}, post:{x:-1.5,z:8.4,rot:Math.PI}, mealPost:{x:-4.6,z:4.6,rot:Math.PI/2},
+        lines:['Ăn cơm xếp hàng đàng hoàng nha.','Đổ cơm là tui ghi sổ đó.','Ăn no mới có sức cải tạo chớ.','Phòng ăn là phải sạch như nhà hàng nghe chưa.'] },
+      { key:'gd7', name:'Quản ngục Mười', skin:0xffd9ae, mode:'post', start:{x:-12.6,z:-10.4}, post:{x:-12.6,z:-10.4,rot:0.9},
+        lines:['Ra vô sân lao động qua cổng này hết nghe chưa.','Cổng này tui canh, đừng hòng lẻn.','Đi làm thì đi thẳng, đừng la cà.'] }
     ];
     const GUARD_ROUTES = {
       gd1: [ {x:-9,z:-8},{x:0,z:-9.8},{x:9,z:-8},{x:11,z:-1.6},{x:6,z:9.8},{x:-6,z:9.8},{x:-10.5,z:2} ],
-      gd2: [ {x:-22,z:-11.9},{x:22,z:-11.9},{x:22,z:11.9},{x:-22,z:11.9} ]
+      gd2: [ {x:-24,z:-11.9},{x:0,z:-11.9},{x:24,z:-11.9},{x:0,z:-11.9} ],
+      gd4: [ {x:24,z:11.9},{x:0,z:11.9},{x:-24,z:11.9},{x:0,z:11.9} ],
+      gd8: [ {x:-13,z:-8.5},{x:-18,z:3.5},{x:-11.5,z:11},{x:8,z:11.5},{x:12.5,z:9.8},{x:12,z:-6},{x:6,z:-12.6},{x:-8,z:-12.6} ]
     };
-    const guards = GUARD_DEFS.map((def, i)=>{
+    const guards = GUARD_DEFS.map((def)=>{
       const mesh = makeChibi({ skin:def.skin, hair:0x2b2b30, hairStyle:'buzz', shirt:0x2e4057, pants:0x232a35,
         number:'', uniform:true, noPlate:true, kepi:true, baton:true });
       scene.add(mesh);
-      const start = i===0 ? {x:-9,z:-8} : (i===1 ? {x:-22,z:-11.9} : {x:24.8,z:-9.2});
-      const g = { def, mesh, pos:new THREE.Vector3(start.x, 0, start.z), rotY: i===2 ? -1.2 : 0, targetRot: i===2 ? -1.2 : 0,
+      const start = def.start || {x:0, z:0};
+      const face0 = def.post ? def.post.rot : 0;
+      const g = { def, mesh, pos:new THREE.Vector3(start.x, 0, start.z), rotY: face0, targetRot: face0,
         walkT: rand(0,9), wp:0, waitT: rand(0,2), sayCd: rand(4,14), swingT:0, atkCd:0, taskT:0, koT:0,
-        mode: i===2 ? 'post' : 'patrol', homeMode: i===2 ? 'post' : 'patrol' };
+        mode: def.mode || 'patrol', homeMode: def.mode || 'patrol' };
       mesh.position.copy(g.pos);
       const d = document.createElement('div'); d.className='bubble'; $('bubbles').appendChild(d);
       bubbleEls[def.key] = d;
@@ -1958,9 +1982,18 @@
       G.busy = dur; G.busyTotal = dur; G.busyTick = onTick; G.busyDone = onDone;
       $('actionProg').classList.add('show');
     }
+    /* điểm cải tạo: cộng khi làm tốt, trừ khi quậy phá; đủ REFORM_TARGET
+       là sáng hôm sau được xét ra tù (kiểm tra ở advanceDay) */
+    function addReform(n){
+      const before = G.reform;
+      G.reform = clamp(G.reform + n, 0, REFORM_TARGET);
+      if(before < REFORM_TARGET && G.reform >= REFORM_TARGET)
+        toast('Đủ 100 điểm cải tạo rồi ní! Ngủ một giấc, sáng mai điểm danh là được xét ra về.', 4200);
+    }
     function completeTask(bonusMsg){
       if(G.taskDone) return;
       G.taskDone = true; G.tasksDone++;
+      addReform(3);
       if(typeof fbSaveProgress === 'function') fbSaveProgress();
       $('objective').classList.add('done');
       $('uiObjective').textContent = 'Xong việc buổi này.';
@@ -2029,9 +2062,16 @@
     }
     /* ---- lao động tự chọn: trồng cây / tưới rau / cho heo ăn / quét sân ----
        Mỗi lượt làm xong tính 1 đơn vị công chung với gấp hộp: đủ 6 đơn vị là
-       xong chỉ tiêu buổi lao động; cứ 4 đơn vị trả +1 gói mì tôm công. */
+       xong chỉ tiêu buổi lao động; cứ 4 đơn vị trả +1 gói mì tôm công.
+       VIỆC LÀM ĐỘC LẬP TỪNG NGƯỜI: chỉ tiêu, mì tôm và điểm cải tạo đều là
+       số đếm RIÊNG của từng người chơi (biến cục bộ phía máy mình; ở Xóm
+       Tò mỗi máy giữ phần của mình, hồ sơ ai lưu phần nấy) — nhiều người
+       cùng làm MỘT trạm một lúc vẫn tính đủ cho từng người, công việc
+       chồng lên nhau thoải mái, không ai tranh phần của ai. Vườn rau và
+       ổ trứng được làm mới mỗi buổi lao động để không bao giờ "hết việc". */
     function laborUnit(){
       laborCount++;
+      addReform(1);
       if(laborCount % 4 === 0){ G.noodles++; G.noodlesEarned++; tone(980,.09,'sine',.1); toast('Đủ 4 lượt công: +1 gói mì tôm.'); }
       if(laborCount>=6 && !G.taskDone) completeTask('Đủ chỉ tiêu lao động buổi này. Làm tiếp vẫn được tính công mì tôm.');
     }
@@ -2346,6 +2386,7 @@
       G.stats.health = Math.max(15, G.stats.health - 10);
       G.stats.respect = clamp(G.stats.respect - 3, 0, 100);
       G.stats.mood = clamp(G.stats.mood - 5, 0, 100);
+      addReform(-4);
       FIGHT.koPhase = 'down'; FIGHT.koT = 1.5;
       showBubble('player', 'Mắt nổ đom đóm… xỉu đây… @.@', 2400);
       toast(wasGuardFight ? 'Ăn đòn quản ngục hết máu — ngất xỉu luôn rồi ní…' : 'Hết máu — ngất xỉu giữa sân rồi ní…', 3600);
@@ -2359,6 +2400,7 @@
       if(FIGHT.kind==='npc' && FIGHT.npc){ FIGHT.npc.fightT = 0; FIGHT.npc.talkCd = 20; showBubble(FIGHT.npc, 'Dạ dạ… tui xin lỗi…', 2000); }
       playerBonk(0, 4, g.pos, ['Ối… dạ, tui biết lỗi rồi…','Dạ dạ, hết đánh rồi…']);
       G.stats.mood = clamp(G.stats.mood - 3, 0, 100);
+      addReform(-5);
       FIGHT.active = false; FIGHT.npc = null; FIGHT.guard = null;
       hideFightHud();
       guardsResetModes();
@@ -2372,6 +2414,7 @@
       player.pos.copy(cellSpawn(G.cellNo));
       player.mesh.position.copy(player.pos);
       G.jailT = 5;
+      addReform(-8);
       toast('Biệt giam chớp nhoáng 5 giây vì tội đánh quản ngục…', 3200);
       SFX.bad();
     }
@@ -2380,6 +2423,7 @@
       const p = phase();
       showBubble(g, p.id==='rollam' ? 'Điểm danh mà đi đâu đó ní? Ăn dùi cui nè, về sân tập trung!' : 'Giờ lao động mà đứng chơi hả ní? Ăn dùi cui nè, ra làm đi!', 2600);
       playerBonk(0, 2, g.pos, ['Dạ! Đi làm liền, đi làm liền!','Dạ dạ, tui làm ngay!']);
+      addReform(-3);
       idleT = 0; disciplineCd = 90;
       g.mode = g.homeMode; g.waitT = 2; g.taskT = 0;
     }
@@ -2413,7 +2457,17 @@
         const chase = (g.mode==='intervene' || g.mode==='assist' || g.mode==='discipline' || g.mode==='fightback' || g.mode==='carryFetch' || g.mode==='carryBack');
         const speed = chase ? 4.1 : 1.5;
         if(g.mode==='post'){
-          if(Math.random() < gdt * 0.06) g.targetRot = -1.2 + rand(-0.7, 0.7);
+          // về đúng điểm trực của mình (bị kéo đi can ngăn xong cũng quay
+          // lại điểm); giờ ăn thì quản ngục Chín vô đứng trong phòng ăn
+          const spot = (g.def.mealPost && p.meal) ? g.def.mealPost : g.def.post;
+          if(spot){
+            const d = guardGoTo(g, spot.x, spot.z, 2.2, gdt);
+            moving = d > 0.45;
+            if(!moving){
+              g.targetRot = spot.rot;
+              if(Math.random() < gdt * 0.06) g.targetRot = spot.rot + rand(-0.7, 0.7);
+            }
+          }
           if(g.sayCd <= 0 && Math.random() < gdt * 0.05){ g.sayCd = rand(16, 30); showBubble(g, pick(g.def.lines), 2400); }
         } else if(g.mode==='preside'){
           const d = guardGoTo(g, PRESIDE_SPOT.x, PRESIDE_SPOT.z, 2.2, gdt);
@@ -2648,7 +2702,14 @@
       trayGroup.visible = isMeal;
       if(isMeal){ const meat = meatArm; meatMeshes.forEach(m=> m.visible = meat); meatArm = false; }
       // stack reset each labor phase
-      if(p.id==='labor' || p.id==='labor2') stackMeshes.forEach(m=> m.visible=false);
+      if(p.id==='labor' || p.id==='labor2'){
+        stackMeshes.forEach(m=> m.visible=false);
+        // vườn rau + ổ trứng làm mới mỗi buổi lao động: việc không bao
+        // giờ "hết phần", ai làm phần nấy, chồng lên nhau thoải mái
+        plantCount = 0;
+        sprouts.forEach(s=>{ s.visible = false; s.scale.setScalar(0.3); });
+        eggs.forEach(e=>{ e.visible = false; });
+      }
       // ring target
       if(p.station){ const s = STATIONS[p.station]; taskRing.visible = taskBeam.visible = true;
         taskRing.position.set(s.x, 0.02, s.z); taskBeam.position.set(s.x, 1.3, s.z); }
@@ -2687,15 +2748,15 @@
       if(G.dayAdvancing || G.over) return;
       G.dayAdvancing = true;
       const fade = $('fade');
-      if(G.day >= G.totalDays){
-        fade.querySelector('#fadeTxt').textContent = 'Ngày ra tù…';
+      if(G.reform >= REFORM_TARGET){
+        fade.querySelector('#fadeTxt').textContent = 'Cải tạo tốt — ngày ra tù…';
         fade.classList.add('show');
         setTimeout(()=>{ fade.classList.remove('show'); endGame(); }, 1600);
         return;
       }
       G.day++;
       if(typeof fbSaveProgress === 'function') fbSaveProgress();
-      fade.querySelector('#fadeTxt').textContent = 'Ngày '+G.day+' / '+G.totalDays;
+      fade.querySelector('#fadeTxt').textContent = 'Ngày '+G.day+' · cải tạo '+Math.round(G.reform)+'/'+REFORM_TARGET;
       fade.classList.add('show');
       G.lying = false; G.onBed = false; G.resting = false; G.climbActive = false; CLIMB.active = false;
       G.sitting = ''; G.sitTrans = false; SIT.active = false; G.workPose = '';
@@ -2719,11 +2780,12 @@
 
     function endGame(){
       G.over = true;
-      $('endDays').textContent = G.totalDays;
+      $('endDays').textContent = G.day;
+      $('endReform').textContent = Math.round(G.reform) + '/' + REFORM_TARGET;
       $('endBoxes').textContent = G.boxesTotal||0;
       $('endNoodles').textContent = G.noodlesEarned;
       $('endTallies').textContent = G.tallies;
-      $('endTasks').textContent = G.tasksDone + ' / ' + (G.totalDays * (PHASES.length-1));
+      $('endTasks').textContent = G.tasksDone;
       $('endRespect').textContent = Math.round(G.stats.respect);
       const r = G.stats.respect;
       $('endRank').textContent = r>=70 ? 'Danh hiệu: Đại ca phòng 7' : r>=45 ? 'Danh hiệu: Tù nhân gương mẫu' : r>=25 ? 'Danh hiệu: Người quen mặt cả dãy' : 'Danh hiệu: Tù nhân thầm lặng';
@@ -2737,7 +2799,8 @@
     function setBar(id, v){ $(id).querySelector('i').style.width = clamp(v,0,100)+'%'; }
     function updateHUD(){
       $('uiDay').textContent = G.day;
-      $('uiTotal').textContent = G.totalDays;
+      $('vReform').textContent = Math.round(G.reform) + '/' + REFORM_TARGET;
+      setBar('barReform', G.reform / REFORM_TARGET * 100);
       $('uiClock').textContent = fmtClock(clockNow());
       $('uiNoodles').textContent = G.noodles;
       const s = G.stats;
@@ -3120,12 +3183,7 @@
       });
       swWrap.appendChild(b);
     });
-    $('terms').querySelectorAll('.term').forEach(el=>{
-      el.addEventListener('click', ()=>{
-        $('terms').querySelectorAll('.term').forEach(x=>x.classList.remove('sel'));
-        el.classList.add('sel'); G.totalDays = parseInt(el.dataset.days, 10); SFX.tap();
-      });
-    });
+    /* án chung thân cố định — không còn chọn mức án 3/7/30 ngày nữa */
     buildPlayer();
 
     /* ---------- nhiệm vụ thu gọn + nhắc xoay ngang + zoom ---------- */
@@ -3358,10 +3416,12 @@
       if(doc.name) G.playerName = doc.name;
       if(doc.shirt != null) G.shirt = doc.shirt;
       if(doc.prisonerNo) G.number = doc.prisonerNo;
-      if(doc.sentenceDays) G.totalDays = doc.sentenceDays;
+      // đã được thả ở kiếp trước thì vô lại tính cải tạo từ đầu
+      if(doc.released) G.reform = 0;
+      else if(doc.reform != null) G.reform = clamp(doc.reform, 0, REFORM_TARGET);
       if(doc.cellNo) G.cellNo = clamp(doc.cellNo, 1, 100);
       if(restoreProgress && !doc.released){
-        if(doc.day) G.day = clamp(doc.day, 1, G.totalDays);
+        if(doc.day) G.day = clamp(doc.day, 1, 36500);
         if(doc.phaseIdx != null) G.phaseIdx = clamp(doc.phaseIdx, 0, PHASES.length - 1);
         if(doc.phaseT != null) G.phaseT = clamp(doc.phaseT, 0, phase().dur - 1);
         G.taskDone = !!doc.taskDone;
@@ -3409,7 +3469,7 @@
       const sp = cellSpawn(G.cellNo);
       const prof = {
         name: G.playerName, shirt: G.shirt, prisonerNo: num,
-        sentenceDays: G.totalDays, daysServed: 0, day: 1,
+        sentenceDays: 0, reform: 0, daysServed: 0, day: 1,
         phaseIdx: 0, phaseT: 0, taskDone: false,
         stats:{ hunger:80, health:92, mood:85, respect:15 },
         noodles: 3, noodlesEarned: 0, boxesTotal: 0, tallies: 0, tasksDone: 0,
@@ -3425,7 +3485,7 @@
     function progressFields(){
       return {
         name: G.playerName, shirt: G.shirt, prisonerNo: G.number,
-        sentenceDays: G.totalDays, day: G.day, daysServed: Math.max(0, G.day - 1),
+        sentenceDays: 0, reform: Math.round(G.reform), day: G.day, daysServed: Math.max(0, G.day - 1),
         phaseIdx: G.phaseIdx, phaseT: Math.round(G.phaseT), taskDone: !!G.taskDone,
         stats:{ hunger:Math.round(G.stats.hunger), health:Math.round(G.stats.health), mood:Math.round(G.stats.mood), respect:Math.round(G.stats.respect) },
         noodles: G.noodles, noodlesEarned: G.noodlesEarned, boxesTotal: G.boxesTotal || 0,
@@ -3436,7 +3496,7 @@
         lastSeen: new Date().toISOString()
       };
     }
-    const PROGRESS_KEYS = ['name','shirt','prisonerNo','sentenceDays','day','daysServed','phaseIdx','phaseT','taskDone','stats','noodles','noodlesEarned','boxesTotal','tallies','tasksDone','serverId','cellNo','x','y','z','rotY','state','inBed','lastSeen'];
+    const PROGRESS_KEYS = ['name','shirt','prisonerNo','sentenceDays','reform','day','daysServed','phaseIdx','phaseT','taskDone','stats','noodles','noodlesEarned','boxesTotal','tallies','tasksDone','serverId','cellNo','x','y','z','rotY','state','inBed','lastSeen'];
     let saveTimer = null, saveBusy = false;
     async function fbSaveProgress(){
       if(!FB.uid || saveBusy) return;
@@ -3455,7 +3515,7 @@
       if(!FB.uid) return;
       try{
         const f = progressFields();
-        f.title = $('endRank').textContent; f.daysServed = G.totalDays; f.released = true;
+        f.title = $('endRank').textContent; f.daysServed = G.day; f.released = true;
         fbPatch('players/' + FB.uid, f, PROGRESS_KEYS.concat(['title','released'])).catch(()=>{});
       }catch(e){}
     }
@@ -3491,7 +3551,7 @@
     function showLobby(){
       $('startOverlay').classList.add('hidden');
       $('lobbyOverlay').classList.remove('hidden');
-      $('lobbyInfo').innerHTML = '<b>' + escapeHtml(G.playerName) + '</b> · số tù <b>' + escapeHtml(G.number) + '</b> · chuồng <b>số ' + (G.cellNo || '?') + '</b> · ngày ' + G.day + '/' + G.totalDays + '<br>Xóm chứa tới 100 anh em, ai vô cũng ở chung một sân.';
+      $('lobbyInfo').innerHTML = '<b>' + escapeHtml(G.playerName) + '</b> · số tù <b>' + escapeHtml(G.number) + '</b> · chuồng <b>số ' + (G.cellNo || '?') + '</b> · ngày ' + G.day + ' · án chung thân · cải tạo ' + Math.round(G.reform) + '/' + REFORM_TARGET + ' điểm<br>Xóm chứa tới 100 anh em, ai vô cũng ở chung một sân.';
       if(FB.online){
         const st = $('fbStatus');
         st.textContent = 'Nối xóm xong rồi đó ní.';
@@ -3677,9 +3737,9 @@
       const sorted = fresh.slice().sort((a, b) => (a.__pid === FB.uid ? -1 : b.__pid === FB.uid ? 1 : (a.cellNo || 999) - (b.cellNo || 999)));
       let html = sorted.slice(0, 24).map(p => {
         const me = p.__pid === FB.uid;
-        const left = Math.max(0, (p.sentenceDays || 3) - (p.daysServed || 0));
+        const left = 'án chung thân · cải tạo ' + (p.reform || 0) + '/100';
         const st = p.state === 'sleep' ? 'đang ngủ trong chuồng' : p.state === 'ko' ? 'đang ngất, chờ quản ngục khiêng về chuồng' : p.state === 'wc' ? 'đang ngồi bồn cầu' : p.state === 'eat' ? 'đang ngồi ghế ăn cơm' : p.state === 'sit' ? 'đang ngồi ghế' : (p.state === 'walk' ? 'đang đi lại' : 'đang ở trong trại');
-        return '<div class="rpMember"><span class="dot"></span><span class="rpName">' + escapeHtml(p.name || 'Bạn tù') + (me ? ' (ní)' : '') + '</span><span class="rpMeta">' + escapeHtml(p.prisonerNo || '') + ' · chuồng ' + (p.cellNo || '?') + ' · còn ' + left + ' ngày · ' + st + '</span></div>';
+        return '<div class="rpMember"><span class="dot"></span><span class="rpName">' + escapeHtml(p.name || 'Bạn tù') + (me ? ' (ní)' : '') + '</span><span class="rpMeta">' + escapeHtml(p.prisonerNo || '') + ' · chuồng ' + (p.cellNo || '?') + ' · ' + left + ' · ' + st + '</span></div>';
       }).join('');
       if(sorted.length > 24) html += '<div class="rpMore">… và ' + (sorted.length - 24) + ' anh em nữa trong xóm</div>';
       el.innerHTML = html || '<div class="rpMember">Chưa có ai trong trại…</div>';
@@ -3801,11 +3861,10 @@
             swWrap.querySelectorAll('.sw').forEach((x, i) => x.classList.toggle('sel', i === idx));
             G.shirt = doc.shirt;
           }
-          document.querySelectorAll('#terms .term').forEach(el => el.classList.toggle('sel', parseInt(el.dataset.days, 10) === (doc.sentenceDays || 3)));
-          G.totalDays = doc.sentenceDays || 3;
+          if(doc.reform != null) G.reform = clamp(doc.reform, 0, REFORM_TARGET);
           const rn = $('restoreNote');
           rn.classList.remove('hidden');
-          rn.innerHTML = 'Quay lại rồi hả ní? <b>' + escapeHtml(doc.name || '') + '</b> đang ở ngày ' + (doc.day || 1) + '/' + (doc.sentenceDays || 3) + ', còn ' + (doc.noodles || 0) + ' gói mì' + (doc.cellNo ? ', chuồng <b>số ' + doc.cellNo + '</b> còn nguyên' : '') + '. Vô chơi tiếp đi.';
+          rn.innerHTML = 'Quay lại rồi hả ní? <b>' + escapeHtml(doc.name || '') + '</b> đang ở ngày ' + (doc.day || 1) + ' (án chung thân), cải tạo ' + (doc.reform || 0) + '/100 điểm, còn ' + (doc.noodles || 0) + ' gói mì' + (doc.cellNo ? ', chuồng <b>số ' + doc.cellNo + '</b> còn nguyên' : '') + '. Vô chơi tiếp đi.';
           $('btnStart').textContent = 'Vô chơi tiếp nè';
         })
         .catch(() => {});
