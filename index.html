@@ -203,6 +203,22 @@
       }
       #btnFight.show{ display:flex; }
       #btnFight:active{ transform:scale(.93); }
+      #btnBribe{
+        width:56px; height:56px; border-radius:50%; border:2px solid rgba(255,255,255,.35);
+        background:radial-gradient(circle at 34% 30%, #ffe9a8, #ffc93c 60%, #d99a06);
+        color:#3a2703; font-family:inherit; font-weight:800; font-size:10.5px; cursor:pointer;
+        box-shadow:0 6px 18px rgba(0,0,0,.45); display:none; align-items:center; justify-content:center;
+        text-align:center; line-height:1.15; padding:4px;
+      }
+      #btnBribe.show{ display:flex; }
+      #btnBribe:active{ transform:scale(.93); }
+      #titleRow{
+        display:none; margin-top:5px; padding-top:5px; border-top:1px dashed rgba(255,255,255,.16);
+        font-size:11.5px; font-weight:800; color:var(--noodle); line-height:1.25;
+      }
+      #stats.mini #titleRow{ display:none !important; }
+      .ntag .ntagT{ display:block; color:var(--noodle); font-size:11px; letter-spacing:.2px; }
+      .rpTitleGold{ color:var(--noodle); font-weight:800; }
       #actionProg{
         width:96px; height:9px; border-radius:99px; background:rgba(0,0,0,.55);
         border:1px solid var(--line); overflow:hidden; display:none;
@@ -502,6 +518,7 @@
       <div class="stat" id="stMood"><div class="lab"><span>Tinh thần</span><b id="vMood">85</b></div><div class="bar" id="barMood"><i style="width:85%"></i></div></div>
       <div class="stat" id="stRespect"><div class="lab"><span>Uy tín phòng</span><b id="vRespect">20</b></div><div class="bar" id="barRespect"><i style="width:20%"></i></div></div>
       <div class="stat" id="stReform"><div class="lab"><span>Cải tạo tốt</span><b id="vReform">0/100</b></div><div class="bar" id="barReform"><i style="width:0%"></i></div></div>
+      <div id="titleRow"></div>
     </div>
 
     <div id="roomPanel" class="plate hidden mini">
@@ -551,6 +568,7 @@
       <button id="btnInteract">BẤM</button>
       <div id="interactLab">Gấp chăn</div>
       <button id="btnFight" title="Kiếm chuyện đánh nhau (cẩn thận quản ngục!)">KIẾM CHUYỆN</button>
+      <button id="btnBribe" title="Đút lót quản ngục 2 gói mì — ổng nhắm mắt làm ngơ một lúc (trừ khi trúng ông liêm chính!)">ĐÚT LÓT 2 MÌ</button>
     </div>
 
     <!-- START -->
@@ -759,7 +777,9 @@
       playerName:'Tý Tò', number:'T-0000', shirt:0x5b8def,
       busy:0, lying:false, onBed:false, resting:false, climbActive:false, elapsed:0, eventCd:0,
       sitting:'', sitTrans:false, workPose:'',
-      jailT:0, knocked:false, carried:false
+      jailT:0, knocked:false, carried:false,
+      // hồ sơ hài + danh hiệu + hầm vượt ngục (lưu theo hồ sơ người chơi)
+      crime:'', escN:0, carryN:0, wcN:0, tunnel:0, tunnelDay:0, escapedLegend:false
     };
 
     /* ÁN CHUNG THÂN: không còn mức án 3/7/30 ngày nữa. Ở tù tới khi nào
@@ -1712,7 +1732,7 @@
       const start = def.start || {x:0, z:0};
       const face0 = def.post ? def.post.rot : 0;
       const g = { def, mesh, pos:new THREE.Vector3(start.x, 0, start.z), rotY: face0, targetRot: face0,
-        walkT: rand(0,9), wp:0, waitT: rand(0,2), sayCd: rand(4,14), swingT:0, atkCd:0, taskT:0, koT:0,
+        walkT: rand(0,9), wp:0, waitT: rand(0,2), sayCd: rand(4,14), swingT:0, atkCd:0, taskT:0, koT:0, bribeT:0, flash:null,
         mode: def.mode || 'patrol', homeMode: def.mode || 'patrol' };
       mesh.position.copy(g.pos);
       const d = document.createElement('div'); d.className='bubble'; $('bubbles').appendChild(d);
@@ -1907,6 +1927,7 @@
 
     $('btnInteract').addEventListener('click', ()=>{ audio(); tryInteract(); });
     $('btnFight').addEventListener('click', ()=>{ audio(); if(fightTarget) startFightTarget(fightTarget); });
+    $('btnBribe').addEventListener('click', ()=>{ audio(); if(bribeTarget) doBribe(bribeTarget); });
 
     /* ---------------- INTERACTABLES ---------------- */
     let foldCount = 0, laborCount = 0, wallCount = 0, plantCount = 0, talkCount = 0;
@@ -1966,16 +1987,37 @@
             scene.remove(eventItems.parcel); eventItems.parcel=null;
             G.noodles += 5; G.noodlesEarned += 5; G.stats.mood = clamp(G.stats.mood+14,0,100); SFX.great();
             toast('Người nhà gửi tiếp tế: +5 gói mì tôm, có cả xúc xích!'); showBubble(npcs[3], 'Cho em xin một gói nha anh…', 2600); } });
+      // XE MÌ HUYỀN THOẠI: còn gói nào trên xe là giành được gói đó —
+      // số lượng có hạn cho cả xóm, chậm chân là hết
+      if(TRUCK.active && TRUCK.packs > 0 && TRUCK.mesh) consider(TRUCK.x, TRUCK.z,
+        { label:'Giành mì trên xe (còn '+TRUCK.packs+' gói)', verb:'Giành mì', act:()=>{
+            if(!TRUCK.active || TRUCK.packs <= 0) return;
+            TRUCK.packs--;
+            G.noodles++; G.noodlesEarned++;
+            SFX.pop();
+            toast('Giành được 1 gói mì huyền thoại! Trên xe còn '+TRUCK.packs+' gói.');
+            if(TRUCK.packs <= 0) truckLeave('Hết sạch mì rồi! Xe lăn bánh đi trong tiếng hò hét của cả xóm…');
+        } });
+      // BỒ CÂU ĐƯA THƯ: nó đậu yên chờ mình tới nhận thư nhà
+      if(PIGEON.active && PIGEON.landed && PIGEON.mesh) consider(PIGEON.mesh.position.x, PIGEON.mesh.position.z,
+        { label:'Nhận thư từ bồ câu', verb:'Nhận thư', act:()=>deliverLetter() });
       // current task station
       if(p.station && !G.taskDone){
         const s = STATIONS[p.station];
         cRad = 3.4;
         consider(s.x, s.z, { label:p.task, verb:p.verb, act:()=>doPhaseTask(p) });
       }
+      // đang đứng trong chuồng của mình mà hôm nay chưa đào hầm: ưu tiên
+      // hiện nút ĐÀO HẦM thay cho nút trèo giường (đào xong lại trèo được)
+      let digInCell = false;
+      if(G.cellNo >= 1 && G.tunnel < TUNNEL_NEED && G.tunnelDay !== G.day){
+        const cdx = cellDefs[clamp(G.cellNo - 1, 0, cellDefs.length - 1)];
+        digInCell = Math.abs(player.pos.x - cdx.cx) < 1.15 && Math.abs(player.pos.z - cdx.cz) < 1.35;
+      }
       // climb up onto your own bed and lie down — any time, not just nap/sleep phases
       // (considered after the phase task, so gấp chăn / ngủ theo lịch still win at the bed)
       cRad = 2.4;
-      if(!(p.station==='bed' && !G.taskDone)){
+      if(!(p.station==='bed' && !G.taskDone) && !digInCell){
         const bs = STATIONS.bed;
         consider(bs.x, bs.z, { label:'Trèo lên giường nằm', verb:'Lên giường', act:()=>{
           startClimbUp(()=>{ showBubble('player','Zzz… êm hơn sàn nhiều.', 2200); });
@@ -2000,6 +2042,14 @@
       // wall counting — any time
       cRad = 2.2;
       consider(STATIONS.wall.x, STATIONS.wall.z, { label:'Đếm ngày trên tường', verb:'Đếm ngày', act:doWall });
+      // ĐÀO HẦM BẰNG THÌA trong chuồng của mình: mỗi ngày đào lén được
+      // đúng 1 khúc; hầm hiện sẵn trong chuồng thì bấm là đào tiếp
+      if(digInCell){
+        const cd2 = cellDefs[clamp(G.cellNo - 1, 0, cellDefs.length - 1)];
+        const hx = cd2.cx + 0.55, hz = cd2.cz - cd2.facing * 0.15;
+        cRad = 2.1;
+        consider(hx, hz, { label:'Đào hầm bằng thìa (khúc '+(G.tunnel+1)+'/'+TUNNEL_NEED+')', verb:'Đào hầm', act:doDig });
+      }
       // basin free wash
       if(p.id!=='wash') consider(STATIONS.basin.x, STATIONS.basin.z, { label:'Rửa mặt cho tỉnh', verb:'Rửa mặt', act:()=>{
         startBusy(0.9, t=>{}, ()=>{ splash(9.75,0.85,5.3); G.stats.mood=clamp(G.stats.mood+4,0,100); SFX.splash(); toast('Rửa mặt cái, tỉnh cả người.'); });
@@ -2013,6 +2063,7 @@
       // tiếng "tõm" rồi xả nước òng ọc; bạn tù đứng gần nghe được là chê
       consider(SEATS.wc.appX, SEATS.wc.appZ, { label:'Ngồi bồn cầu đi vệ sinh', verb:'Đi vệ sinh', act:()=>{
         startSit('wc', ()=>{
+          G.wcN++; // thêm một lần ngự bồn cầu — nuôi danh hiệu "Ông Hoàng Bồn Cầu"
           showBubble('player','Ngồi xuống… tập trung… rặn…', 1500);
           const nFart = 2 + Math.floor(Math.random()*3); // 2–4 cái
           const fartLines = ['Phẹt!','Phẹẹẹt…','Phẹt phẹt!','Xììì…','Phẹt…'];
@@ -2394,6 +2445,7 @@
 
     let currentInteract = null;
     let fightTarget = null;
+    let bribeTarget = null;
     let ambFartT = rand(18, 35); // đồng hồ "xì hơi ambient" của bạn tù
     function tryInteract(){
       if(currentInteract) currentInteract.act();
@@ -2417,6 +2469,9 @@
       let bg = null, bd = Infinity;
       for(const g of guards){
         if(freeOnly && !(g.mode==='patrol' || g.mode==='post' || g.mode==='preside')) continue;
+        // quản ngục đang được đút lót (bribeT) thì "không thấy gì hết":
+        // không được chọn đi can đánh nhau / xử kỷ luật / rượt theo lịch
+        if(freeOnly && g.bribeT > 0) continue;
         const d = Math.hypot(g.pos.x - x, g.pos.z - z);
         if(d < bd){ bd = d; bg = g; }
       }
@@ -2576,6 +2631,7 @@
     }
     function endChaseEscaped(){
       const g = CHASE.guard;
+      G.escN++; // trốn thoát thành công — nuôi danh hiệu "Chân Chạy Vàng"
       CHASE.active = false; CHASE.guard = null; CHASE.uiTxt = '';
       $('chaseTag').classList.add('hidden');
       if(g && g.mode==='chase'){ g.mode = g.homeMode; g.waitT = 2; g.taskT = 0; showBubble(g, pick(['Mất dấu rồi… đâu mất tiêu?!','Hừ, trốn nhanh thiệt. Tha cho lần này đó!','Đâu rồi…? Thôi, tha đó!']), 2600); }
@@ -2828,6 +2884,12 @@
         }
         g.sayCd = Math.max(0, g.sayCd - gdt);
         if(g.swingT > 0) g.swingT -= gdt;
+        // đút lót đang còn hiệu lực: ổng nhắm mắt làm ngơ — đang đi can
+        // đánh nhau / xử kỷ luật giữa chừng cũng quay về điểm trực
+        if(g.bribeT > 0){
+          g.bribeT -= gdt;
+          if(g.mode==='intervene' || g.mode==='discipline'){ g.mode = g.homeMode; g.waitT = 2; g.taskT = 0; }
+        }
         g.wantX = undefined; // đích tính theo frame: mode nào không gọi guardGoTo frame này thì không bị watchdog coi là kẹt
         let moving = false;
         const chase = (g.mode==='intervene' || g.mode==='assist' || g.mode==='discipline' || g.mode==='fightback' || g.mode==='chase' || g.mode==='hunt' || g.mode==='carryFetch' || g.mode==='carryBack');
@@ -2902,6 +2964,7 @@
             // chuồng, quản ngục vòng ra cổng theo đường cũ
             const cd = cellDefs[clamp((G.cellNo||1)-1, 0, cellDefs.length-1)];
             G.carried = false;
+            G.carryN++; // lại được khiêng về chuồng — nuôi danh hiệu "Khách VIP Phòng Y Tế"
             if(FIGHT.koDest==='bed'){
               // QUĂNG THẲNG LÊN GIƯỜNG chuồng của người ngất
               const b = myBed();
@@ -3179,6 +3242,335 @@
       for(const e of pool){ r -= e.w; if(r<=0){ e.run(); return; } }
     }
 
+    /* ================= HỒ SƠ TỘI DANH HÀI + DANH HIỆU =================
+       (1) Tạo nhân vật là game tự bốc 1 tội danh hài, ghi vô hồ sơ —
+       hiện ở sảnh, thẻ thành viên xóm. (2) Danh hiệu trên đầu tính từ
+       hành vi THIỆT trong game: số lần trốn thoát quản ngục (escN), số
+       lần bị khiêng về chuồng (carryN), số lần ngồi bồn cầu (wcN) và
+       uy tín phòng — hiện trên đầu bạn tù trong xóm + danh sách xóm. */
+    const CRIMES = [
+      'Ăn vụng 3 gói mì của bạn cùng phòng',
+      'Ngáy to làm nứt tường phòng bên',
+      'Hát karaoke lúc 2 giờ sáng',
+      'Trộm dép tổ ong của cả dãy trọ',
+      'Ngủ gật trong giờ thi, ngáy át cả giám thị',
+      'Ăn hết nồi lẩu rồi nói "tui no rồi"',
+      'Mượn xe bạn đi 3 năm chưa trả',
+      'Đặt 12 cái báo thức mà vẫn ngủ quên',
+      'Chiếm remote TV, bấm kênh mua sắm cả buổi',
+      'Ăn chực đám cưới người lạ tới 4 lần',
+      'Nhắn tin "đang tới" khi còn đang tắm',
+      'Để chuông điện thoại reo giữa rạp phim',
+      'Xếp hàng mua trà sữa chen ngang 7 người',
+      'Kể chuyện ma làm em nhỏ khóc 3 đêm liền',
+      'Giành micro karaoke hát 14 bài liên tiếp',
+      'Ăn hết phần pizza của cả nhóm rồi chối',
+      'Ngủ trong thư viện, gáy sách làm dấu ấn',
+      'Đi dép trái vô đám cưới người ta'
+    ];
+    function ensureCrime(){
+      if(!G.crime) G.crime = pick(CRIMES);
+      return G.crime;
+    }
+    function currentTitle(){
+      if(G.stats.respect >= 75) return 'Đại Ca';
+      if(G.escN >= 3) return 'Chân Chạy Vàng';
+      if(G.wcN >= 6) return 'Ông Hoàng Bồn Cầu';
+      if(G.carryN >= 3) return 'Khách VIP Phòng Y Tế';
+      return '';
+    }
+
+    /* ================= (3) ĐÚT LÓT QUẢN NGỤC BẰNG MÌ TÔM =================
+       Đút 2 gói: ổng nhắm mắt làm ngơ ~18 giây (không can đánh nhau,
+       không xử kỷ luật, không rượt theo lịch — xem nearestGuard +
+       updateGuards). Nhưng ~25% trúng ông LIÊM CHÍNH: mất mì, bị ghi
+       sổ, trừ 5 điểm cải tạo. Mì mất trong cả 2 trường hợp. */
+    function doBribe(g){
+      if(!g || G.noodles < 2 || g.bribeT > 0) return;
+      G.noodles -= 2;
+      bribeTarget = null;
+      $('btnBribe').classList.remove('show');
+      if(Math.random() < 0.25){
+        showBubble(g, 'Hối lộ hả ní?! Tui LIÊM CHÍNH — GHI SỔ!', 2800);
+        showBubble('player', 'Thôi xong… trúng ông liêm chính rồi…', 2200);
+        addReform(-5);
+        G.stats.respect = clamp(G.stats.respect - 3, 0, 100);
+        toast('Đút lót trúng quản ngục LIÊM CHÍNH! Mất 2 gói mì, bị ghi sổ, trừ 5 điểm cải tạo.', 4200);
+        SFX.bad();
+      } else {
+        g.bribeT = 18;
+        showBubble(g, 'Ờ… ờ… tui có thấy gì đâu. Mắt tui nay mờ quá…', 2800);
+        toast('Đút lót thành công! ' + g.def.name + ' nhắm mắt làm ngơ 18 giây — quậy đi ní, ổng không can, không rượt đâu.', 4200);
+        SFX.pop();
+      }
+      updateHUD();
+    }
+
+    /* ================= (6) SỰ KIỆN NGẪU NHIÊN MỖI NGÀY =================
+       Mỗi ngày game bốc thăm 1 sự kiện, tới đúng buổi đã hẹn là nổ:
+       mất điện toàn trại ~30s (quản ngục cầm đèn pin đi soi), xe mì
+       huyền thoại ghé sân (số gói có hạn cho cả xóm giành nhau), hoặc
+       bồ câu đưa thư nhà (thư hài + buff ngẫu nhiên). */
+    const DAYEV = { type:'', atPhase:-1 };
+    function scheduleDailyEvent(){
+      DAYEV.type = pick(['blackout','truck','pigeon']);
+      DAYEV.atPhase = 2 + Math.floor(Math.random() * 7); // buổi ăn sáng -> ăn chiều
+    }
+    function maybeDailyEvent(){
+      if(!DAYEV.type || G.phaseIdx < DAYEV.atPhase) return;
+      const t = DAYEV.type; DAYEV.type = ''; DAYEV.atPhase = -1;
+      if(t === 'blackout') startBlackout();
+      else if(t === 'truck') spawnTruck();
+      else if(t === 'pigeon') spawnPigeon();
+    }
+    /* --- mất điện --- */
+    const BLACKOUT = { t:0 };
+    function makeFlashlight(){
+      const grp = new THREE.Group();
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.62, 2.3, 18, 1, true),
+        new THREE.MeshBasicMaterial({ color:0xffe9a8, transparent:true, opacity:0.14, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }));
+      cone.position.set(0, 0.95, 1.15); cone.rotation.x = 1.87; grp.add(cone);
+      const disc = new THREE.Mesh(new THREE.CircleGeometry(0.85, 20),
+        new THREE.MeshBasicMaterial({ color:0xffe9a8, transparent:true, opacity:0.16, blending:THREE.AdditiveBlending, depthWrite:false }));
+      disc.rotation.x = -Math.PI/2; disc.position.set(0, 0.04, 2.1); grp.add(disc);
+      grp.visible = false; scene.add(grp);
+      return grp;
+    }
+    function startBlackout(){
+      BLACKOUT.t = 30;
+      for(const g of guards) if(!g.flash) g.flash = makeFlashlight();
+      toast('MẤT ĐIỆN TOÀN TRẠI! Tối thui như mực — quản ngục cầm đèn pin đi soi kìa, liệu mà nép vô…', 4600);
+      showDialogue('Quản ngục Tư', 'Mất điện thôi, không ai được chạy lung tung! Ai lảng vảng là tui soi thấy hết đó!', 3600);
+      SFX.bad();
+    }
+    /* --- xe mì huyền thoại --- */
+    const TRUCK = { active:false, packs:0, mesh:null, x:-8, z:-9.6, grabT:4 };
+    function spawnTruck(){
+      if(TRUCK.active) return;
+      const grp = new THREE.Group(); grp.position.set(TRUCK.x, 0, TRUCK.z); grp.rotation.y = Math.PI/2; scene.add(grp);
+      box(2.6, 0.5, 1.3, mat(0x7a4a2e,.8), 0, 0.55, 0, grp);                    // thùng xe
+      box(0.8, 0.75, 1.2, mat(0xb0512f,.8), 1.65, 0.62, 0, grp);               // đầu xe
+      const wheelM = mat(0x2b2b30,.6);
+      [[-0.9,-0.62],[0.9,-0.62],[-0.9,0.62],[0.9,0.62],[1.65,-0.62],[1.65,0.62]].forEach(w=>{
+        const wh = cyl(0.26, 0.26, 0.12, wheelM, w[0], 0.26, w[1], grp, 14); wh.rotation.x = Math.PI/2;
+      });
+      const packM = mat(0xff8c2e,.7), packM2 = mat(0xffc93c,.7);
+      for(let i=0;i<9;i++){
+        box(0.42, 0.3, 0.42, i%2 ? packM : packM2, -1.0 + (i%3)*0.55, 0.95 + Math.floor(i/3)*0.31, (i%2 ? 0.25 : -0.25), grp);
+      }
+      const signTex = canvasTex(512, 128, (c)=>{
+        c.fillStyle = '#fff3d6'; c.fillRect(0,0,512,128);
+        c.fillStyle = '#b03a2e'; c.textAlign = 'center'; c.font = '800 52px "Baloo 2", sans-serif';
+        c.fillText('XE MÌ HUYỀN THOẠI', 256, 82);
+      });
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.55), new THREE.MeshBasicMaterial({ map:signTex }));
+      sign.position.set(0, 1.55, 0.68); grp.add(sign);
+      TRUCK.mesh = grp; TRUCK.active = true; TRUCK.packs = 10; TRUCK.grabT = rand(3, 5);
+      toast('XE MÌ TÔM HUYỀN THOẠI ghé sân! Chỉ có 10 gói cho cả xóm — CHẠY RA GIÀNH LẸ!', 4600);
+      SFX.bell();
+    }
+    function truckLeave(msg){
+      if(TRUCK.mesh){ scene.remove(TRUCK.mesh); TRUCK.mesh = null; }
+      TRUCK.active = false; TRUCK.packs = 0;
+      if(msg) toast(msg, 3800);
+    }
+    /* --- bồ câu đưa thư --- */
+    const PIGEON = { active:false, landed:false, state:'', t:0, mesh:null, wingL:null, wingR:null,
+      from:new THREE.Vector3(), to:new THREE.Vector3() };
+    function spawnPigeon(){
+      if(PIGEON.active) return;
+      const grp = new THREE.Group(); scene.add(grp);
+      const white = mat(0xf4f6f8,.7), grey = mat(0x9aa7ad,.7);
+      const body = sph(0.16, white, 0, 0, 0, grp, 14); body.scale.set(1.25, 0.95, 0.95);
+      sph(0.095, grey, 0.19, 0.09, 0, grp, 12);
+      const beak = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.09, 8), mat(0xff8c2e,.6));
+      beak.rotation.z = -Math.PI/2; beak.position.set(0.3, 0.09, 0); grp.add(beak);
+      box(0.16, 0.02, 0.09, grey, -0.2, 0.02, 0, grp);
+      const letter = box(0.13, 0.09, 0.015, mat(0xfff6e6,.9), 0.02, -0.1, 0.09, grp); letter.rotation.x = 0.4;
+      const mkWing = side => {
+        const pivot = new THREE.Group(); pivot.position.set(0, 0.09, side * 0.08); grp.add(pivot);
+        const w = box(0.3, 0.015, 0.3, white, -0.02, 0, side * 0.2, pivot); w.castShadow = false;
+        return pivot;
+      };
+      PIGEON.wingL = mkWing(1); PIGEON.wingR = mkWing(-1);
+      const lx = clamp(player.pos.x + rand(-1.6, 1.6), -26, 26), lz = clamp(player.pos.z + rand(1.2, 2.2), -20, 20);
+      PIGEON.to.set(lx, 0.22, lz);
+      PIGEON.from.set(lx + 15, 6.5, lz - 11);
+      grp.position.copy(PIGEON.from);
+      PIGEON.mesh = grp; PIGEON.active = true; PIGEON.landed = false; PIGEON.state = 'in'; PIGEON.t = 0;
+      toast('Có BỒ CÂU đáp xuống gần ní kìa — hình như nó cắp theo thư nhà!', 4000);
+      SFX.bell();
+    }
+    const LETTERS = [
+      '“Con à, má gói theo 2 gói mì với lọ muối vừng. Ở trỏng ráng cải tạo tốt, đừng có đánh nhau với người ta nghe chưa. Má.”',
+      '“Anh hai ơi, con Vàng ở nhà đẻ 4 con rồi. Cả nhà khỏe. Em để dành tiền lì xì chờ anh về lì xì lại. Em.”',
+      '“Chồng à, em vẫn chờ. Cái áo len em đan xong rồi, đan thừa 1 ống tay, về em sửa lại cho. Vợ.”',
+      '“Ba ơi, con được điểm 10 môn Toán. Cô hỏi ba đâu, con nói ba đi công tác xa thiệt là xa. Ba về sớm nha. Con.”',
+      '“Thằng quỷ, ở trỏng đừng có khóc nhè là được. Bánh tráng trộn tao giữ phần mày trong tủ lạnh (gần mốc rồi). Bạn mày.”'
+    ];
+    function deliverLetter(){
+      if(!PIGEON.active || !PIGEON.landed) return;
+      PIGEON.landed = false; PIGEON.state = 'out'; PIGEON.t = 0;
+      showDialogue('Thư nhà — bồ câu đưa tới', pick(LETTERS), 5600);
+      const buff = Math.floor(Math.random() * 5);
+      setTimeout(()=>{
+        if(!G.started || G.over) return;
+        if(buff === 0){ G.noodles += 3; G.noodlesEarned += 3; toast('Đọc thư xong thấy trong thư kẹp 3 gói mì! +3 mì tôm.'); }
+        else if(buff === 1){ G.stats.mood = clamp(G.stats.mood + 16, 0, 100); toast('Đọc thư nhà, tinh thần phấn chấn hẳn lên!'); }
+        else if(buff === 2){ G.stats.health = clamp(G.stats.health + 10, 0, 100); toast('Thư nhà là liều thuốc bổ: +10 sức khỏe.'); }
+        else if(buff === 3){ G.stats.respect = clamp(G.stats.respect + 6, 0, 100); toast('Cả phòng thấy ní có thư nhà, nể thêm một khúc: +6 uy tín.'); }
+        else { addReform(3); toast('Đọc thư xong quyết tâm cải tạo: +3 điểm cải tạo.'); }
+        SFX.great();
+      }, 900);
+    }
+    /* cập nhật mỗi frame cho 3 sự kiện trên: đèn pin của quản ngục khi
+       mất điện, bạn tù máy giành mì (chơi một mình), bồ câu bay */
+    function updateDailyFx(gdt){
+      if(BLACKOUT.t > 0){
+        BLACKOUT.t -= gdt;
+        for(const g of guards){
+          if(!g.flash) continue;
+          g.flash.visible = true;
+          g.flash.position.set(g.pos.x, 0, g.pos.z);
+          g.flash.rotation.y = g.rotY;
+        }
+        if(BLACKOUT.t <= 0){
+          for(const g of guards) if(g.flash) g.flash.visible = false;
+          toast('Điện có lại rồi! Cả trại ồ lên như được mùa.', 3200);
+          SFX.good();
+        }
+      }
+      if(TRUCK.active && !roomMode){
+        TRUCK.grabT -= gdt;
+        if(TRUCK.grabT <= 0){
+          TRUCK.grabT = rand(3, 6);
+          if(TRUCK.packs > 0 && Math.random() < 0.75){
+            TRUCK.packs--;
+            const n = pick(npcs.filter(x => x.mesh.visible));
+            if(n) showBubble(n, pick(['Ê! Mì trên xe huyền thoại kìa — giành lẹ!','Tui xí 1 gói nha!','Chậm là hết đó mấy ní!']), 1800);
+            if(TRUCK.packs <= 0) truckLeave('Bạn tù máy giành hết mì trên xe rồi! Ní chậm chân quá…');
+          }
+        }
+      }
+      if(PIGEON.active && PIGEON.mesh){
+        PIGEON.t += gdt;
+        const m = PIGEON.mesh;
+        if(PIGEON.state === 'in'){
+          const k = clamp(PIGEON.t / 3.4, 0, 1), e = k * k * (3 - 2 * k);
+          m.position.lerpVectors(PIGEON.from, PIGEON.to, e);
+          m.position.y = lerp(PIGEON.from.y, PIGEON.to.y, e) + Math.sin(e * Math.PI) * 1.2;
+          m.rotation.y = Math.atan2(PIGEON.to.x - PIGEON.from.x, PIGEON.to.z - PIGEON.from.z) - Math.PI/2;
+          const flap = Math.sin(performance.now() / 45) * 0.75;
+          if(PIGEON.wingL) PIGEON.wingL.rotation.x = flap;
+          if(PIGEON.wingR) PIGEON.wingR.rotation.x = -flap;
+          if(k >= 1){ PIGEON.state = 'wait'; PIGEON.landed = true; if(PIGEON.wingL) PIGEON.wingL.rotation.x = 0.15; if(PIGEON.wingR) PIGEON.wingR.rotation.x = -0.15; }
+        } else if(PIGEON.state === 'wait'){
+          m.position.y = PIGEON.to.y + Math.sin(performance.now() / 300) * 0.02;
+          m.rotation.y += gdt * 0.4;
+        } else if(PIGEON.state === 'out'){
+          m.position.y += gdt * 2.6; m.position.x += gdt * 3.2; m.position.z -= gdt * 2.2;
+          const flap = Math.sin(performance.now() / 45) * 0.75;
+          if(PIGEON.wingL) PIGEON.wingL.rotation.x = flap;
+          if(PIGEON.wingR) PIGEON.wingR.rotation.x = -flap;
+          if(PIGEON.t > 2.4){ scene.remove(m); PIGEON.mesh = null; PIGEON.active = false; PIGEON.state = ''; }
+        }
+      }
+      syncTunnelMesh();
+    }
+
+    /* ================= (8) ĐÀO HẦM VƯỢT NGỤC BẰNG THÌA =================
+       Dự án nhiều ngày: mỗi ngày đào lén được 1 khúc trong chuồng của
+       mình (tiến độ lưu theo hồ sơ). Quản ngục kiểm tra đột xuất mà
+       phát hiện là hầm bị lấp + trừ điểm cải tạo. Đào thông 5 khúc:
+       đa số chui lên ngay giữa PHÒNG TRỰC của quản ngục (bị bắt lại),
+       tỉ lệ nhỏ mới vượt ngục thành công thành huyền thoại. */
+    const TUNNEL_NEED = 5;
+    const tunnelGroup = new THREE.Group(); tunnelGroup.visible = false; scene.add(tunnelGroup);
+    const tunnelHole = new THREE.Mesh(new THREE.CircleGeometry(0.34, 20),
+      new THREE.MeshBasicMaterial({ color:0x140f0a }));
+    tunnelHole.rotation.x = -Math.PI/2; tunnelHole.position.y = 0.03; tunnelGroup.add(tunnelHole);
+    const tunnelDirt = sph(0.3, mat(0x6b4a2e, 1), 0.42, 0.05, 0.18, tunnelGroup, 12);
+    tunnelDirt.scale.y = 0.45; tunnelDirt.castShadow = false;
+    let tunnelSyncKey = '';
+    function syncTunnelMesh(){
+      const key = (G.cellNo || 0) + '|' + G.tunnel;
+      if(key === tunnelSyncKey) return;
+      tunnelSyncKey = key;
+      if(!G.cellNo || G.tunnel <= 0){ tunnelGroup.visible = false; return; }
+      const cd = cellDefs[clamp(G.cellNo - 1, 0, cellDefs.length - 1)];
+      tunnelGroup.position.set(cd.cx + 0.55, 0, cd.cz - cd.facing * 0.15);
+      const s = 0.55 + G.tunnel * 0.22;
+      tunnelGroup.scale.setScalar(s);
+      tunnelGroup.visible = true;
+    }
+    function doDig(){
+      const g = nearestGuard(player.pos.x, player.pos.z, false);
+      if(g && Math.hypot(g.pos.x - player.pos.x, g.pos.z - player.pos.z) < 4.2){
+        showBubble(g, 'Ê! Đứng trong chuồng lúi húi làm gì đó ní?', 1900);
+        toast('Quản ngục đang lảng vảng gần chuồng — đào bây giờ là lộ tẩy! Đợi ổng đi xa đã ní.');
+        SFX.bad();
+        return;
+      }
+      G.workPose = 'hoe';
+      startBusy(3.4, ()=>{ if(Math.random() < 0.3) noiseBurst(.05,.05,700); }, ()=>{
+        G.workPose = '';
+        G.tunnel++; G.tunnelDay = G.day;
+        SFX.pop();
+        if(G.tunnel >= TUNNEL_NEED){
+          showBubble('player', 'ĐẤT SỤP XUỐNG — HẦM THÔNG RỒI! Chui lên thôi…', 2400);
+          toast('Khúc cuối cùng xong — hầm thông rồi ní!', 3000);
+          setTimeout(()=>{ if(G.started && !G.over) tunnelComplete(); }, 900);
+        } else {
+          toast('Đào xong khúc ' + G.tunnel + '/' + TUNNEL_NEED + ' của hôm nay. Giấu thìa đi, mai đào tiếp — mà nhớ canh quản ngục kiểm tra đột xuất.', 4200);
+          showBubble('player', 'Một khúc nữa rồi… cái thìa mòn thấy rõ luôn…', 2200);
+        }
+        if(typeof fbSaveProgress === 'function') fbSaveProgress();
+      });
+    }
+    function runInspection(){
+      // quản ngục kiểm tra chuồng đột xuất: hầm càng dài càng dễ bị lộ
+      const g = nearestGuard(player.pos.x, player.pos.z, false);
+      if(g) showBubble(g, 'KIỂM TRA CHUỒNG ĐỘT XUẤT! Đứng yên hết cho tui coi!', 2600);
+      SFX.bell();
+      const found = Math.random() < 0.3 + G.tunnel * 0.13;
+      setTimeout(()=>{
+        if(!G.started || G.over) return;
+        if(found){
+          G.tunnel = 0; tunnelSyncKey = '';
+          addReform(-8);
+          if(g) showBubble(g, 'CÁI HẦM NÀY LÀ CỦA AI?! Lấp ngay! Ghi sổ trừ điểm!', 2800);
+          toast('Bị phát hiện cái hầm rồi! Quản ngục lấp hầm luôn tại chỗ, trừ 8 điểm cải tạo. Công cốc mấy ngày đào…', 4600);
+          SFX.bad();
+        } else {
+          toast('Kiểm tra chuồng đột xuất… quản ngục liếc qua cái hầm mà không thấy. HÚ VÍA!', 4200);
+          if(g) showBubble(g, 'Chuồng này… cũng gọn. Qua chuồng khác!', 2200);
+          SFX.good();
+        }
+      }, 1600);
+    }
+    function tunnelComplete(){
+      if(Math.random() < 0.22){
+        // tỉ lệ nhỏ: chui ra ngoài thiệt — HUYỀN THOẠI XÓM
+        G.escapedLegend = true;
+        toast('Ní chui lên… NGOÀI TƯỜNG TRẠI! Tự do thiệt rồi ní ơi!!', 4200);
+        SFX.great();
+        setTimeout(()=>{ if(!G.over) endGame(); }, 1400);
+      } else {
+        // đa số: tính lộn hướng — chui lên giữa phòng trực quản ngục
+        G.tunnel = 0; tunnelSyncKey = '';
+        player.pos.set(24.6, 0, -7.4);
+        if(player.mesh) player.mesh.position.copy(player.pos);
+        camSnap = true;
+        const g = nearestGuard(player.pos.x, player.pos.z, false);
+        if(g) showBubble(g, 'ỦA?! Chui từ dưới đất lên GIỮA PHÒNG TRỰC hả ní?!', 3200);
+        showBubble('player', 'Ủa… đào lộn hướng rồi… chào cán bộ… tui quay lại chuồng đây…', 3000);
+        addReform(-6);
+        toast('Đào thông thiệt — mà chui lên ngay giữa phòng trực của quản ngục! Bị bắt tại trận, hầm bị lấp, trừ 6 điểm cải tạo.', 5000);
+        SFX.bad();
+      }
+      if(typeof fbSaveProgress === 'function') fbSaveProgress();
+    }
+
     function setPhase(idx, silent){
       G.phaseIdx = idx; G.phaseT = 0; G.taskDone = false;
       foldCount = 0; laborCount = 0; wallCount = 0; talkCount = 0;
@@ -3215,6 +3607,9 @@
         banner(fmtClock(p.clock[0]), p.name);
         SFX.bell();
         maybeEvent();
+        maybeDailyEvent(); // sự kiện ngẫu nhiên của ngày (mất điện / xe mì / bồ câu) tới hẹn là nổ
+        // đang có hầm dở trong chuồng: lâu lâu quản ngục kiểm tra đột xuất
+        if(G.tunnel > 0 && G.phaseIdx > 0 && Math.random() < 0.15) runInspection();
         if(!roomMode && p.id==='labor') showBubble(npcs[1], 'Gấp hộp mà hát là mau xong lắm!', 2600);
         if(!roomMode && p.id==='free') showBubble(npcs[2], 'Tối rồi, ngồi xuống chú kể chuyện đời.', 3000);
         if(!roomMode && p.id==='rollam') showBubble(npcs[0], 'Đứng ngay ngắn. Hô to lên.', 2400);
@@ -3245,6 +3640,7 @@
         return;
       }
       G.day++;
+      scheduleDailyEvent(); // ngày mới: bốc thăm sự kiện ngẫu nhiên mới
       if(typeof fbSaveProgress === 'function') fbSaveProgress();
       fade.querySelector('#fadeTxt').textContent = 'Ngày '+G.day+' · cải tạo '+Math.round(G.reform)+'/'+REFORM_TARGET;
       fade.classList.add('show');
@@ -3280,6 +3676,12 @@
       const r = G.stats.respect;
       $('endRank').textContent = r>=70 ? 'Danh hiệu: Đại ca phòng 7' : r>=45 ? 'Danh hiệu: Tù nhân gương mẫu' : r>=25 ? 'Danh hiệu: Người quen mặt cả dãy' : 'Danh hiệu: Tù nhân thầm lặng';
       $('endSub').textContent = G.playerName + ' (' + G.number + ') bước ra khỏi cổng trại dưới nắng sớm. Trong túi: ' + G.noodles + ' gói mì tôm để dành và một bụng bài học.';
+      if(G.escapedLegend){
+        // kết hiếm: đào hầm chui ra ngoài thiệt — huyền thoại của xóm
+        document.querySelector('#endCard h1').innerHTML = 'Đào hầm thành công — <span class="thin">VƯỢT NGỤC!</span>';
+        $('endRank').textContent = 'Danh hiệu: HUYỀN THOẠI VƯỢT NGỤC';
+        $('endSub').textContent = G.playerName + ' (' + G.number + ') chui lên khỏi mặt đất NGOÀI tường trại, phủi đất trên vai, ngó lại cái thìa mòn trong tay rồi đi thẳng vô nắng sớm. Cả xóm còn kể chuyện này dài dài.';
+      }
       fbSaveFinal();
       $('endOverlay').classList.remove('hidden');
       SFX.great();
@@ -3289,6 +3691,8 @@
     function setBar(id, v){ $(id).querySelector('i').style.width = clamp(v,0,100)+'%'; }
     function updateHUD(){
       $('uiDay').textContent = G.day;
+      const tr = $('titleRow'), ttl = currentTitle();
+      if(tr){ tr.textContent = ttl ? ('★ ' + ttl) : ''; tr.style.display = ttl ? 'block' : 'none'; }
       $('vReform').textContent = Math.round(G.reform) + '/' + REFORM_TARGET;
       setBar('barReform', G.reform / REFORM_TARGET * 100);
       $('uiClock').textContent = fmtClock(clockNow());
@@ -3612,12 +4016,19 @@
           if(currentInteract && (currentInteract.npc || currentInteract.guard || currentInteract.remote)){
             fightTarget = currentInteract; fb.classList.add('show');
           } else { fightTarget = null; fb.classList.remove('show'); }
+          // nút ĐÚT LÓT: đứng gần quản ngục + có từ 2 gói mì + ổng chưa
+          // đang "nhắm mắt" từ lần đút trước thì mới hiện
+          const bb = $('btnBribe');
+          if(currentInteract && currentInteract.guard && G.noodles >= 2 && !(currentInteract.guard.bribeT > 0)){
+            bribeTarget = currentInteract.guard; bb.classList.add('show');
+          } else { bribeTarget = null; bb.classList.remove('show'); }
 
           /* quản ngục đi tuần + can thiệp, đánh nhau, nhắc lệch lịch */
           updateGuards(gdt, t);
           updateFight(gdt);
           updateChase(gdt);
           updateHunt(gdt);
+          updateDailyFx(gdt); // mất điện + xe mì + bồ câu + mesh cái hầm
           updateHitFx(gdt);
           updateScheduleWatch(gdt);
 
@@ -3631,6 +4042,10 @@
           scene.background.copy(bgC); scene.fog.color.copy(bgC);
           const warm = (h>16.5 && h<19.5) ? 0.25 : 0;
           sun.color.setHex(0xfff1d6).lerp(new THREE.Color(0xffb27a), warm);
+          if(BLACKOUT.t > 0){ // MẤT ĐIỆN: cả trại chìm trong bóng tối, chỉ còn đèn pin quản ngục
+            hemi.intensity *= 0.16; sun.intensity *= 0.08; lamp.intensity = 0.35;
+            scene.background.setHex(0x0a1017); scene.fog.color.setHex(0x0a1017);
+          }
 
           hudT -= dt;
           if(hudT <= 0){ hudT = 0.15; updateHUD();
@@ -3945,6 +4360,11 @@
       if(doc.name) G.playerName = doc.name;
       if(doc.shirt != null) G.shirt = doc.shirt;
       if(doc.prisonerNo) G.number = doc.prisonerNo;
+      // tội danh hài: hồ sơ cũ chưa có thì bốc 1 cái, từ nay đi theo hồ sơ
+      if(doc.crime) G.crime = doc.crime; else ensureCrime();
+      if(doc.escN != null) G.escN = doc.escN;
+      if(doc.carryN != null) G.carryN = doc.carryN;
+      if(doc.wcN != null) G.wcN = doc.wcN;
       // đã được thả ở kiếp trước thì vô lại tính cải tạo từ đầu
       if(doc.released) G.reform = 0;
       else if(doc.reform != null) G.reform = clamp(doc.reform, 0, REFORM_TARGET);
@@ -3959,6 +4379,8 @@
         if(doc.boxesTotal != null) G.boxesTotal = doc.boxesTotal;
         if(doc.tallies != null) G.tallies = doc.tallies;
         if(doc.tasksDone != null) G.tasksDone = doc.tasksDone;
+        if(doc.tunnel != null){ G.tunnel = clamp(doc.tunnel, 0, TUNNEL_NEED); tunnelSyncKey = ''; }
+        if(doc.tunnelDay != null) G.tunnelDay = doc.tunnelDay;
         if(doc.stats) ['hunger','health','mood','respect'].forEach(k => { if(doc.stats[k] != null) G.stats[k] = doc.stats[k]; });
         if(doc.x != null && doc.z != null){
           player.pos.set(clamp(doc.x, -28, 28), 0, clamp(doc.z, -22, 22));
@@ -3998,6 +4420,7 @@
       const sp = cellSpawn(G.cellNo);
       const prof = {
         name: G.playerName, shirt: G.shirt, prisonerNo: num,
+        crime: ensureCrime(), escN: 0, carryN: 0, wcN: 0, tunnel: 0, tunnelDay: 0,
         sentenceDays: 0, reform: 0, daysServed: 0, day: 1,
         phaseIdx: 0, phaseT: 0, taskDone: false,
         stats:{ hunger:80, health:92, mood:85, respect:15 },
@@ -4019,13 +4442,15 @@
         stats:{ hunger:Math.round(G.stats.hunger), health:Math.round(G.stats.health), mood:Math.round(G.stats.mood), respect:Math.round(G.stats.respect) },
         noodles: G.noodles, noodlesEarned: G.noodlesEarned, boxesTotal: G.boxesTotal || 0,
         tallies: G.tallies, tasksDone: G.tasksDone,
+        crime: ensureCrime(), title: currentTitle(), escN: G.escN, carryN: G.carryN, wcN: G.wcN,
+        tunnel: G.tunnel, tunnelDay: G.tunnelDay,
         serverId: roomMode ? SERVER_ID : '', cellNo: G.cellNo || 0,
         x: +player.pos.x.toFixed(2), y: +player.pos.y.toFixed(2), z: +player.pos.z.toFixed(2), rotY: +player.rotY.toFixed(2),
         state: (typeof playerStateStr === 'function') ? playerStateStr() : 'idle', inBed: !!G.onBed,
         lastSeen: new Date().toISOString()
       };
     }
-    const PROGRESS_KEYS = ['name','shirt','prisonerNo','sentenceDays','reform','day','daysServed','phaseIdx','phaseT','taskDone','stats','noodles','noodlesEarned','boxesTotal','tallies','tasksDone','serverId','cellNo','x','y','z','rotY','state','inBed','lastSeen'];
+    const PROGRESS_KEYS = ['name','shirt','prisonerNo','sentenceDays','reform','day','daysServed','phaseIdx','phaseT','taskDone','stats','noodles','noodlesEarned','boxesTotal','tallies','tasksDone','crime','title','escN','carryN','wcN','tunnel','tunnelDay','serverId','cellNo','x','y','z','rotY','state','inBed','lastSeen'];
     let saveTimer = null, saveBusy = false;
     async function fbSaveProgress(){
       if(!FB.uid || saveBusy) return;
@@ -4045,7 +4470,7 @@
       try{
         const f = progressFields();
         f.title = $('endRank').textContent; f.daysServed = G.day; f.released = true;
-        fbPatch('players/' + FB.uid, f, PROGRESS_KEYS.concat(['title','released'])).catch(()=>{});
+        fbPatch('players/' + FB.uid, f, PROGRESS_KEYS.concat(['released'])).catch(()=>{});
       }catch(e){}
     }
 
@@ -4080,7 +4505,7 @@
     function showLobby(){
       $('startOverlay').classList.add('hidden');
       $('lobbyOverlay').classList.remove('hidden');
-      $('lobbyInfo').innerHTML = '<b>' + escapeHtml(G.playerName) + '</b> · số tù <b>' + escapeHtml(G.number) + '</b> · chuồng <b>số ' + (G.cellNo || '?') + '</b> · ngày ' + G.day + ' · án chung thân · cải tạo ' + Math.round(G.reform) + '/' + REFORM_TARGET + ' điểm<br>Xóm chứa tới 100 anh em, ai vô cũng ở chung một sân.';
+      $('lobbyInfo').innerHTML = '<b>' + escapeHtml(G.playerName) + '</b> · số tù <b>' + escapeHtml(G.number) + '</b> · chuồng <b>số ' + (G.cellNo || '?') + '</b> · ngày ' + G.day + ' · án chung thân · cải tạo ' + Math.round(G.reform) + '/' + REFORM_TARGET + ' điểm<br><b>Tội:</b> ' + escapeHtml(ensureCrime()) + (currentTitle() ? ' · <b>Danh hiệu:</b> ' + escapeHtml(currentTitle()) : '') + '<br>Xóm chứa tới 100 anh em, ai vô cũng ở chung một sân.';
       if(FB.online){
         const st = $('fbStatus');
         st.textContent = 'Nối xóm xong rồi đó ní.';
@@ -4210,7 +4635,8 @@
           walkT: rand(0, 9), cellNo: p.cellNo || 0, sleeping: false };
       }
       r.cellNo = p.cellNo || r.cellNo || 0;
-      r.tag.textContent = (p.name || 'Bạn tù') + ' · ' + (p.prisonerNo || '') + (p.cellNo ? ' · chuồng ' + p.cellNo : '');
+      r.tag.innerHTML = (p.title ? '<span class="ntagT">★ ' + escapeHtml(p.title) + '</span>' : '')
+        + escapeHtml((p.name || 'Bạn tù') + ' · ' + (p.prisonerNo || '') + (p.cellNo ? ' · chuồng ' + p.cellNo : ''));
       r.sleeping = (p.state === 'sleep' || !!p.inBed);
       r.ko = (p.state === 'ko');
       r.sitting = p.state === 'wc' ? 'wc' : ((p.state === 'sit' || p.state === 'eat') ? 'chair' : '');
@@ -4278,7 +4704,10 @@
         const me = p.__pid === FB.uid;
         const left = 'án chung thân · cải tạo ' + (p.reform || 0) + '/100';
         const st = p.state === 'sleep' ? 'đang ngủ trong chuồng' : p.state === 'ko' ? 'đang ngất, chờ quản ngục khiêng về chuồng' : p.state === 'wc' ? 'đang ngồi bồn cầu' : p.state === 'eat' ? 'đang ngồi ghế ăn cơm' : p.state === 'sit' ? 'đang ngồi ghế' : (p.state === 'walk' ? 'đang đi lại' : 'đang ở trong trại');
-        return '<div class="rpMember"><span class="dot"></span><span class="rpName">' + escapeHtml(p.name || 'Bạn tù') + (me ? ' (ní)' : '') + '</span><span class="rpMeta">' + escapeHtml(p.prisonerNo || '') + ' · chuồng ' + (p.cellNo || '?') + ' · ' + left + ' · ' + st + '</span></div>';
+        return '<div class="rpMember"><span class="dot"></span><span class="rpName">' + escapeHtml(p.name || 'Bạn tù') + (me ? ' (ní)' : '') + '</span>'
+          + (p.title ? '<span class="rpTitleGold"> ★ ' + escapeHtml(p.title) + '</span>' : '')
+          + '<span class="rpMeta">' + escapeHtml(p.prisonerNo || '') + ' · chuồng ' + (p.cellNo || '?') + ' · ' + left + ' · ' + st
+          + (p.crime ? '<br>Tội: ' + escapeHtml(p.crime) : '') + '</span></div>';
       }).join('');
       if(sorted.length > 24) html += '<div class="rpMore">… và ' + (sorted.length - 24) + ' anh em nữa trong xóm</div>';
       el.innerHTML = html || '<div class="rpMember">Chưa có ai trong trại…</div>';
@@ -4343,6 +4772,8 @@
       tryLockLandscape(); applyObjAuto();
       setTimeout(updateRotateHint, 350);
       G.boxesTotal = G.boxesTotal || 0;
+      if(!G.cellNo) G.cellNo = 1; // chơi offline chưa được cấp chuồng: mặc định chuồng 1 như bảng hiệu đã hiện
+      if(DAYEV.atPhase < 0) scheduleDailyEvent(); // ngày đầu của phiên chơi cũng có sự kiện ngẫu nhiên
       markOwnCell();
       assignNpcBeds();
       if(!roomMode) npcs.forEach(n => { n.mesh.visible = true; });
