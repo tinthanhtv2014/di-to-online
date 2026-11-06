@@ -1498,6 +1498,7 @@
     }
     [propHoe, propCan, propFeed, propBroom].forEach(p => { p.visible = false; workProp.add(p); });
     const WORK_PROPS = { hoe:propHoe, water:propCan, feed:propFeed, sweep:propBroom };
+    const WORK_PROP_LIST = [propHoe, propCan, propFeed, propBroom]; // mảng cấp sẵn cho vòng lặp chính, khỏi Object.values mỗi frame
 
     // cột đèn sân (thay quạt trần trong nhà cũ) + bảng khu lao động ngoài sân
     [[-7.5,-9.5],[7.5,9.5]].forEach(p=>{
@@ -1686,7 +1687,7 @@
     // player
     const player = {
       mesh: null, pos: new THREE.Vector3(2.2, 0, 1.8), rotY: -2.2, walkT: 0, blinkT: rand(2,4),
-      speed: 2.6, targetRot: -2.2
+      speed: 2.6, curSpd: 0, targetRot: -2.2
     };
     function buildPlayer(){
       if(player.mesh) scene.remove(player.mesh);
@@ -1908,18 +1909,21 @@
     addEventListener('keydown', e=>{ if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA')) return; keys[e.code]=true; if(e.code==='KeyE') tryInteract(); if(e.code==='Space'){ e.preventDefault(); } });
     addEventListener('keyup', e=>{ keys[e.code]=false; });
 
-    const joy = { active:false, id:null, x:0, y:0 };
+    // joystick: sự kiện chạm chỉ đặt ĐÍCH (tx,ty) + núm đi theo tay ngay;
+    // giá trị điều khiển thật (moveSm, khai báo ở vòng lặp chính) tiến về
+    // đích bằng giảm chấn theo thời gian thực nên đi/dừng đều êm, không giật.
+    const joy = { active:false, id:null, tx:0, ty:0 };
     const joyEl = $('joy'), knob = $('joyKnob');
     function joyCenter(){ const r = joyEl.getBoundingClientRect(); return { x:r.left+r.width/2, y:r.top+r.height/2, rad:r.width/2 }; }
     joyEl.addEventListener('pointerdown', e=>{ joy.active=true; joy.id=e.pointerId; joyEl.setPointerCapture(e.pointerId); joyMove(e); });
     joyEl.addEventListener('pointermove', e=>{ if(joy.active && e.pointerId===joy.id) joyMove(e); });
-    function joyEnd(e){ if(e.pointerId===joy.id){ joy.active=false; joy.x=0; joy.y=0; knob.style.transform='translate(-50%,-50%)'; } }
+    function joyEnd(e){ if(e.pointerId===joy.id){ joy.active=false; joy.tx=0; joy.ty=0; knob.style.transform='translate(-50%,-50%)'; } }
     joyEl.addEventListener('pointerup', joyEnd); joyEl.addEventListener('pointercancel', joyEnd);
     function joyMove(e){
       const c = joyCenter();
       let dx = (e.clientX-c.x)/c.rad, dy = (e.clientY-c.y)/c.rad;
       const len = Math.hypot(dx,dy); if(len>1){ dx/=len; dy/=len; }
-      joy.x = dx; joy.y = dy;
+      joy.tx = dx; joy.ty = dy;
       knob.style.transform = 'translate(calc(-50% + '+(dx*34)+'px), calc(-50% + '+(dy*34)+'px))';
     }
 
@@ -1936,6 +1940,13 @@
     // tắt/bật hẳn chế độ bám lưng này.
     const CAM_MIN = 4.2, CAM_MAX = 14;
     let camYaw = 0.65, camPitch = 0.36, camDist = 7.4;
+    // MƯỢT LIỀN MẠCH: sự kiện kéo KHÔNG áp thẳng vào góc camera nữa (áp
+    // thẳng từng sự kiện là nguồn rung giật khi vuốt) — độ lệch được cộng
+    // dồn vào camPend* rồi vòng lặp chính áp dụng dần có giảm chấn theo
+    // thời gian thực. Độ nhạy giữ nguyên của bản cũ (0.0036 / 0.0022) nên
+    // TỐC ĐỘ quay không đổi, chỉ hết khựng. Zoom cũng đi qua camDistTgt
+    // rồi camDist đuổi theo êm thay vì nhảy bậc theo từng nấc lăn/chụm.
+    let camPendYaw = 0, camPendPitch = 0, camDistTgt = 7.4;
     let camFollow = true, camHoldUntil = 0, camSpin = 0, camSnap = false;
     const drag = { active:false, id:null, lx:0, ly:0, lt:0, moved:false };
     renderer.domElement.addEventListener('pointerdown', e=>{
@@ -1947,17 +1958,22 @@
       if(!drag.active || e.pointerId!==drag.id) return;
       const dx = e.clientX-drag.lx, dy = e.clientY-drag.ly;
       if(Math.abs(dx)+Math.abs(dy) > 3) drag.moved = true;
-      camYaw -= dx*0.0036; camPitch = clamp(camPitch + dy*0.0022, 0.14, 1.05);
-      // quán tính: nhớ vận tốc xoay gần nhất để thả tay ra camera trượt thêm chút
+      camPendYaw += -dx*0.0036; camPendPitch += dy*0.0022;
+      // chặn phần chờ của pitch trong giới hạn góc + biên nhỏ: kéo quá đà
+      // rồi kéo ngược lại là đáp ngay, không phải "trả nợ" độ lệch thừa
+      camPendPitch = clamp(camPendPitch, Math.max(0.14 - camPitch, -0.35), Math.min(1.05 - camPitch, 0.35));
+      // quán tính: vận tốc xoay ước lượng từ độ lệch cộng dồn, trộn mượt
+      // theo thời gian giữa 2 sự kiện (không dùng hệ số cố định theo sự kiện)
       const now = performance.now(), dtEv = Math.max((now - drag.lt)/1000, 0.008);
       const vel = clamp(-dx*0.0036/dtEv, -3, 3);
-      camSpin = camSpin*0.55 + vel*0.45;
+      const wv = 1 - Math.exp(-dtEv*10);
+      camSpin = camSpin*(1-wv) + vel*wv;
       drag.lt = now;
       camHoldUntil = now + 1800;
       drag.lx = e.clientX; drag.ly = e.clientY;
     });
     addEventListener('pointerup', e=>{ if(e.pointerId===drag.id){ drag.active=false; camHoldUntil = performance.now() + 1800; if(Math.abs(camSpin) < 0.2) camSpin = 0; } });
-    addEventListener('wheel', e=>{ camDist = clamp(camDist + e.deltaY*0.006, CAM_MIN, CAM_MAX); }, { passive:true });
+    addEventListener('wheel', e=>{ camDistTgt = clamp(camDistTgt + e.deltaY*0.006, CAM_MIN, CAM_MAX); }, { passive:true });
     // pinch 2 ngón trên canvas để zoom ra / vào
     const camPointers = new Map(); let pinchD0 = 0, pinchDist0 = 0;
     renderer.domElement.addEventListener('pointerdown', e=>{
@@ -1965,7 +1981,7 @@
       if(camPointers.size===2){
         const pts = [...camPointers.values()];
         pinchD0 = Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y) || 1;
-        pinchDist0 = camDist; drag.active = false;
+        pinchDist0 = camDistTgt; drag.active = false;
       }
     });
     addEventListener('pointermove', e=>{
@@ -1974,7 +1990,7 @@
       if(camPointers.size===2 && pinchD0>0){
         const pts = [...camPointers.values()];
         const d = Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y) || 1;
-        camDist = clamp(pinchDist0 * pinchD0 / d, CAM_MIN, CAM_MAX);
+        camDistTgt = clamp(pinchDist0 * pinchD0 / d, CAM_MIN, CAM_MAX);
       }
     });
     function pinchEnd(e){ camPointers.delete(e.pointerId); if(camPointers.size<2) pinchD0 = 0; }
@@ -3309,7 +3325,7 @@
         guardUnstick(g, gdt); // chống kẹt tổng: đo độ nhúc nhích THẬT sau va chạm rồi tự thoát
         let dr = g.targetRot - g.rotY;
         while(dr > Math.PI) dr -= Math.PI * 2; while(dr < -Math.PI) dr += Math.PI * 2;
-        g.rotY += dr * Math.min(1, gdt * 8);
+        g.rotY += dr * (1 - Math.exp(-8 * gdt));
         g.mesh.position.copy(g.pos);
         g.mesh.rotation.y = g.rotY;
         animChibi(g.mesh, g.walkT, moving, t + g.walkT * 0.41, false, Math.sin(t * 0.6 + g.walkT * 2) > 0.995, false, '', g.mode==='fightback' ? 'fight' : '');
@@ -4042,6 +4058,14 @@
 
     /* ---------------- MAIN LOOP ---------------- */
     const camTarget = new THREE.Vector3();
+    // trạng thái làm mượt dùng chung (khai báo 1 lần, dùng lại mỗi frame —
+    // không cấp phát mới trong vòng lặp cho đỡ giật khung hình trên máy yếu):
+    const moveSm = { x:0, y:0 };              // đầu vào di chuyển đã làm mượt (joystick + phím)
+    const playerSmPos = new THREE.Vector3(2.2, 0, 1.8); // vị trí nhân vật đã nội suy — camera đuổi theo mốc này
+    const MENU_FOCUS = new THREE.Vector3(0.4, 0, 0.4);
+    let camEffSm = 7.4;                        // khoảng cách camera sau khi đã mượt hóa việc thu/phóng tránh tường
+    const COL_BG_NIGHT = new THREE.Color(0x51687c), COL_BG_DAY = new THREE.Color(0xbde6da),
+          COL_SUN_WARM = new THREE.Color(0xffb27a), _bgC = new THREE.Color();
     let last = performance.now(), hudT = 0, exhaustCd = 0;
     function animate(now){
       requestAnimationFrame(animate);
@@ -4101,11 +4125,27 @@
           }
 
           /* --- player movement --- */
-          let ix = joy.x, iy = joy.y;
-          if(keys['KeyA']||keys['ArrowLeft']) ix -= 1;
-          if(keys['KeyD']||keys['ArrowRight']) ix += 1;
-          if(keys['KeyW']||keys['ArrowUp']) iy -= 1;
-          if(keys['KeyS']||keys['ArrowDown']) iy += 1;
+          // ĐẦU VÀO ĐÃ LÀM MƯỢT: gộp joystick (đích) + phím thành 1 vector
+          // thô, qua vùng chết có dốc mềm ở rìa (dưới 0.12 = đứng yên, từ
+          // 0.12 trở lên độ lớn tăng dần từ 0 chứ không nhảy lên mức tối
+          // thiểu), rồi moveSm tiến về đó bằng giảm chấn hàm mũ theo thời
+          // gian thực — đẩy cần là tăng tốc êm, thả cần là lướt dừng êm,
+          // và giống nhau ở mọi tốc độ khung hình.
+          let rx0 = joy.tx, ry0 = joy.ty;
+          if(keys['KeyA']||keys['ArrowLeft']) rx0 -= 1;
+          if(keys['KeyD']||keys['ArrowRight']) rx0 += 1;
+          if(keys['KeyW']||keys['ArrowUp']) ry0 -= 1;
+          if(keys['KeyS']||keys['ArrowDown']) ry0 += 1;
+          let rmag = Math.hypot(rx0, ry0);
+          if(rmag > 1){ rx0/=rmag; ry0/=rmag; rmag = 1; }
+          const dzMag = rmag <= 0.12 ? 0 : (rmag - 0.12) / 0.88;
+          const txv = rmag > 0 ? rx0/rmag * dzMag : 0, tyv = rmag > 0 ? ry0/rmag * dzMag : 0;
+          const kIn = 1 - Math.exp(-16 * gdt);
+          moveSm.x += (txv - moveSm.x) * kIn;
+          moveSm.y += (tyv - moveSm.y) * kIn;
+          if(Math.abs(moveSm.x) < 0.001 && txv === 0) moveSm.x = 0;
+          if(Math.abs(moveSm.y) < 0.001 && tyv === 0) moveSm.y = 0;
+          const ix = moveSm.x, iy = moveSm.y;
           if(keys['KeyQ']){ camYaw += dt*1.4; camHoldUntil = performance.now() + 2500; camSpin = 0; }
           if(keys['KeyE']) {} // interact handled on keydown
           if(keys['KeyR']){ camYaw -= dt*1.4; camHoldUntil = performance.now() + 2500; camSpin = 0; }
@@ -4120,24 +4160,33 @@
           // Bỏ chạy khỏi quản ngục (đang quánh ổng hoặc đang bị rượt) thì
           // chân nhanh hẳn lên (hồi hộp!) — quản ngục rượt 3.35, mình 3.9.
           const fleeMul = ((FIGHT.active && FIGHT.kind==='guard') || CHASE.active || HUNT.active) ? 1.5 : 1;
-          if(mag > 0.12 && !G.lying && !G.onBed && !G.climbActive && !G.sitting && !G.sitTrans && G.busy<=0 && !(G.jailT > 0) && !G.knocked){
-            if(mag>1){ ix/=mag; iy/=mag; }
+          if(mag > 0.03 && !G.lying && !G.onBed && !G.climbActive && !G.sitting && !G.sitTrans && G.busy<=0 && !(G.jailT > 0) && !G.knocked){
             const s = Math.sin(camYaw), c = Math.cos(camYaw);
             // camera forward on ground = -(sin,cos); input iy: up on stick = -1 (forward)
             const fx = -s, fz = -c, rx = -fz, rz = fx;
-            const mx = fx*(-iy) + rx*ix, mz = fz*(-iy) + rz*ix;
-            const ml = Math.hypot(mx,mz) || 1;
-            player.pos.x += (mx/ml) * player.speed * fleeMul * gdt * Math.min(mag,1);
-            player.pos.z += (mz/ml) * player.speed * fleeMul * gdt * Math.min(mag,1);
+            let mx = fx*(-iy) + rx*ix, mz = fz*(-iy) + rz*ix;
+            const ml = Math.hypot(mx,mz) || 1; mx/=ml; mz/=ml;
+            // RAMP TỐC ĐỘ: tốc độ thật đuổi theo tốc độ đích (tỉ lệ theo độ
+            // gạt cần đã mượt) bằng hàm mũ — xuất phát và dừng đều có gia
+            // tốc, không còn kiểu "nhấn là vọt, thả là đứng sững".
+            player.curSpd += (player.speed * fleeMul * Math.min(mag,1) - player.curSpd) * (1 - Math.exp(-9 * gdt));
+            player.pos.x += mx * player.curSpd * gdt;
+            player.pos.z += mz * player.curSpd * gdt;
             collide(player.pos, 0.3);
             player.targetRot = Math.atan2(mx, mz);
-            player.walkT += gdt*10.5;
+            player.walkT += gdt * 10.5 * clamp(player.curSpd / player.speed, 0.25, 1.6);
             moving = true; lastMoveAt = performance.now();
             if(Math.random() < gdt*2.2) noiseBurst(.03,.02,300);
+          } else {
+            // không còn đầu vào (hoặc đang bận/nằm/ngồi): tốc độ lướt về 0 êm
+            player.curSpd += (0 - player.curSpd) * (1 - Math.exp(-10 * gdt));
+            if(player.curSpd < 0.01) player.curSpd = 0;
           }
           let dr = player.targetRot - player.rotY;
           while(dr > Math.PI) dr -= Math.PI*2; while(dr < -Math.PI) dr += Math.PI*2;
-          player.rotY += dr * Math.min(1, gdt*13);
+          // thân xoay theo hàm mũ theo thời gian thực: bẻ hướng êm ở mọi fps,
+          // thay cho hệ số cố định theo frame (120Hz xoay khác hẳn 30Hz)
+          player.rotY += dr * (1 - Math.exp(-15 * gdt));
           player.mesh.position.copy(player.pos);
           player.mesh.rotation.y = player.rotY;
           player.blinkT -= gdt;
@@ -4147,7 +4196,7 @@
           /* đạo cụ lao động + heo + mầm cây */
           if(G.workPose && WORK_PROPS[G.workPose]){
             workProp.visible = true;
-            Object.values(WORK_PROPS).forEach(p => p.visible = false);
+            for(const p of WORK_PROP_LIST) p.visible = false;
             WORK_PROPS[G.workPose].visible = true;
             const fx = Math.sin(player.rotY), fz = Math.cos(player.rotY);
             workProp.position.set(player.pos.x + fx*0.46, 0.42 + Math.sin(t*7)*0.05, player.pos.z + fz*0.46);
@@ -4194,7 +4243,7 @@
               const dist = Math.hypot(dx, dz);
               if(n.pos.y > 0.02 || dist <= 0.14){
                 n.climbing = true; n.walkT += gdt*12;
-                const k = Math.min(1, gdt*1.7);
+                const k = 1 - Math.exp(-1.7 * gdt);
                 n.pos.x = lerp(n.pos.x, bed.x, k); n.pos.z = lerp(n.pos.z, bed.z, k);
                 n.pos.y = lerp(n.pos.y, bed.lieY, k) + Math.sin(clamp(n.pos.y/Math.max(bed.lieY,0.01),0,1)*Math.PI)*0.004;
                 n.targetRot = -Math.PI/2;
@@ -4209,7 +4258,7 @@
             } else if(!n.lying && n.onBed){
               // phase changed: climb back down first, then walk to the new spot
               n.climbing = true; n.walkT += gdt*12;
-              const k = Math.min(1, gdt*1.7);
+              const k = 1 - Math.exp(-1.7 * gdt);
               n.pos.x = lerp(n.pos.x, bed.appX, k); n.pos.z = lerp(n.pos.z, bed.appZ, k);
               n.pos.y = lerp(n.pos.y, 0, k);
               n.targetRot = Math.PI/2;
@@ -4239,12 +4288,12 @@
             }
             let ndr = n.targetRot - n.rotY;
             while(ndr > Math.PI) ndr -= Math.PI*2; while(ndr < -Math.PI) ndr += Math.PI*2;
-            n.rotY += ndr * Math.min(1, gdt*8);
+            n.rotY += ndr * (1 - Math.exp(-8 * gdt));
             // at mealtimes the NPCs sit on the stools around the table too
             const nSeated = !!phase().meal && !n.lying && !n.onBed && !n.climbing &&
               Math.hypot(n.target.x - n.pos.x, n.target.z - n.pos.z) < 0.12;
-            if(nSeated) n.pos.y = lerp(n.pos.y, 0.18, Math.min(1, gdt*6));
-            else if(!n.onBed && !n.climbing && !n.lying) n.pos.y = lerp(n.pos.y, 0, Math.min(1, gdt*6));
+            if(nSeated) n.pos.y = lerp(n.pos.y, 0.18, 1 - Math.exp(-6 * gdt));
+            else if(!n.onBed && !n.climbing && !n.lying) n.pos.y = lerp(n.pos.y, 0, 1 - Math.exp(-6 * gdt));
             n.mesh.position.set(n.pos.x, n.pos.y, n.pos.z);
             n.mesh.rotation.y = n.rotY;
             n.mesh.rotation.z = 0;
@@ -4286,10 +4335,12 @@
           hemi.intensity = lerp(0.62, 1.4, dayAmt);
           sun.intensity = lerp(0.38, 1.9, dayAmt);
           lamp.intensity = lerp(1.7, 0.0, dayAmt);
-          const bgC = new THREE.Color(0x51687c).lerp(new THREE.Color(0xbde6da), dayAmt);
-          scene.background.copy(bgC); scene.fog.color.copy(bgC);
+          // dùng màu cấp phát sẵn (_bgC + các hằng màu) — trước đây mỗi
+          // frame tốn 3 object Color mới, lâu dài gây khựng nhịp trên máy yếu
+          _bgC.copy(COL_BG_NIGHT).lerp(COL_BG_DAY, dayAmt);
+          scene.background.copy(_bgC); scene.fog.color.copy(_bgC);
           const warm = (h>16.5 && h<19.5) ? 0.25 : 0;
-          sun.color.setHex(0xfff1d6).lerp(new THREE.Color(0xffb27a), warm);
+          sun.color.setHex(0xfff1d6).lerp(COL_SUN_WARM, warm);
           if(BLACKOUT.t > 0){ // MẤT ĐIỆN: cả trại chìm trong bóng tối, chỉ còn đèn pin quản ngục
             hemi.intensity *= 0.16; sun.intensity *= 0.08; lamp.intensity = 0.35;
             scene.background.setHex(0x0a1017); scene.fog.color.setHex(0x0a1017);
@@ -4302,6 +4353,32 @@
         }
 
         /* camera follow */
+        // áp dụng độ lệch kéo đã CỘNG DỒN từ các sự kiện chạm/chuột, có
+        // giảm chấn hàm mũ theo thời gian thực: tổng lượng xoay giữ nguyên
+        // (tốc độ quay như bản cũ) nhưng rải đều qua các frame nên hết
+        // rung giật khi vuốt, và 30Hz hay 120Hz đều cho cùng một cảm giác
+        if(camPendYaw !== 0 || camPendPitch !== 0){
+          const kp = 1 - Math.exp(-26 * dt);
+          const ay = camPendYaw * kp, ap = camPendPitch * kp;
+          camYaw += ay; camPitch = clamp(camPitch + ap, 0.14, 1.05);
+          camPendYaw -= ay; camPendPitch -= ap;
+          if(Math.abs(camPendYaw) < 1e-6) camPendYaw = 0;
+          if(Math.abs(camPendPitch) < 1e-6) camPendPitch = 0;
+        }
+        // khoảng cách zoom đuổi theo đích cũng bằng giảm chấn hàm mũ
+        if(camDist !== camDistTgt){
+          camDist += (camDistTgt - camDist) * (1 - Math.exp(-10 * dt));
+          if(Math.abs(camDistTgt - camDist) < 0.005) camDist = camDistTgt;
+        }
+        // vị trí nhân vật ĐÃ NỘI SUY: đuổi theo player.pos bằng giảm chấn
+        // nhanh — camera bám theo mốc mượt này thay vì mốc vị trí thô, nên
+        // dù vị trí có nhảy bậc (hồi sinh, đồng bộ…) camera cũng không giật
+        if(G.started){
+          const kSm = 1 - Math.exp(-18 * dt);
+          playerSmPos.x += (player.pos.x - playerSmPos.x) * kSm;
+          playerSmPos.y += (player.pos.y - playerSmPos.y) * kSm;
+          playerSmPos.z += (player.pos.z - playerSmPos.z) * kSm;
+        } else playerSmPos.copy(MENU_FOCUS);
         // quán tính xoay: thả tay sau khi kéo thì camera trượt thêm một chút rồi tắt dần
         if(!drag.active && camSpin !== 0){
           camYaw += camSpin * dt;
@@ -4327,7 +4404,7 @@
             camYaw += clamp(step, -maxStep, maxStep);
           }
         }
-        const focus = G.started ? player.pos : new THREE.Vector3(0.4,0,0.4);
+        const focus = G.started ? playerSmPos : MENU_FOCUS;
         const orbitYaw = G.started ? camYaw : (t*0.07);
         // CHỐNG XUYÊN TƯỜNG: bắn tia ngang từ vị trí nhân vật theo
         // hướng camera; nếu vật cản đầu tiên ở khoảng ngang th mà
@@ -4355,9 +4432,17 @@
             if(yAtHit < 2.45) effDist = Math.min(effDist, Math.max(0.9, (th - 0.28) / cp));
           }
         }
-        const cx = focus.x + Math.sin(orbitYaw)*Math.cos(camPitch)*effDist;
-        const cz = focus.z + Math.cos(orbitYaw)*Math.cos(camPitch)*effDist;
-        const cy = 0.8 + Math.sin(camPitch)*effDist;
+        // thu/phóng tránh tường cũng phải LIỀN MẠCH: khoảng cách hiệu dụng
+        // đuổi theo mốc tính được bằng giảm chấn hàm mũ — rút vào nhanh khi
+        // sắp đụng tường, nhả ra chậm hơn — thay vì nhảy bậc theo từng frame
+        // mỗi khi tia quét chạm/mất vật cản (nguồn giật khi đi sát tường)
+        if(G.started){
+          camEffSm += (effDist - camEffSm) * (1 - Math.exp(-(effDist < camEffSm ? 14 : 5) * dt));
+          if(Math.abs(effDist - camEffSm) < 0.004) camEffSm = effDist;
+        } else camEffSm = effDist;
+        const cx = focus.x + Math.sin(orbitYaw)*Math.cos(camPitch)*camEffSm;
+        const cz = focus.z + Math.cos(orbitYaw)*Math.cos(camPitch)*camEffSm;
+        const cy = 0.8 + Math.sin(camPitch)*camEffSm;
         camTarget.set(
           clamp(cx, -ROOM.w/2+0.35, ROOM.w/2-0.35),
           clamp(cy, 1.1, 11),
@@ -4941,22 +5026,22 @@
         const dist = Math.hypot(dx, dz);
         let moving = false;
         if(r.sleeping || r.ko){
-          const k = Math.min(1, gdt * 3);
+          const k = 1 - Math.exp(-3 * gdt);
           r.pos.x = lerp(r.pos.x, r.target.x, k);
           r.pos.z = lerp(r.pos.z, r.target.z, k);
           r.pos.y = lerp(r.pos.y, r.target.y, k);
         } else if(dist > 0.04){
           const sp = Math.min(dist, 2.4 * gdt);
           r.pos.x += dx / dist * sp; r.pos.z += dz / dist * sp;
-          r.pos.y = lerp(r.pos.y, r.target.y, Math.min(1, gdt * 6));
+          r.pos.y = lerp(r.pos.y, r.target.y, 1 - Math.exp(-6 * gdt));
           r.walkT += gdt * 10; moving = true;
         } else {
-          r.pos.y = lerp(r.pos.y, r.target.y, Math.min(1, gdt * 6));
+          r.pos.y = lerp(r.pos.y, r.target.y, 1 - Math.exp(-6 * gdt));
         }
         let dr = r.targetRot - r.rotY;
         while(dr > Math.PI) dr -= Math.PI * 2;
         while(dr < -Math.PI) dr += Math.PI * 2;
-        r.rotY += dr * Math.min(1, gdt * 10);
+        r.rotY += dr * (1 - Math.exp(-10 * gdt));
         r.mesh.position.copy(r.pos);
         r.mesh.rotation.y = r.rotY;
         // bạn tù online đang ngồi bồn cầu: máy mình cũng nghe phẹt phẹt
@@ -5069,6 +5154,7 @@
       player.mesh.position.copy(player.pos);
       // vào game là camera đứng sẵn sau lưng nhân vật, khỏi xoay tìm hướng
       camYaw = player.rotY + Math.PI; camPitch = 0.36; camSpin = 0; camHoldUntil = 0; camSnap = true;
+      camPendYaw = 0; camPendPitch = 0; camDistTgt = camDist; playerSmPos.copy(player.pos); camEffSm = camDist; moveSm.x = 0; moveSm.y = 0; player.curSpd = 0;
       // chơi tiếp đúng buổi đang dở (tiến trình đã lưu), không bắt đầu lại từ sáng
       const resumeIdx = clamp(G.phaseIdx || 0, 0, PHASES.length - 1);
       const resumeT = G.phaseT || 0, resumeDone = !!G.taskDone;
