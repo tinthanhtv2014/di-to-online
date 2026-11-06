@@ -1,0 +1,1369 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Quản Trị Đi Tò Online</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <style>
+      :root{
+        color-scheme: light dark;
+        --bg:#e9f4ee;
+        --bg-grad:#dcefe4;
+        --surface:#ffffff;
+        --surface-2:#f0f7f2;
+        --surface-3:#e3f0e8;
+        --ink:#17352b;
+        --ink-2:#3d5a4e;
+        --muted:#678175;
+        --line:#cfe0d5;
+        --brand:#0d7a5f;
+        --brand-strong:#095c47;
+        --brand-soft:#d7efe3;
+        --brand-ink:#ffffff;
+        --amber:#dd941f;
+        --amber-soft:#fbeecd;
+        --red:#cf3f38;
+        --red-soft:#fbe7e5;
+        --blue:#2b6cb0;
+        --blue-soft:#e0edf9;
+        --ok:#1d9e6c;
+        --shadow:0 10px 30px rgba(16,60,44,.10);
+        --shadow-sm:0 2px 8px rgba(16,60,44,.08);
+        --radius:16px;
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#0c1712;
+          --bg-grad:#0a120e;
+          --surface:#152219;
+          --surface-2:#1a2a20;
+          --surface-3:#213528;
+          --ink:#e7f3ec;
+          --ink-2:#b9cec2;
+          --muted:#87a293;
+          --line:#2a4234;
+          --brand:#2fbf94;
+          --brand-strong:#5fd3ae;
+          --brand-soft:#173b2d;
+          --brand-ink:#05231a;
+          --amber:#f0b95a;
+          --amber-soft:#3a2f16;
+          --red:#ff7a72;
+          --red-soft:#3d1f1c;
+          --blue:#7ab3e8;
+          --blue-soft:#1b2f45;
+          --ok:#3ecf8e;
+          --shadow:0 10px 30px rgba(0,0,0,.45);
+          --shadow-sm:0 2px 8px rgba(0,0,0,.35);
+        }
+      }
+      *{ box-sizing:border-box; }
+      html{ -webkit-text-size-adjust:100%; }
+      body{
+        margin:0;
+        font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
+        background:linear-gradient(180deg,var(--bg-grad),var(--bg) 340px);
+        background-color:var(--bg);
+        color:var(--ink);
+        min-height:100vh;
+      }
+      button{ font:inherit; cursor:pointer; }
+      input,select,textarea{ font:inherit; color:var(--ink); }
+      :focus-visible{ outline:3px solid var(--brand); outline-offset:2px; border-radius:6px; }
+      .hidden{ display:none !important; }
+
+      /* ---------- màn hình khóa ---------- */
+      .lock-wrap{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px 16px; }
+      .lock-card{
+        width:100%; max-width:400px; background:var(--surface); border:1px solid var(--line);
+        border-radius:22px; box-shadow:var(--shadow); padding:30px 26px 26px; text-align:center;
+      }
+      .lock-badge{
+        width:64px; height:64px; margin:0 auto 14px; border-radius:20px;
+        background:var(--brand-soft); color:var(--brand);
+        display:flex; align-items:center; justify-content:center;
+      }
+      .lock-badge svg{ width:32px; height:32px; }
+      .lock-card h1{ font-size:22px; font-weight:800; margin:0 0 6px; letter-spacing:-.01em; }
+      .lock-card p{ margin:0 0 18px; color:var(--muted); font-size:14px; line-height:1.55; }
+      .lock-status{ font-size:13px; color:var(--muted); min-height:20px; margin-bottom:12px; display:flex; align-items:center; justify-content:center; gap:8px; }
+      .lock-status .dot{ width:9px; height:9px; border-radius:50%; background:var(--amber); flex:none; }
+      .lock-status.ok .dot{ background:var(--ok); }
+      .lock-status.bad .dot{ background:var(--red); }
+      .field{ text-align:left; margin-bottom:12px; }
+      .field label{ display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:var(--ink-2); }
+      .field input{
+        width:100%; padding:12px 14px; border:1.5px solid var(--line); border-radius:12px;
+        background:var(--surface-2); font-size:16px;
+      }
+      .field input:focus{ border-color:var(--brand); outline:none; background:var(--surface); }
+      .btn{
+        display:inline-flex; align-items:center; justify-content:center; gap:8px;
+        border:1.5px solid transparent; border-radius:12px; padding:11px 18px;
+        font-weight:700; font-size:14.5px; background:var(--surface-3); color:var(--ink);
+        transition:transform .06s ease, background .15s ease, opacity .15s;
+      }
+      .btn:active{ transform:scale(.97); }
+      .btn:disabled{ opacity:.55; cursor:wait; }
+      .btn.primary{ background:var(--brand); color:var(--brand-ink); }
+      .btn.primary:hover{ background:var(--brand-strong); }
+      .btn.block{ width:100%; }
+      .btn.ghost{ background:transparent; border-color:var(--line); }
+      .btn.danger{ background:var(--red); color:#fff; }
+      .btn.danger-ghost{ background:var(--red-soft); color:var(--red); }
+      .btn.sm{ padding:7px 12px; font-size:13px; border-radius:10px; }
+      .btn svg{ width:17px; height:17px; flex:none; }
+      .form-error{
+        background:var(--red-soft); color:var(--red); border-radius:10px;
+        padding:10px 12px; font-size:13.5px; margin-bottom:12px; text-align:left; line-height:1.5;
+      }
+
+      /* ---------- khung chính ---------- */
+      .topbar{
+        position:sticky; top:0; z-index:40; backdrop-filter:blur(10px);
+        background:color-mix(in srgb, var(--bg) 82%, transparent);
+        border-bottom:1px solid var(--line);
+      }
+      .topbar-in{ max-width:1220px; margin:0 auto; padding:12px 16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+      .brand-block{ display:flex; align-items:center; gap:11px; min-width:0; }
+      .brand-mark{
+        width:40px; height:40px; border-radius:12px; background:var(--brand); color:var(--brand-ink);
+        display:flex; align-items:center; justify-content:center; flex:none;
+      }
+      .brand-mark svg{ width:22px; height:22px; }
+      .brand-block h1{ font-size:17px; font-weight:800; margin:0; line-height:1.2; white-space:nowrap; }
+      .brand-block .sub{ font-size:12.5px; color:var(--muted); white-space:nowrap; }
+      .topbar-actions{ margin-left:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+      .conn-chip{
+        display:inline-flex; align-items:center; gap:7px; font-size:12.5px; font-weight:600;
+        background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:6px 12px;
+      }
+      .conn-chip .dot{ width:8px; height:8px; border-radius:50%; background:var(--amber); }
+      .conn-chip.ok .dot{ background:var(--ok); }
+      .conn-chip.bad .dot{ background:var(--red); }
+      .updated-at{ font-size:12px; color:var(--muted); }
+
+      .tabs{ max-width:1220px; margin:0 auto; padding:14px 16px 0; display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; }
+      .tabs::-webkit-scrollbar{ display:none; }
+      .tab-btn{
+        border:1.5px solid var(--line); background:var(--surface); color:var(--ink-2);
+        border-radius:999px; padding:9px 18px; font-weight:700; font-size:14px; white-space:nowrap;
+        display:inline-flex; align-items:center; gap:8px;
+      }
+      .tab-btn[aria-selected="true"]{ background:var(--brand); border-color:var(--brand); color:var(--brand-ink); }
+      .tab-btn .count{
+        background:var(--surface-3); color:var(--ink-2); border-radius:999px; font-size:12px; padding:1px 8px; font-weight:700;
+      }
+      .tab-btn[aria-selected="true"] .count{ background:rgba(255,255,255,.25); color:inherit; }
+
+      main{ max-width:1220px; margin:0 auto; padding:18px 16px 60px; }
+
+      .card{
+        background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+        box-shadow:var(--shadow-sm); padding:18px;
+      }
+      .card h2{ font-size:16px; font-weight:800; margin:0 0 4px; display:flex; align-items:center; gap:9px; }
+      .card h2 svg{ width:19px; height:19px; color:var(--brand); }
+      .card .hint{ font-size:13px; color:var(--muted); margin:0 0 14px; line-height:1.55; }
+
+      /* tiles tổng quan */
+      .tiles{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:16px; }
+      @media (min-width:760px){ .tiles{ grid-template-columns:repeat(3,1fr); } }
+      @media (min-width:1080px){ .tiles{ grid-template-columns:repeat(6,1fr); } }
+      .tile{
+        background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+        padding:16px; box-shadow:var(--shadow-sm);
+      }
+      .tile .t-label{ font-size:12.5px; font-weight:600; color:var(--muted); display:flex; align-items:center; gap:7px; margin-bottom:8px; }
+      .tile .t-label svg{ width:16px; height:16px; color:var(--brand); }
+      .tile .t-value{ font-size:27px; font-weight:900; line-height:1.05; letter-spacing:-.02em; }
+      .tile .t-sub{ font-size:12px; color:var(--muted); margin-top:5px; }
+
+      .grid-2{ display:grid; gap:16px; grid-template-columns:1fr; align-items:start; }
+      @media (min-width:980px){ .grid-2{ grid-template-columns:1.65fr 1fr; } }
+
+      /* sơ đồ chuồng */
+      .cells{ display:grid; grid-template-columns:repeat(10,1fr); gap:5px; }
+      @media (min-width:900px){ .cells{ grid-template-columns:repeat(25,1fr); gap:4px; } }
+      .cell{
+        aspect-ratio:1; border-radius:7px; border:1px solid var(--line); background:var(--surface-2);
+        font-size:10px; font-weight:700; color:var(--muted);
+        display:flex; align-items:center; justify-content:center; padding:0; position:relative;
+      }
+      @media (min-width:900px){ .cell{ font-size:9.5px; } }
+      .cell.occupied{ background:var(--brand-soft); border-color:var(--brand); color:var(--brand-strong); cursor:pointer; }
+      .cell.occupied:hover{ background:var(--brand); color:var(--brand-ink); }
+      .cell.occupied.online::after{
+        content:""; position:absolute; top:2px; right:2px; width:5px; height:5px; border-radius:50%; background:var(--ok);
+      }
+      .cell.released{ background:var(--amber-soft); border-color:var(--amber); color:var(--amber); }
+      .legend{ display:flex; gap:16px; flex-wrap:wrap; font-size:12.5px; color:var(--muted); margin-top:12px; }
+      .legend span{ display:inline-flex; align-items:center; gap:6px; }
+      .legend i{ width:12px; height:12px; border-radius:4px; display:inline-block; border:1px solid var(--line); }
+      .legend .lg-occ{ background:var(--brand-soft); border-color:var(--brand); }
+      .legend .lg-rel{ background:var(--amber-soft); border-color:var(--amber); }
+      .legend .lg-free{ background:var(--surface-2); }
+      .legend .lg-dot{ background:var(--ok); border-radius:50%; width:8px; height:8px; border:none; }
+
+      /* danh sách ngắn (top / gần đây) */
+      .mini-list{ display:flex; flex-direction:column; }
+      .mini-row{
+        display:flex; align-items:center; gap:11px; padding:10px 4px; border-bottom:1px dashed var(--line);
+        background:none; border-top:none; border-left:none; border-right:none; width:100%; text-align:left; color:var(--ink);
+      }
+      .mini-row:last-child{ border-bottom:none; }
+      button.mini-row{ cursor:pointer; border-radius:8px; }
+      button.mini-row:hover{ background:var(--surface-2); }
+      .mini-row .who{ min-width:0; flex:1; }
+      .mini-row .who b{ display:block; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .mini-row .who small{ color:var(--muted); font-size:12px; }
+      .mini-row .val{ font-weight:800; font-size:14px; white-space:nowrap; }
+      .avatar{
+        width:38px; height:38px; border-radius:12px; flex:none; position:relative;
+        display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:13px;
+        text-shadow:0 1px 3px rgba(0,0,0,.35);
+      }
+      .avatar .on-dot{ position:absolute; bottom:-2px; right:-2px; width:11px; height:11px; border-radius:50%; background:var(--ok); border:2.5px solid var(--surface); }
+      .avatar .off-dot{ position:absolute; bottom:-2px; right:-2px; width:11px; height:11px; border-radius:50%; background:var(--muted); border:2.5px solid var(--surface); opacity:.55; }
+
+      /* thanh công cụ phạm nhân */
+      .toolbar{ display:flex; flex-direction:column; gap:12px; margin-bottom:16px; }
+      @media (min-width:820px){ .toolbar{ flex-direction:row; align-items:center; } }
+      .search-box{ position:relative; flex:1; min-width:200px; }
+      .search-box svg{ position:absolute; left:12px; top:50%; transform:translateY(-50%); width:18px; height:18px; color:var(--muted); pointer-events:none; }
+      .search-box input{
+        width:100%; padding:11px 14px 11px 40px; border:1.5px solid var(--line); border-radius:12px; background:var(--surface); font-size:15px;
+      }
+      .search-box input:focus{ border-color:var(--brand); outline:none; }
+      .toolbar select{
+        padding:11px 12px; border:1.5px solid var(--line); border-radius:12px; background:var(--surface); font-weight:600; font-size:14px;
+      }
+      .chips{ display:flex; gap:7px; flex-wrap:wrap; }
+      .chip{
+        border:1.5px solid var(--line); background:var(--surface); color:var(--ink-2);
+        border-radius:999px; padding:7px 14px; font-size:13px; font-weight:700;
+      }
+      .chip[aria-pressed="true"]{ background:var(--brand); border-color:var(--brand); color:var(--brand-ink); }
+
+      /* thẻ phạm nhân */
+      .player-grid{ display:grid; gap:14px; grid-template-columns:1fr; }
+      @media (min-width:680px){ .player-grid{ grid-template-columns:repeat(2,1fr); } }
+      @media (min-width:1060px){ .player-grid{ grid-template-columns:repeat(3,1fr); } }
+      .pcard{
+        background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+        box-shadow:var(--shadow-sm); padding:16px; display:flex; flex-direction:column; gap:12px;
+      }
+      .pcard-head{ display:flex; gap:12px; align-items:flex-start; }
+      .pcard-head .avatar{ width:46px; height:46px; font-size:14px; border-radius:14px; }
+      .pcard-id{ min-width:0; flex:1; }
+      .pcard-id .name{ font-size:16.5px; font-weight:800; line-height:1.25; word-break:break-word; }
+      .pcard-id .meta{ font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.5; }
+      .title-badge{
+        display:inline-block; background:var(--amber-soft); color:var(--amber); font-weight:700;
+        font-size:11.5px; border-radius:999px; padding:2px 9px; margin-top:4px;
+      }
+      .status-pill{
+        font-size:11.5px; font-weight:700; border-radius:999px; padding:4px 10px; white-space:nowrap; flex:none;
+        background:var(--surface-3); color:var(--ink-2);
+      }
+      .status-pill.online{ background:var(--brand-soft); color:var(--brand-strong); }
+      .status-pill.released{ background:var(--amber-soft); color:var(--amber); }
+      .crime{ font-size:13px; color:var(--ink-2); line-height:1.5; background:var(--surface-2); border-radius:10px; padding:9px 11px; }
+      .crime b{ color:var(--ink); }
+      .bar-row{ display:grid; grid-template-columns:86px 1fr 40px; align-items:center; gap:9px; font-size:12.5px; margin-top:6px; }
+      .bar-row .b-label{ color:var(--muted); font-weight:600; }
+      .bar-row .b-val{ font-weight:700; text-align:right; font-variant-numeric:tabular-nums; }
+      .bar{ height:8px; border-radius:99px; background:var(--surface-3); overflow:hidden; }
+      .bar i{ display:block; height:100%; border-radius:99px; background:var(--brand); }
+      .bar.hunger i{ background:#e2703a; } .bar.health i{ background:#e14b63; }
+      .bar.mood i{ background:#3e8fd9; } .bar.respect i{ background:#dd941f; }
+      .bar.reform i{ background:var(--brand); }
+      .kv-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+      .kv{ background:var(--surface-2); border-radius:10px; padding:8px 10px; text-align:center; }
+      .kv b{ display:block; font-size:16px; font-weight:800; font-variant-numeric:tabular-nums; }
+      .kv span{ font-size:11px; color:var(--muted); font-weight:600; }
+      .pcard-actions{ display:flex; flex-wrap:wrap; gap:7px; margin-top:auto; }
+      .stepper{ display:inline-flex; align-items:center; gap:0; border:1.5px solid var(--line); border-radius:11px; overflow:hidden; }
+      .stepper button{
+        background:var(--surface); border:none; padding:7px 10px; font-weight:800; font-size:13px; color:var(--brand-strong); min-width:38px;
+      }
+      .stepper button:hover{ background:var(--brand-soft); }
+      .stepper .s-label{ font-size:11.5px; font-weight:700; color:var(--muted); padding:0 4px; white-space:nowrap; }
+      .empty-state{
+        text-align:center; color:var(--muted); padding:44px 20px; background:var(--surface);
+        border:1.5px dashed var(--line); border-radius:var(--radius); font-size:14.5px; line-height:1.6;
+      }
+
+      /* điều hành */
+      .ops-grid{ display:grid; gap:16px; grid-template-columns:1fr; align-items:start; }
+      @media (min-width:980px){ .ops-grid{ grid-template-columns:1fr 1fr; } }
+      textarea.ta{
+        width:100%; border:1.5px solid var(--line); border-radius:12px; background:var(--surface-2);
+        padding:12px 14px; font-size:15px; resize:vertical; min-height:84px; line-height:1.55;
+      }
+      textarea.ta:focus{ border-color:var(--brand); outline:none; background:var(--surface); }
+      .chat-list{ display:flex; flex-direction:column; gap:2px; max-height:430px; overflow-y:auto; padding-right:4px; }
+      .cmsg{ padding:8px 10px; border-radius:10px; font-size:14px; line-height:1.5; word-break:break-word; }
+      .cmsg:hover{ background:var(--surface-2); }
+      .cmsg .cmeta{ font-size:11.5px; color:var(--muted); margin-top:2px; display:flex; gap:8px; align-items:center; }
+      .cmsg.admin{ background:var(--brand-soft); }
+      .cmsg .del{
+        margin-left:auto; border:none; background:none; color:var(--muted); padding:2px 6px; border-radius:6px; font-size:12px; font-weight:700;
+      }
+      .cmsg .del:hover{ color:var(--red); background:var(--red-soft); }
+      .chat-send{ display:flex; gap:8px; margin-top:12px; }
+      .chat-send input{
+        flex:1; padding:11px 14px; border:1.5px solid var(--line); border-radius:12px; background:var(--surface-2); font-size:15px; min-width:0;
+      }
+      .chat-send input:focus{ border-color:var(--brand); outline:none; background:var(--surface); }
+      .ghost-row{
+        display:flex; align-items:center; gap:11px; padding:10px 4px; border-bottom:1px dashed var(--line);
+      }
+      .ghost-row:last-child{ border-bottom:none; }
+      .ghost-row .who{ flex:1; min-width:0; }
+      .ghost-row .who b{ display:block; font-size:14px; }
+      .ghost-row .who small{ color:var(--muted); font-size:12px; }
+
+      /* ngăn chi tiết */
+      .scrim{
+        position:fixed; inset:0; background:rgba(8,25,18,.45); z-index:60;
+        opacity:0; pointer-events:none; transition:opacity .2s;
+      }
+      .scrim.show{ opacity:1; pointer-events:auto; }
+      .drawer{
+        position:fixed; top:0; right:0; bottom:0; width:min(430px,100vw); z-index:61;
+        background:var(--surface); box-shadow:var(--shadow); transform:translateX(105%);
+        transition:transform .24s ease; overflow-y:auto; padding:20px 18px 34px;
+      }
+      .drawer.show{ transform:none; }
+      .drawer-head{ display:flex; align-items:flex-start; gap:12px; margin-bottom:6px; }
+      .drawer-head .avatar{ width:54px; height:54px; font-size:16px; border-radius:16px; }
+      .icon-btn{
+        border:1.5px solid var(--line); background:var(--surface); border-radius:11px; width:38px; height:38px;
+        display:inline-flex; align-items:center; justify-content:center; color:var(--ink-2); flex:none;
+      }
+      .icon-btn svg{ width:18px; height:18px; }
+      .drawer h3{ font-size:14px; font-weight:800; margin:20px 0 8px; }
+      .drawer .hint{ font-size:12.5px; color:var(--muted); line-height:1.55; }
+      .action-list{ display:flex; flex-direction:column; gap:9px; }
+      .action-list .btn{ justify-content:flex-start; width:100%; }
+
+      /* modal xác nhận */
+      .modal-wrap{
+        position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center; padding:18px;
+        background:rgba(8,25,18,.5);
+      }
+      .modal{
+        background:var(--surface); border-radius:20px; box-shadow:var(--shadow); max-width:420px; width:100%; padding:24px 22px;
+      }
+      .modal h3{ margin:0 0 8px; font-size:18px; font-weight:800; }
+      .modal p{ margin:0 0 18px; color:var(--ink-2); font-size:14.5px; line-height:1.6; }
+      .modal .row{ display:flex; gap:9px; justify-content:flex-end; flex-wrap:wrap; }
+
+      /* toast */
+      #toasts{ position:fixed; bottom:18px; left:50%; transform:translateX(-50%); z-index:90; display:flex; flex-direction:column; gap:8px; align-items:center; width:min(440px, calc(100vw - 24px)); }
+      .toast{
+        background:var(--ink); color:var(--bg); border-radius:13px; padding:12px 17px; font-size:14px; font-weight:600;
+        box-shadow:var(--shadow); text-align:center; line-height:1.5; animation:toast-in .22s ease;
+      }
+      .toast.err{ background:var(--red); color:#fff; }
+      @keyframes toast-in{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
+      @media (prefers-reduced-motion: reduce){
+        .toast{ animation:none; }
+        .drawer,.scrim{ transition:none; }
+        .btn{ transition:none; }
+      }
+      .loading-note{ text-align:center; color:var(--muted); padding:38px 16px; font-size:14.5px; }
+      .spin{
+        width:20px; height:20px; border-radius:50%; border:3px solid var(--line); border-top-color:var(--brand);
+        display:inline-block; vertical-align:-4px; margin-right:9px; animation:sp 0.8s linear infinite;
+      }
+      @keyframes sp{ to{ transform:rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce){ .spin{ animation:none; } }
+    </style>
+  </head>
+  <body>
+    <!-- ================= MÀN HÌNH KHÓA ================= -->
+    <div id="lockScreen" class="lock-wrap">
+      <div class="lock-card">
+        <div class="lock-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.6" fill="currentColor" stroke="none"/></svg>
+        </div>
+        <h1>Khu vực quản trị</h1>
+        <p>Trang quản trị game Đi Tò Online — Xóm Tò. Chỉ dành cho quản giáo trưởng.</p>
+        <div id="lockStatus" class="lock-status"><span class="dot"></span><span id="lockStatusText">Đang nối tới trại…</span></div>
+        <div id="lockError" class="form-error hidden"></div>
+
+        <form id="setupForm" class="hidden" autocomplete="off">
+          <div class="field">
+            <label for="setupPass1">Tạo mật khẩu quản trị</label>
+            <input id="setupPass1" type="password" placeholder="Ít nhất 6 ký tự" autocomplete="new-password" />
+          </div>
+          <div class="field">
+            <label for="setupPass2">Nhập lại mật khẩu</label>
+            <input id="setupPass2" type="password" placeholder="Nhập lại cho chắc" autocomplete="new-password" />
+          </div>
+          <button class="btn primary block" type="submit" id="setupBtn">Tạo mật khẩu &amp; vào quản trị</button>
+        </form>
+
+        <form id="loginForm" class="hidden" autocomplete="off">
+          <div class="field">
+            <label for="loginPass">Mật khẩu quản trị</label>
+            <input id="loginPass" type="password" placeholder="Nhập mật khẩu" autocomplete="current-password" />
+          </div>
+          <button class="btn primary block" type="submit" id="loginBtn">Mở khóa</button>
+        </form>
+
+        <button id="lockRetry" class="btn ghost block hidden" type="button">Thử nối lại</button>
+      </div>
+    </div>
+
+    <!-- ================= KHUNG CHÍNH ================= -->
+    <div id="app" class="hidden">
+      <header class="topbar">
+        <div class="topbar-in">
+          <div class="brand-block">
+            <div class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/><path d="M12 3v3"/></svg>
+            </div>
+            <div>
+              <h1>Quản Trị Đi Tò Online</h1>
+              <div class="sub">Xóm Tò · máy chủ chung · tối đa 100 phạm nhân</div>
+            </div>
+          </div>
+          <div class="topbar-actions">
+            <span id="connChip" class="conn-chip"><span class="dot"></span><span id="connText">Đang nối…</span></span>
+            <span id="updatedAt" class="updated-at"></span>
+            <button id="btnRefresh" class="btn sm" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/></svg>
+              Làm mới
+            </button>
+            <button id="btnLock" class="btn sm ghost" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+              Khóa lại
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <nav class="tabs" role="tablist" aria-label="Mục quản trị">
+        <button class="tab-btn" role="tab" data-tab="overview" aria-selected="true">Tổng quan</button>
+        <button class="tab-btn" role="tab" data-tab="players" aria-selected="false">Phạm nhân <span class="count" id="tabPlayerCount">0</span></button>
+        <button class="tab-btn" role="tab" data-tab="ops" aria-selected="false">Điều hành</button>
+      </nav>
+
+      <main>
+        <!-- ======= TỔNG QUAN ======= -->
+        <section id="tab-overview">
+          <div class="tiles" id="tiles"></div>
+          <div class="grid-2">
+            <div class="card">
+              <h2>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 12h18M9 4v16M15 4v16"/></svg>
+                Sơ đồ 100 chuồng
+              </h2>
+              <p class="hint">Bấm vào chuồng đang có người để xem hồ sơ và xử lý ngay. Điểm xanh lá là người đó đang online trong game.</p>
+              <div class="cells" id="cellGrid"></div>
+              <div class="legend">
+                <span><i class="lg-occ"></i> Đang có người ở</span>
+                <span><i class="lg-rel"></i> Đã được thả</span>
+                <span><i class="lg-free"></i> Chuồng trống</span>
+                <span><i class="lg-dot"></i> Đang online</span>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              <div class="card">
+                <h2>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v6a5 5 0 0 1-10 0V4z"/><path d="M7 6H4a2 2 0 0 0 0 4h3M17 6h3a2 2 0 0 1 0 4h-3"/></svg>
+                  Cải tạo tốt nhất
+                </h2>
+                <div class="mini-list" id="topReform"></div>
+              </div>
+              <div class="card">
+                <h2>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                  Hoạt động gần đây
+                </h2>
+                <div class="mini-list" id="recentList"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======= PHẠM NHÂN ======= -->
+        <section id="tab-players" class="hidden">
+          <div class="toolbar">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+              <input id="searchInp" type="search" placeholder="Tìm theo tên, số tù (T-xxxx) hoặc số chuồng…" />
+            </div>
+            <select id="sortSel" aria-label="Sắp xếp">
+              <option value="cell">Theo số chuồng</option>
+              <option value="reform">Cải tạo cao → thấp</option>
+              <option value="noodles">Mì tôm nhiều → ít</option>
+              <option value="recent">Hoạt động mới nhất</option>
+              <option value="day">Ngày ở tù lâu nhất</option>
+            </select>
+          </div>
+          <div class="chips" id="filterChips" style="margin-bottom:16px;">
+            <button class="chip" data-filter="all" aria-pressed="true">Tất cả</button>
+            <button class="chip" data-filter="online" aria-pressed="false">Đang online</button>
+            <button class="chip" data-filter="incell" aria-pressed="false">Có chuồng</button>
+            <button class="chip" data-filter="nocell" aria-pressed="false">Chưa có chuồng</button>
+            <button class="chip" data-filter="released" aria-pressed="false">Đã được thả</button>
+          </div>
+          <div id="playerGrid" class="player-grid"></div>
+          <div id="playerEmpty" class="empty-state hidden"></div>
+        </section>
+
+        <!-- ======= ĐIỀU HÀNH ======= -->
+        <section id="tab-ops" class="hidden">
+          <div class="ops-grid">
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              <div class="card">
+                <h2>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M7 13v5a2 2 0 0 0 4 0v-4"/><path d="M17 8a4 4 0 0 1 0 8"/></svg>
+                  Thông báo toàn trại
+                </h2>
+                <p class="hint">Thông báo sẽ xuất hiện ngay trong khung chat của Xóm Tò dưới tên <b>Ban Quản Trị</b> — ai đang ở trong game mở chat là thấy. Đồng thời được lưu lại để các bản game sau hiện thành banner giữa màn hình.</p>
+                <textarea id="annText" class="ta" maxlength="300" placeholder="Ví dụ: Tối nay 20h điểm danh sớm, anh em về chuồng đúng giờ nhé!"></textarea>
+                <div style="display:flex; gap:9px; margin-top:12px; flex-wrap:wrap;">
+                  <button id="btnAnnounce" class="btn primary" type="button">Phát thông báo</button>
+                  <span id="annLast" class="updated-at" style="align-self:center;"></span>
+                </div>
+              </div>
+
+              <div class="card">
+                <h2>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-3z"/><path d="M9.5 12l2 2 3.5-4"/></svg>
+                  Bảo mật trang quản trị
+                </h2>
+                <p class="hint">Đổi mật khẩu mở khóa trang này. Mật khẩu được lưu dạng mã băm trên chính kho dữ liệu của game, không nằm trong mã nguồn trang.</p>
+                <div class="field">
+                  <label for="curPass">Mật khẩu hiện tại</label>
+                  <input id="curPass" type="password" autocomplete="current-password" />
+                </div>
+                <div class="field">
+                  <label for="newPass">Mật khẩu mới (ít nhất 6 ký tự)</label>
+                  <input id="newPass" type="password" autocomplete="new-password" />
+                </div>
+                <button id="btnChangePass" class="btn" type="button">Đổi mật khẩu</button>
+              </div>
+
+              <div class="card">
+                <h2>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></svg>
+                  Dọn hồ sơ rác
+                </h2>
+                <p class="hint">Các hồ sơ nghi là tài khoản thử: chưa từng vào Xóm Tò, chưa có chuồng, vẫn ở ngày 1 và đã lâu không hoạt động. Xóa từng hồ sơ một cho chắc tay.</p>
+                <div id="ghostList"></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h2>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H4l2-3a8 8 0 1 1 15-5z"/></svg>
+                Chat Xóm Tò
+              </h2>
+              <p class="hint">Tin nhắn mới nhất của cả xóm, tự làm mới mỗi 5 giây. Bấm ✕ ở một tin để gỡ tin đó khỏi game.</p>
+              <div class="chat-list" id="chatList"><div class="loading-note">Đang tải chat…</div></div>
+              <div class="chat-send">
+                <input id="chatInp" type="text" maxlength="200" placeholder="Nhắn vào xóm với tên Ban Quản Trị…" />
+                <button id="btnChatSend" class="btn primary" type="button">Gửi</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- ngăn chi tiết phạm nhân -->
+    <div id="scrim" class="scrim"></div>
+    <aside id="drawer" class="drawer" aria-label="Chi tiết phạm nhân"></aside>
+
+    <!-- modal xác nhận -->
+    <div id="modalWrap" class="modal-wrap hidden">
+      <div class="modal" role="alertdialog" aria-modal="true">
+        <h3 id="modalTitle"></h3>
+        <p id="modalText"></p>
+        <div class="row">
+          <button id="modalCancel" class="btn ghost" type="button">Thôi, để đó</button>
+          <button id="modalOk" class="btn danger" type="button">Xác nhận</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toasts" aria-live="polite"></div>
+
+    <script>
+    'use strict';
+    /* ============================================================
+       QUẢN TRỊ ĐI TÒ ONLINE — nối thẳng vào Firestore của game
+       (project di-to-44436) bằng REST + đăng nhập ẩn danh,
+       cùng cơ chế với bản game đang chạy.
+       Dữ liệu: players/{uid} · servers/CHUNG/messages · meta/admin
+       ============================================================ */
+    var SERVER_ID = 'CHUNG', SERVER_CAP = 100, REFORM_TARGET = 100;
+    var FB_CFG = { apiKey:'AIzaSyDstqRaQrLtZK_1lc8V7D6eWR60oblFOjQ', authDomain:'di-to-44436.firebaseapp.com', projectId:'di-to-44436', storageBucket:'di-to-44436.firebasestorage.app', messagingSenderId:'769831037197', appId:'1:769831037197:web:85fd745484b2538bfce844' };
+    var FB_DB = 'https://firestore.googleapis.com/v1/projects/' + FB_CFG.projectId + '/databases/(default)/documents';
+    var ADMIN_NAME = 'Ban Quản Trị';
+
+    var FB = { uid:null, idToken:null, refreshToken:null, expAt:0 };
+    var state = {
+      unlocked:false, players:[], chat:[], lastFetch:0,
+      filter:'all', sort:'cell', query:'', detailPid:null,
+      playersTimer:null, chatTimer:null, passHash:null
+    };
+
+    function $(id){ return document.getElementById(id); }
+    function escapeHtml(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+    function clamp(v, a, b){ v = +v || 0; return Math.max(a, Math.min(b, v)); }
+    function fmtNum(n){ return (Math.round(+n || 0)).toLocaleString('vi-VN'); }
+    function relTime(iso){
+      var t = Date.parse(iso || '');
+      if(!t) return 'chưa rõ';
+      var s = Math.max(0, Math.floor((Date.now() - t) / 1000));
+      if(s < 45) return 'vừa xong';
+      if(s < 3600) return Math.floor(s / 60) + ' phút trước';
+      if(s < 86400) return Math.floor(s / 3600) + ' giờ trước';
+      if(s < 86400 * 30) return Math.floor(s / 86400) + ' ngày trước';
+      var d = new Date(t);
+      return d.toLocaleDateString('vi-VN');
+    }
+    function toast(msg, isErr){
+      var box = $('toasts');
+      var el = document.createElement('div');
+      el.className = 'toast' + (isErr ? ' err' : '');
+      el.textContent = msg;
+      box.appendChild(el);
+      setTimeout(function(){ el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(function(){ el.remove(); }, 320); }, 3400);
+    }
+
+    /* ---------- tầng Firebase REST ---------- */
+    async function fbAuth(){
+      if(FB.refreshToken){
+        try{
+          var r0 = await fetch('https://securetoken.googleapis.com/v1/token?key=' + FB_CFG.apiKey, {
+            method:'POST', headers:{ 'Content-Type':'application/x-www-form-urlencoded' },
+            body:'grant_type=refresh_token&refresh_token=' + encodeURIComponent(FB.refreshToken)
+          });
+          if(r0.ok){
+            var j0 = await r0.json();
+            FB.uid = j0.user_id; FB.idToken = j0.id_token; FB.refreshToken = j0.refresh_token;
+            FB.expAt = Date.now() + ((+j0.expires_in || 3600) - 60) * 1000;
+            return true;
+          }
+        }catch(e){}
+      }
+      var r = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' + FB_CFG.apiKey, {
+        method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ returnSecureToken:true })
+      });
+      if(!r.ok) throw new Error('Đăng nhập ẩn danh lỗi ' + r.status);
+      var j = await r.json();
+      FB.uid = j.localId; FB.idToken = j.idToken; FB.refreshToken = j.refreshToken;
+      FB.expAt = Date.now() + ((+j.expiresIn || 3600) - 60) * 1000;
+      return true;
+    }
+    async function fbToken(){
+      if(!FB.idToken || Date.now() > FB.expAt) await fbAuth();
+      return FB.idToken;
+    }
+    async function fbFetch(path, opts){
+      opts = opts || {};
+      var method = opts.method || 'GET';
+      var body = opts.body ? JSON.stringify(opts.body) : undefined;
+      var headers = { 'Content-Type':'application/json' };
+      if(!opts.noAuth) headers['Authorization'] = 'Bearer ' + (await fbToken());
+      var r = await fetch(FB_DB + path, { method:method, headers:headers, body:body });
+      if(r.status === 401 && !opts.noAuth){
+        FB.idToken = null;
+        headers['Authorization'] = 'Bearer ' + (await fbToken());
+        r = await fetch(FB_DB + path, { method:method, headers:headers, body:body });
+      }
+      return r;
+    }
+    function fv(v){
+      if(v === null || v === undefined) return { nullValue:null };
+      if(typeof v === 'string') return { stringValue:v };
+      if(typeof v === 'boolean') return { booleanValue:v };
+      if(typeof v === 'number') return Number.isInteger(v) ? { integerValue:String(v) } : { doubleValue:v };
+      if(Array.isArray(v)) return { arrayValue:{ values: v.map(fv) } };
+      if(typeof v === 'object'){ var f = {}; for(var k in v) f[k] = fv(v[k]); return { mapValue:{ fields:f } }; }
+      return { stringValue:String(v) };
+    }
+    function flds(obj){ var f = {}; for(var k in obj) f[k] = fv(obj[k]); return f; }
+    function dv(f){
+      if(!f) return null;
+      if('stringValue' in f) return f.stringValue;
+      if('integerValue' in f) return parseInt(f.integerValue, 10);
+      if('doubleValue' in f) return f.doubleValue;
+      if('booleanValue' in f) return f.booleanValue;
+      if('timestampValue' in f) return f.timestampValue;
+      if('nullValue' in f) return null;
+      if('mapValue' in f){ var o = {}; var ff = (f.mapValue && f.mapValue.fields) || {}; for(var k in ff) o[k] = dv(ff[k]); return o; }
+      if('arrayValue' in f) return ((f.arrayValue && f.arrayValue.values) || []).map(dv);
+      return null;
+    }
+    function docToObj(doc){
+      var o = {}; var ff = (doc && doc.fields) || {};
+      for(var k in ff) o[k] = dv(ff[k]);
+      o.__name = doc.name; o.__pid = (doc.name || '').split('/').pop();
+      return o;
+    }
+    async function fbGet(path){
+      var r = await fbFetch('/' + path);
+      if(r.status === 404) return null;
+      if(!r.ok) throw new Error('Firestore lỗi ' + r.status);
+      return docToObj(await r.json());
+    }
+    async function fbPatch(path, obj, mask){
+      var q = '';
+      if(mask && mask.length) q = '?' + mask.map(function(m){ return 'updateMask.fieldPaths=' + encodeURIComponent(m); }).join('&');
+      var r = await fbFetch('/' + path + q, { method:'PATCH', body:{ fields: flds(obj) } });
+      if(!r.ok){
+        var t = '';
+        try{ t = (await r.json()).error.message || ''; }catch(e){}
+        throw new Error('Ghi Firestore lỗi ' + r.status + (t ? ' — ' + t : ''));
+      }
+      return docToObj(await r.json());
+    }
+    async function fbDelete(path){
+      var r = await fbFetch('/' + path, { method:'DELETE' });
+      if(!r.ok && r.status !== 404) throw new Error('Xóa Firestore lỗi ' + r.status);
+      return true;
+    }
+    async function fbListPlayers(){
+      var out = [], token = '';
+      for(var page = 0; page < 6; page++){
+        var r = await fbFetch('/players?pageSize=200' + (token ? '&pageToken=' + encodeURIComponent(token) : ''));
+        if(!r.ok) throw new Error('Firestore lỗi ' + r.status);
+        var j = await r.json();
+        (j.documents || []).forEach(function(d){ out.push(docToObj(d)); });
+        token = j.nextPageToken || '';
+        if(!token) break;
+      }
+      return out;
+    }
+    async function fbListChat(){
+      var r = await fbFetch('/servers/' + SERVER_ID + '/messages?pageSize=100');
+      if(!r.ok) throw new Error('Firestore lỗi ' + r.status);
+      var j = await r.json();
+      var docs = (j.documents || []).map(docToObj);
+      docs.sort(function(a, b){ return String(a.ts || '').localeCompare(String(b.ts || '')); });
+      return docs;
+    }
+    async function fbPostChat(name, text){
+      var r = await fbFetch('/servers/' + SERVER_ID + '/messages', {
+        method:'POST',
+        body:{ fields: flds({ pid:'admin', name:name, text:String(text).slice(0, 300), ts:new Date().toISOString() }) }
+      });
+      if(!r.ok) throw new Error('Gửi tin lỗi ' + r.status);
+      return true;
+    }
+
+    /* ---------- dữ liệu dẫn xuất ---------- */
+    function isOnline(p){
+      if(p.serverId !== SERVER_ID) return false;
+      var t = Date.parse(p.lastSeen || '');
+      return !!t && (Date.now() - t) < 20000;
+    }
+    function pReform(p){ return clamp(p.reform == null ? 0 : p.reform, 0, REFORM_TARGET); }
+    function pNoodles(p){ return Math.max(0, +p.noodles || 0); }
+    function pCell(p){ var c = +p.cellNo || 0; return (c >= 1 && c <= 100) ? c : 0; }
+    function pName(p){ return p.name || 'Bạn tù'; }
+    function shirtCss(p){
+      var c = (typeof p.shirt === 'number') ? p.shirt : 0x8a93a6;
+      return '#' + ('000000' + c.toString(16)).slice(-6);
+    }
+    var STATE_LABEL = {
+      idle:'Đang ở trong trại', walk:'Đang đi lại', sleep:'Đang ngủ trong chuồng',
+      ko:'Đang ngất, chờ khiêng về', wc:'Đang ngồi bồn cầu', eat:'Đang ngồi ăn cơm', sit:'Đang ngồi ghế'
+    };
+    function stateLabel(p){ return STATE_LABEL[p.state] || 'Đang ở trong trại'; }
+
+    /* ---------- mật khẩu quản trị (lưu mã băm ở meta/admin) ---------- */
+    async function hashPass(pw){
+      var raw = 'dito-admin::' + pw;
+      if(window.crypto && crypto.subtle && window.isSecureContext){
+        var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+        return Array.prototype.map.call(new Uint8Array(buf), function(b){ return ('0' + b.toString(16)).slice(-2); }).join('');
+      }
+      var h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+      for(var i = 0; i < raw.length; i++){
+        var ch = raw.charCodeAt(i);
+        h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677);
+      }
+      h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+      h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+      return ('00000000' + (h2 >>> 0).toString(16)).slice(-8) + ('00000000' + (h1 >>> 0).toString(16)).slice(-8);
+    }
+    function setLockStatus(txt, cls){
+      $('lockStatusText').textContent = txt;
+      $('lockStatus').className = 'lock-status' + (cls ? ' ' + cls : '');
+    }
+    function lockError(msg){
+      var e = $('lockError');
+      if(!msg){ e.classList.add('hidden'); e.textContent = ''; return; }
+      e.textContent = msg; e.classList.remove('hidden');
+    }
+    async function initGate(){
+      $('setupForm').classList.add('hidden');
+      $('loginForm').classList.add('hidden');
+      $('lockRetry').classList.add('hidden');
+      lockError('');
+      setLockStatus('Đang nối tới trại…', '');
+      try{
+        await fbAuth();
+        var admin = await fbGet('meta/admin');
+        if(admin && admin.passHash){
+          state.passHash = admin.passHash;
+          setLockStatus('Đã nối tới trại. Nhập mật khẩu để vào.', 'ok');
+          $('loginForm').classList.remove('hidden');
+          $('loginPass').focus();
+        } else {
+          state.passHash = null;
+          setLockStatus('Đã nối tới trại. Trang quản trị chưa có mật khẩu — tạo ngay bên dưới.', 'ok');
+          $('setupForm').classList.remove('hidden');
+          $('setupPass1').focus();
+        }
+      }catch(e){
+        setLockStatus('Chưa nối được tới trại.', 'bad');
+        lockError('Không nối được tới dữ liệu game (' + (e.message || e) + '). Kiểm tra mạng rồi thử lại. Nếu vẫn lỗi, có thể luật bảo mật Firestore đang chặn trang này đọc dữ liệu.');
+        $('lockRetry').classList.remove('hidden');
+      }
+    }
+    $('lockRetry').addEventListener('click', initGate);
+    $('setupForm').addEventListener('submit', async function(ev){
+      ev.preventDefault();
+      var p1 = $('setupPass1').value, p2 = $('setupPass2').value;
+      lockError('');
+      if(p1.length < 6){ lockError('Mật khẩu cần ít nhất 6 ký tự.'); return; }
+      if(p1 !== p2){ lockError('Hai lần nhập chưa khớp nhau.'); return; }
+      var btn = $('setupBtn'); btn.disabled = true; btn.textContent = 'Đang tạo…';
+      try{
+        var h = await hashPass(p1);
+        await fbPatch('meta/admin', { passHash:h, updatedAt:new Date().toISOString() }, ['passHash','updatedAt']);
+        state.passHash = h;
+        toast('Đã tạo mật khẩu quản trị.');
+        unlock();
+      }catch(e){
+        lockError('Tạo mật khẩu chưa được: ' + (e.message || e) + '. Có thể luật Firestore chưa cho trang này ghi vào mục meta — nới luật cho collection meta rồi thử lại.');
+      }
+      btn.disabled = false; btn.textContent = 'Tạo mật khẩu & vào quản trị';
+    });
+    $('loginForm').addEventListener('submit', async function(ev){
+      ev.preventDefault();
+      lockError('');
+      var btn = $('loginBtn'); btn.disabled = true; btn.textContent = 'Đang kiểm tra…';
+      try{
+        var h = await hashPass($('loginPass').value);
+        if(h === state.passHash){ $('loginPass').value = ''; unlock(); }
+        else lockError('Sai mật khẩu rồi. Thử lại nhé.');
+      }catch(e){ lockError('Lỗi kiểm tra mật khẩu: ' + (e.message || e)); }
+      btn.disabled = false; btn.textContent = 'Mở khóa';
+    });
+    function unlock(){
+      state.unlocked = true;
+      $('lockScreen').classList.add('hidden');
+      $('app').classList.remove('hidden');
+      refreshAll(true);
+      if(state.playersTimer) clearInterval(state.playersTimer);
+      state.playersTimer = setInterval(function(){ if(!document.hidden) refreshPlayers(false); }, 12000);
+    }
+    function lock(){
+      state.unlocked = false;
+      if(state.playersTimer) clearInterval(state.playersTimer);
+      if(state.chatTimer) clearInterval(state.chatTimer);
+      state.playersTimer = state.chatTimer = null;
+      closeDrawer();
+      $('app').classList.add('hidden');
+      $('lockScreen').classList.remove('hidden');
+      initGate();
+    }
+    $('btnLock').addEventListener('click', lock);
+
+    /* ---------- làm mới dữ liệu ---------- */
+    function setConn(ok, txt){
+      $('connChip').className = 'conn-chip ' + (ok ? 'ok' : 'bad');
+      $('connText').textContent = txt;
+    }
+    async function refreshPlayers(manual){
+      try{
+        var ps = await fbListPlayers();
+        state.players = ps;
+        state.lastFetch = Date.now();
+        var on = ps.filter(isOnline).length;
+        setConn(true, 'Đã nối Firestore · ' + on + ' đang online');
+        $('updatedAt').textContent = 'Cập nhật ' + new Date().toLocaleTimeString('vi-VN');
+        renderAll();
+      }catch(e){
+        setConn(false, 'Mất nối Firestore');
+        if(manual) toast('Tải dữ liệu lỗi: ' + (e.message || e), true);
+      }
+    }
+    async function refreshChat(){
+      try{
+        state.chat = await fbListChat();
+        renderChat();
+      }catch(e){ /* giữ chat cũ */ }
+    }
+    async function refreshAll(manual){
+      await refreshPlayers(manual);
+      refreshChat();
+      try{
+        var a = await fbGet('meta/announcement');
+        if(a && a.text) $('annLast').textContent = 'Thông báo gần nhất: ' + relTime(a.ts) + ' — “' + String(a.text).slice(0, 60) + '”';
+      }catch(e){}
+    }
+    $('btnRefresh').addEventListener('click', function(){ refreshAll(true); });
+
+    /* ---------- tabs ---------- */
+    document.querySelectorAll('.tab-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.querySelectorAll('.tab-btn').forEach(function(b){ b.setAttribute('aria-selected', b === btn ? 'true' : 'false'); });
+        ['overview','players','ops'].forEach(function(t){ $('tab-' + t).classList.toggle('hidden', t !== btn.dataset.tab); });
+        if(btn.dataset.tab === 'ops'){
+          refreshChat();
+          if(state.chatTimer) clearInterval(state.chatTimer);
+          state.chatTimer = setInterval(function(){ if(!document.hidden) refreshChat(); }, 5000);
+        } else if(state.chatTimer){ clearInterval(state.chatTimer); state.chatTimer = null; }
+      });
+    });
+
+    /* ---------- render tổng quan ---------- */
+    function avatarHtml(p, withDot){
+      var initials = pName(p).trim().split(/\s+/).slice(-2).map(function(w){ return w.charAt(0); }).join('').toUpperCase() || 'T';
+      var dot = '';
+      if(withDot) dot = isOnline(p) ? '<span class="on-dot"></span>' : '<span class="off-dot"></span>';
+      return '<div class="avatar" style="background:' + shirtCss(p) + '">' + escapeHtml(initials) + dot + '</div>';
+    }
+    function renderTiles(){
+      var ps = state.players;
+      var online = ps.filter(isOnline).length;
+      var cellsUsed = {};
+      ps.forEach(function(p){ var c = pCell(p); if(c) cellsUsed[c] = true; });
+      var released = ps.filter(function(p){ return p.released; }).length;
+      var totalNoodles = ps.reduce(function(s, p){ return s + pNoodles(p); }, 0);
+      var avgReform = ps.length ? Math.round(ps.reduce(function(s, p){ return s + pReform(p); }, 0) / ps.length) : 0;
+      var tasks = ps.reduce(function(s, p){ return s + (+p.tasksDone || 0); }, 0);
+      var tiles = [
+        { label:'Đang online', value: online + '<small style="font-size:15px;color:var(--muted)"> / ' + SERVER_CAP + '</small>', sub:'trong Xóm Tò lúc này',
+          icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1.4" fill="currentColor" stroke="none"/></svg>' },
+        { label:'Tổng hồ sơ', value: fmtNum(ps.length), sub:'phạm nhân đã đăng ký',
+          icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5M16 5.5a3.5 3.5 0 0 1 0 6M18.5 15c1.7.8 2.5 2.3 2.5 5"/></svg>' },
+        { label:'Chuồng đã có người', value: Object.keys(cellsUsed).length + '<small style="font-size:15px;color:var(--muted)"> / 100</small>', sub:'còn ' + (100 - Object.keys(cellsUsed).length) + ' chuồng trống',
+          icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 12h18M9 4v16M15 4v16"/></svg>' },
+        { label:'Mì tôm toàn trại', value: fmtNum(totalNoodles), sub:'gói đang lưu hành',
+          icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M7 8c1.5-1.5 3 1 4.5 0S14.5 9.5 16 8"/></svg>' },
+        { label:'Cải tạo trung bình', value: avgReform + '<small style="font-size:15px;color:var(--muted)"> / 100</small>', sub:'đủ 100 điểm là mãn hạn',
+          icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 15c3-2 5 2 8 0s5 2 8 0V5c-3 2-5-2-8 0S7 7 4 5"/></svg>' },
+        { label:'Đã được thả', value: fmtNum(released), sub:'· ' + fmtNum(tasks) + ' nhiệm vụ đã hoàn thành toàn trại',
+          icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3M16 17l5-5-5-5M21 12H9"/></svg>' }
+      ];
+      $('tiles').innerHTML = tiles.map(function(t){
+        return '<div class="tile"><div class="t-label">' + t.icon + escapeHtml(t.label) + '</div><div class="t-value">' + t.value + '</div><div class="t-sub">' + escapeHtml(t.sub) + '</div></div>';
+      }).join('');
+      $('tabPlayerCount').textContent = ps.length;
+    }
+    function renderCells(){
+      var byCell = {};
+      state.players.forEach(function(p){ var c = pCell(p); if(c && !byCell[c]) byCell[c] = p; });
+      var html = '';
+      for(var n = 1; n <= 100; n++){
+        var p = byCell[n];
+        if(p){
+          html += '<button type="button" class="cell occupied' + (p.released ? ' released' : '') + (isOnline(p) ? ' online' : '') + '" data-pid="' + escapeHtml(p.__pid) + '" title="' + escapeHtml(pName(p) + ' · ' + (p.prisonerNo || '') + ' · chuồng ' + n) + '">' + n + '</button>';
+        } else {
+          html += '<div class="cell">' + n + '</div>';
+        }
+      }
+      $('cellGrid').innerHTML = html;
+      $('cellGrid').querySelectorAll('.cell.occupied').forEach(function(el){
+        el.addEventListener('click', function(){ openDrawer(el.dataset.pid); });
+      });
+    }
+    function miniRow(p, rightHtml){
+      return '<button type="button" class="mini-row" data-pid="' + escapeHtml(p.__pid) + '">' + avatarHtml(p, true)
+        + '<span class="who"><b>' + escapeHtml(pName(p)) + '</b><small>' + escapeHtml(p.prisonerNo || '') + (pCell(p) ? ' · chuồng ' + pCell(p) : ' · chưa có chuồng') + '</small></span>'
+        + '<span class="val">' + rightHtml + '</span></button>';
+    }
+    function wireMiniRows(container){
+      container.querySelectorAll('.mini-row').forEach(function(el){
+        el.addEventListener('click', function(){ openDrawer(el.dataset.pid); });
+      });
+    }
+    function renderTopLists(){
+      var byReform = state.players.slice().sort(function(a, b){ return pReform(b) - pReform(a); }).slice(0, 5);
+      $('topReform').innerHTML = byReform.length
+        ? byReform.map(function(p){ return miniRow(p, pReform(p) + '/100'); }).join('')
+        : '<div class="hint" style="margin:0">Chưa có hồ sơ nào.</div>';
+      wireMiniRows($('topReform'));
+      var recent = state.players.slice().sort(function(a, b){ return String(b.lastSeen || '').localeCompare(String(a.lastSeen || '')); }).slice(0, 5);
+      $('recentList').innerHTML = recent.length
+        ? recent.map(function(p){ return miniRow(p, escapeHtml(relTime(p.lastSeen))); }).join('')
+        : '<div class="hint" style="margin:0">Chưa có hoạt động nào.</div>';
+      wireMiniRows($('recentList'));
+    }
+
+    /* ---------- render danh sách phạm nhân ---------- */
+    $('searchInp').addEventListener('input', function(e){ state.query = e.target.value.trim().toLowerCase(); renderPlayers(); });
+    $('sortSel').addEventListener('change', function(e){ state.sort = e.target.value; renderPlayers(); });
+    $('filterChips').querySelectorAll('.chip').forEach(function(chip){
+      chip.addEventListener('click', function(){
+        state.filter = chip.dataset.filter;
+        $('filterChips').querySelectorAll('.chip').forEach(function(c){ c.setAttribute('aria-pressed', c === chip ? 'true' : 'false'); });
+        renderPlayers();
+      });
+    });
+    function filteredPlayers(){
+      var list = state.players.slice();
+      if(state.filter === 'online') list = list.filter(isOnline);
+      else if(state.filter === 'incell') list = list.filter(function(p){ return pCell(p) > 0; });
+      else if(state.filter === 'nocell') list = list.filter(function(p){ return pCell(p) === 0; });
+      else if(state.filter === 'released') list = list.filter(function(p){ return p.released; });
+      if(state.query){
+        var q = state.query;
+        list = list.filter(function(p){
+          return pName(p).toLowerCase().indexOf(q) >= 0
+            || String(p.prisonerNo || '').toLowerCase().indexOf(q) >= 0
+            || String(pCell(p) || '').indexOf(q) >= 0;
+        });
+      }
+      var s = state.sort;
+      list.sort(function(a, b){
+        if(s === 'reform') return pReform(b) - pReform(a);
+        if(s === 'noodles') return pNoodles(b) - pNoodles(a);
+        if(s === 'recent') return String(b.lastSeen || '').localeCompare(String(a.lastSeen || ''));
+        if(s === 'day') return (+b.day || 1) - (+a.day || 1);
+        return (pCell(a) || 999) - (pCell(b) || 999);
+      });
+      return list;
+    }
+    function barRow(label, val, cls){
+      var v = clamp(val == null ? 0 : val, 0, 100);
+      return '<div class="bar-row"><span class="b-label">' + label + '</span><span class="bar ' + cls + '"><i style="width:' + v + '%"></i></span><span class="b-val">' + Math.round(v) + '</span></div>';
+    }
+    function stepperHtml(kind, pid){
+      var label = kind === 'reform' ? 'Cải tạo' : 'Mì tôm';
+      var steps = kind === 'reform' ? [-10, -1, 1, 10] : [-5, -1, 1, 5];
+      var btns = steps.map(function(d){
+        return '<button type="button" data-act="step" data-kind="' + kind + '" data-delta="' + d + '" data-pid="' + escapeHtml(pid) + '">' + (d > 0 ? '+' + d : d) + '</button>';
+      }).join('');
+      return '<span class="stepper"><span class="s-label">' + label + '</span>' + btns + '</span>';
+    }
+    function playerCard(p){
+      var st = p.stats || {};
+      var on = isOnline(p);
+      var pill = p.released
+        ? '<span class="status-pill released">Đã được thả</span>'
+        : '<span class="status-pill' + (on ? ' online' : '') + '">' + (on ? 'Đang online' : 'Offline · ' + relTime(p.lastSeen)) + '</span>';
+      return '<article class="pcard" data-card="' + escapeHtml(p.__pid) + '">'
+        + '<div class="pcard-head">' + avatarHtml(p, false)
+        + '<div class="pcard-id"><div class="name">' + escapeHtml(pName(p)) + '</div>'
+        + '<div class="meta">' + escapeHtml(p.prisonerNo || 'Chưa có số tù') + ' · ' + (pCell(p) ? 'Chuồng số ' + pCell(p) : 'Chưa có chuồng') + ' · Ngày ' + (+p.day || 1) + ' · án chung thân</div>'
+        + (p.title ? '<span class="title-badge">★ ' + escapeHtml(p.title) + '</span>' : '')
+        + '</div>' + pill + '</div>'
+        + '<div class="crime"><b>Tội danh:</b> ' + escapeHtml(p.crime || 'Hồ sơ cũ chưa ghi tội danh') + '</div>'
+        + '<div>' + barRow('Cải tạo', pReform(p), 'reform')
+        + barRow('Bụng dạ', st.hunger, 'hunger') + barRow('Sức khỏe', st.health, 'health')
+        + barRow('Tinh thần', st.mood, 'mood') + barRow('Uy tín', st.respect, 'respect') + '</div>'
+        + '<div class="kv-grid">'
+        + '<div class="kv"><b>' + fmtNum(pNoodles(p)) + '</b><span>gói mì tôm</span></div>'
+        + '<div class="kv"><b>' + (+p.tasksDone || 0) + '</b><span>nhiệm vụ xong</span></div>'
+        + '<div class="kv"><b>' + clamp(p.tunnel || 0, 0, 5) + '/5</b><span>đoạn hầm đào</span></div>'
+        + '</div>'
+        + '<div class="pcard-actions">'
+        + stepperHtml('reform', p.__pid) + stepperHtml('noodles', p.__pid)
+        + '<button type="button" class="btn sm" data-act="detail" data-pid="' + escapeHtml(p.__pid) + '">Chi tiết &amp; xử lý</button>'
+        + '</div></article>';
+    }
+    function renderPlayers(){
+      var list = filteredPlayers();
+      $('playerGrid').innerHTML = list.map(playerCard).join('');
+      var empty = $('playerEmpty');
+      if(!list.length){
+        empty.classList.remove('hidden');
+        empty.textContent = state.players.length
+          ? 'Không có phạm nhân nào khớp bộ lọc / từ khóa này.'
+          : 'Chưa có hồ sơ phạm nhân nào trong trại. Khi có người vào chơi game, hồ sơ của họ sẽ hiện ở đây.';
+      } else empty.classList.add('hidden');
+      $('playerGrid').querySelectorAll('[data-act]').forEach(function(el){
+        el.addEventListener('click', function(){
+          var pid = el.dataset.pid;
+          if(el.dataset.act === 'detail') openDrawer(pid);
+          else if(el.dataset.act === 'step') stepValue(pid, el.dataset.kind, +el.dataset.delta, el);
+        });
+      });
+    }
+
+    /* ---------- sửa số liệu nhanh ---------- */
+    async function stepValue(pid, kind, delta, btn){
+      var p = state.players.find(function(x){ return x.__pid === pid; });
+      if(!p) return;
+      var patch = {}, mask = [];
+      if(kind === 'reform'){
+        var nv = clamp(pReform(p) + delta, 0, REFORM_TARGET);
+        if(nv === pReform(p)){ toast(delta > 0 ? 'Đã chạm trần 100 điểm cải tạo.' : 'Đã ở mức 0 điểm cải tạo.'); return; }
+        patch.reform = nv; mask.push('reform');
+      } else {
+        var nn = Math.max(0, pNoodles(p) + delta);
+        if(nn === pNoodles(p)){ toast('Mì tôm đã về 0, không trừ thêm được.'); return; }
+        patch.noodles = nn; mask.push('noodles');
+      }
+      if(btn) btn.disabled = true;
+      try{
+        var updated = await fbPatch('players/' + pid, patch, mask);
+        Object.assign(p, updated);
+        renderAll();
+        toast('Đã cập nhật ' + (kind === 'reform' ? 'điểm cải tạo' : 'mì tôm') + ' cho ' + pName(p) + '.' + (isOnline(p) ? ' (Người này đang online — game của họ có thể ghi lại số cũ sau vài giây.)' : ''));
+      }catch(e){ toast('Cập nhật lỗi: ' + (e.message || e), true); }
+      if(btn) btn.disabled = false;
+    }
+
+    /* ---------- ngăn chi tiết phạm nhân ---------- */
+    function openDrawer(pid){
+      state.detailPid = pid;
+      renderDrawer();
+      $('scrim').classList.add('show');
+      $('drawer').classList.add('show');
+    }
+    function closeDrawer(){
+      state.detailPid = null;
+      $('scrim').classList.remove('show');
+      $('drawer').classList.remove('show');
+    }
+    $('scrim').addEventListener('click', closeDrawer);
+    function detailPlayer(){ return state.players.find(function(x){ return x.__pid === state.detailPid; }); }
+    function renderDrawer(){
+      var p = detailPlayer();
+      var d = $('drawer');
+      if(!p){ d.innerHTML = '<p class="hint">Hồ sơ này không còn nữa.</p>'; return; }
+      var st = p.stats || {};
+      var on = isOnline(p);
+      d.innerHTML =
+        '<div class="drawer-head">' + avatarHtml(p, true)
+        + '<div style="flex:1;min-width:0"><div style="font-size:19px;font-weight:800;line-height:1.25">' + escapeHtml(pName(p)) + '</div>'
+        + '<div style="font-size:13px;color:var(--muted);margin-top:3px;line-height:1.55">' + escapeHtml(p.prisonerNo || '') + ' · ' + (pCell(p) ? 'Chuồng số ' + pCell(p) : 'Chưa có chuồng') + '<br>' + (on ? 'Đang online · ' + escapeHtml(stateLabel(p)) : 'Offline · hoạt động ' + relTime(p.lastSeen)) + '</div>'
+        + (p.title ? '<span class="title-badge">★ ' + escapeHtml(p.title) + '</span>' : '')
+        + '</div>'
+        + '<button class="icon-btn" id="drawerClose" type="button" aria-label="Đóng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'
+        + '<div class="crime"><b>Tội danh:</b> ' + escapeHtml(p.crime || 'Hồ sơ cũ chưa ghi tội danh') + '</div>'
+        + '<h3>Tiến trình</h3>'
+        + barRow('Cải tạo', pReform(p), 'reform')
+        + barRow('Bụng dạ', st.hunger, 'hunger') + barRow('Sức khỏe', st.health, 'health')
+        + barRow('Tinh thần', st.mood, 'mood') + barRow('Uy tín', st.respect, 'respect')
+        + '<div class="kv-grid" style="margin-top:12px">'
+        + '<div class="kv"><b>' + fmtNum(pNoodles(p)) + '</b><span>gói mì</span></div>'
+        + '<div class="kv"><b>' + (+p.day || 1) + '</b><span>ngày ở tù</span></div>'
+        + '<div class="kv"><b>' + (+p.daysServed || 0) + '</b><span>ngày đã thụ án</span></div>'
+        + '<div class="kv"><b>' + (+p.tasksDone || 0) + '</b><span>nhiệm vụ xong</span></div>'
+        + '<div class="kv"><b>' + (+p.boxesTotal || 0) + '</b><span>thùng đã khuân</span></div>'
+        + '<div class="kv"><b>' + (+p.noodlesEarned || 0) + '</b><span>mì đã kiếm</span></div>'
+        + '<div class="kv"><b>' + (+p.escN || 0) + '</b><span>lần trốn thoát</span></div>'
+        + '<div class="kv"><b>' + (+p.carryN || 0) + '</b><span>lần bị khiêng</span></div>'
+        + '<div class="kv"><b>' + (+p.wcN || 0) + '</b><span>lần ngồi WC</span></div>'
+        + '</div>'
+        + '<p class="hint" style="margin-top:10px">Đào hầm: ' + clamp(p.tunnel || 0, 0, 5) + '/5 đoạn · Trạng thái trong game: ' + escapeHtml(stateLabel(p)) + (p.createdAt ? ' · Nhập trại: ' + new Date(p.createdAt).toLocaleDateString('vi-VN') : '') + '</p>'
+        + (on ? '<p class="hint" style="color:var(--amber)"><b>Lưu ý:</b> người này đang online — game trên máy họ tự lưu tiến trình mỗi vài giây nên có thể ghi đè thay đổi của bạn. Xử lý lúc họ offline sẽ chắc ăn nhất.</p>' : '')
+        + '<h3>Cộng / trừ nhanh</h3>'
+        + '<div style="display:flex;gap:8px;flex-wrap:wrap">' + stepperHtml('reform', p.__pid) + stepperHtml('noodles', p.__pid) + '</div>'
+        + '<h3>Xử lý hồ sơ</h3>'
+        + '<div class="action-list">'
+        + (p.released
+            ? '<button class="btn" type="button" data-dact="unrelease">Thu hồi quyết định thả (vào lại án chung thân)</button>'
+            : '<button class="btn" type="button" data-dact="release">Đánh dấu đã mãn hạn thả</button>')
+        + (pCell(p) ? '<button class="btn" type="button" data-dact="freecell">Trả chuồng số ' + pCell(p) + ' về trống</button>' : '')
+        + '<button class="btn" type="button" data-dact="reset">Đặt lại hồ sơ như mới nhập trại</button>'
+        + '<button class="btn danger-ghost" type="button" data-dact="delete">Xóa hẳn hồ sơ này</button>'
+        + '</div>';
+      $('drawerClose').addEventListener('click', closeDrawer);
+      d.querySelectorAll('[data-act="step"]').forEach(function(el){
+        el.addEventListener('click', function(){ stepValue(el.dataset.pid, el.dataset.kind, +el.dataset.delta, el); });
+      });
+      d.querySelectorAll('[data-dact]').forEach(function(el){
+        el.addEventListener('click', function(){ drawerAction(el.dataset.dact); });
+      });
+    }
+
+    /* ---------- modal xác nhận ---------- */
+    var modalCb = null;
+    function askConfirm(title, text, okLabel, cb){
+      $('modalTitle').textContent = title;
+      $('modalText').textContent = text;
+      $('modalOk').textContent = okLabel || 'Xác nhận';
+      modalCb = cb;
+      $('modalWrap').classList.remove('hidden');
+    }
+    $('modalCancel').addEventListener('click', function(){ $('modalWrap').classList.add('hidden'); modalCb = null; });
+    $('modalOk').addEventListener('click', async function(){
+      var cb = modalCb; modalCb = null;
+      $('modalWrap').classList.add('hidden');
+      if(cb) await cb();
+    });
+
+    async function drawerAction(act){
+      var p = detailPlayer();
+      if(!p) return;
+      var pid = p.__pid, name = pName(p);
+      if(act === 'release'){
+        askConfirm('Đánh dấu đã thả?', name + ' sẽ được ghi là đã mãn hạn. Lần vào game tới, điểm cải tạo của họ tính lại từ 0 như một kiếp mới.', 'Đánh dấu đã thả', async function(){
+          try{ await fbPatch('players/' + pid, { released:true }, ['released']); p.released = true; renderAll(); toast('Đã đánh dấu thả ' + name + '.'); }
+          catch(e){ toast('Lỗi: ' + (e.message || e), true); }
+        });
+      } else if(act === 'unrelease'){
+        askConfirm('Thu hồi quyết định thả?', name + ' sẽ quay lại diện án chung thân với hồ sơ hiện tại.', 'Thu hồi', async function(){
+          try{ await fbPatch('players/' + pid, { released:false }, ['released']); p.released = false; renderAll(); toast('Đã thu hồi quyết định thả của ' + name + '.'); }
+          catch(e){ toast('Lỗi: ' + (e.message || e), true); }
+        });
+      } else if(act === 'freecell'){
+        askConfirm('Trả chuồng số ' + pCell(p) + '?', 'Chuồng sẽ trống để cấp cho người mới. ' + name + ' vào game lần tới sẽ được cấp chuồng trống thấp nhất còn lại.', 'Trả chuồng', async function(){
+          try{ await fbPatch('players/' + pid, { cellNo:0 }, ['cellNo']); p.cellNo = 0; renderAll(); toast('Đã trả chuồng của ' + name + '.'); }
+          catch(e){ toast('Lỗi: ' + (e.message || e), true); }
+        });
+      } else if(act === 'reset'){
+        askConfirm('Đặt lại hồ sơ của ' + name + '?', 'Điểm cải tạo, mì tôm, ngày ở tù, chỉ số, hầm đào… đều về mức như mới nhập trại. Tên, số tù, tội danh và chuồng được giữ nguyên. Không hoàn tác được.', 'Đặt lại hồ sơ', async function(){
+          var patch = {
+            reform:0, day:1, daysServed:0, phaseIdx:0, phaseT:0, taskDone:false,
+            stats:{ hunger:80, health:92, mood:85, respect:15 },
+            noodles:3, noodlesEarned:0, boxesTotal:0, tallies:0, tasksDone:0,
+            tunnel:0, tunnelDay:0, escN:0, carryN:0, wcN:0, title:'', released:false, state:'idle', inBed:false
+          };
+          try{
+            var u = await fbPatch('players/' + pid, patch, Object.keys(patch));
+            Object.assign(p, u); renderAll();
+            toast('Đã đặt lại hồ sơ của ' + name + '.');
+          }catch(e){ toast('Lỗi: ' + (e.message || e), true); }
+        });
+      } else if(act === 'delete'){
+        askConfirm('Xóa hẳn hồ sơ của ' + name + '?', 'Hồ sơ biến mất khỏi trại, chuồng của họ (nếu có) thành trống. Người này vào game lại sẽ phải nhập trại từ đầu với số tù và chuồng mới. Không hoàn tác được.', 'Xóa hồ sơ', async function(){
+          try{
+            await fbDelete('players/' + pid);
+            state.players = state.players.filter(function(x){ return x.__pid !== pid; });
+            closeDrawer(); renderAll();
+            toast('Đã xóa hồ sơ của ' + name + '.');
+          }catch(e){ toast('Lỗi: ' + (e.message || e), true); }
+        });
+      }
+    }
+
+    /* ---------- điều hành: thông báo + chat + dọn rác + mật khẩu ---------- */
+    $('btnAnnounce').addEventListener('click', async function(){
+      var text = $('annText').value.trim();
+      if(!text){ toast('Chưa nhập nội dung thông báo.', true); return; }
+      var btn = $('btnAnnounce'); btn.disabled = true; btn.textContent = 'Đang phát…';
+      try{
+        await fbPostChat(ADMIN_NAME, '📣 ' + text);
+        try{ await fbPatch('meta/announcement', { text:text, ts:new Date().toISOString(), by:ADMIN_NAME }, ['text','ts','by']); }catch(e){}
+        $('annText').value = '';
+        $('annLast').textContent = 'Thông báo gần nhất: vừa xong — “' + text.slice(0, 60) + '”';
+        refreshChat();
+        toast('Đã phát thông báo toàn trại.');
+      }catch(e){ toast('Phát thông báo lỗi: ' + (e.message || e), true); }
+      btn.disabled = false; btn.textContent = 'Phát thông báo';
+    });
+    function renderChat(){
+      var box = $('chatList');
+      if(!state.chat.length){
+        box.innerHTML = '<div class="loading-note">Chưa có tin nhắn nào trong xóm.</div>';
+        return;
+      }
+      box.innerHTML = state.chat.slice(-60).map(function(m){
+        var isAdmin = m.pid === 'admin' || m.name === ADMIN_NAME;
+        return '<div class="cmsg' + (isAdmin ? ' admin' : '') + '"><b>' + escapeHtml(m.name || 'Bạn tù') + ':</b> ' + escapeHtml(m.text || '')
+          + '<div class="cmeta"><span>' + (m.ts ? new Date(m.ts).toLocaleString('vi-VN') : '') + '</span>'
+          + '<button type="button" class="del" data-delchat="' + escapeHtml(m.__pid) + '">gỡ tin ✕</button></div></div>';
+      }).join('');
+      box.querySelectorAll('[data-delchat]').forEach(function(el){
+        el.addEventListener('click', async function(){
+          try{
+            await fbDelete('servers/' + SERVER_ID + '/messages/' + el.dataset.delchat);
+            state.chat = state.chat.filter(function(x){ return x.__pid !== el.dataset.delchat; });
+            renderChat();
+            toast('Đã gỡ tin nhắn khỏi xóm.');
+          }catch(e){ toast('Gỡ tin lỗi: ' + (e.message || e), true); }
+        });
+      });
+      box.scrollTop = box.scrollHeight;
+    }
+    async function sendAdminChat(){
+      var inp = $('chatInp');
+      var text = inp.value.trim();
+      if(!text) return;
+      inp.value = '';
+      try{ await fbPostChat(ADMIN_NAME, text); refreshChat(); }
+      catch(e){ toast('Gửi chat lỗi: ' + (e.message || e), true); inp.value = text; }
+    }
+    $('btnChatSend').addEventListener('click', sendAdminChat);
+    $('chatInp').addEventListener('keydown', function(e){ if(e.key === 'Enter') sendAdminChat(); });
+
+    function ghostCandidates(){
+      var dayMs = 86400000;
+      return state.players.filter(function(p){
+        var t = Date.parse(p.lastSeen || '');
+        var oldEnough = !t || (Date.now() - t) > dayMs;
+        return !pCell(p) && p.serverId !== SERVER_ID && (+p.day || 1) <= 1 && pReform(p) === 0 && !p.released && oldEnough;
+      }).sort(function(a, b){ return String(a.lastSeen || '').localeCompare(String(b.lastSeen || '')); });
+    }
+    function renderGhosts(){
+      var list = ghostCandidates();
+      var box = $('ghostList');
+      if(!list.length){ box.innerHTML = '<p class="hint" style="margin:0">Không có hồ sơ nào nghi rác. Trại sạch sẽ.</p>'; return; }
+      box.innerHTML = list.map(function(p){
+        return '<div class="ghost-row">' + avatarHtml(p, false)
+          + '<div class="who"><b>' + escapeHtml(pName(p)) + ' · ' + escapeHtml(p.prisonerNo || '') + '</b><small>Chưa từng vào xóm · ngày ' + (+p.day || 1) + ' · hoạt động cuối ' + relTime(p.lastSeen) + '</small></div>'
+          + '<button type="button" class="btn sm danger-ghost" data-ghost="' + escapeHtml(p.__pid) + '">Xóa</button></div>';
+      }).join('');
+      box.querySelectorAll('[data-ghost]').forEach(function(el){
+        el.addEventListener('click', function(){
+          var p = state.players.find(function(x){ return x.__pid === el.dataset.ghost; });
+          if(!p) return;
+          askConfirm('Xóa hồ sơ rác của ' + pName(p) + '?', 'Đây là hồ sơ chưa từng vào Xóm Tò. Xóa rồi không khôi phục được.', 'Xóa hồ sơ', async function(){
+            try{
+              await fbDelete('players/' + p.__pid);
+              state.players = state.players.filter(function(x){ return x.__pid !== p.__pid; });
+              renderAll();
+              toast('Đã xóa hồ sơ rác của ' + pName(p) + '.');
+            }catch(e){ toast('Lỗi: ' + (e.message || e), true); }
+          });
+        });
+      });
+    }
+    $('btnChangePass').addEventListener('click', async function(){
+      var cur = $('curPass').value, nw = $('newPass').value;
+      if(!cur || !nw){ toast('Nhập đủ mật khẩu hiện tại và mật khẩu mới.', true); return; }
+      if(nw.length < 6){ toast('Mật khẩu mới cần ít nhất 6 ký tự.', true); return; }
+      var btn = $('btnChangePass'); btn.disabled = true; btn.textContent = 'Đang đổi…';
+      try{
+        var hCur = await hashPass(cur);
+        if(hCur !== state.passHash){ toast('Mật khẩu hiện tại chưa đúng.', true); }
+        else{
+          var hNew = await hashPass(nw);
+          await fbPatch('meta/admin', { passHash:hNew, updatedAt:new Date().toISOString() }, ['passHash','updatedAt']);
+          state.passHash = hNew;
+          $('curPass').value = ''; $('newPass').value = '';
+          toast('Đã đổi mật khẩu quản trị.');
+        }
+      }catch(e){ toast('Đổi mật khẩu lỗi: ' + (e.message || e), true); }
+      btn.disabled = false; btn.textContent = 'Đổi mật khẩu';
+    });
+
+    /* ---------- render tổng ---------- */
+    function renderAll(){
+      renderTiles();
+      renderCells();
+      renderTopLists();
+      renderPlayers();
+      renderGhosts();
+      if(state.detailPid) renderDrawer();
+    }
+
+    /* ---------- khởi động ---------- */
+    initGate();
+    </script>
+  </body>
+</html>
