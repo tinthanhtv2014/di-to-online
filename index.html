@@ -1772,10 +1772,14 @@
         lines:['Ra vô sân lao động qua cổng này hết nghe chưa.','Cổng này tui canh, đừng hòng lẻn.','Đi làm thì đi thẳng, đừng la cà.'] }
     ];
     const GUARD_ROUTES = {
-      gd1: [ {x:-9,z:-8},{x:0,z:-9.8},{x:9,z:-8},{x:3.2,z:-3.4},{x:6,z:9.8},{x:-6,z:9.8},{x:-10.5,z:2} ],
+      gd1: [ {x:-9,z:-8},{x:0,z:-9.8},{x:9,z:-8},{x:3.2,z:-3.4},{x:5.6,z:-1.6},{x:6,z:9.8},{x:-6,z:9.8},{x:-10.5,z:2} ],
       gd2: [ {x:-24,z:-11.9},{x:0,z:-11.9},{x:24,z:-11.9},{x:0,z:-11.9} ],
       gd4: [ {x:24,z:11.9},{x:0,z:11.9},{x:-24,z:11.9},{x:0,z:11.9} ],
-      gd8: [ {x:-13,z:-8.5},{x:-18,z:3.5},{x:-11.5,z:11},{x:8,z:11.5},{x:12.5,z:9.8},{x:12,z:-6},{x:6,z:-12.6},{x:-8,z:-12.6} ]
+      // gd8 vòng qua đầu tây của vườn rau + phía đông chuồng gà: đi
+      // thẳng (-13,-8.5)->(-18,3.5) là đâm vô hàng rào nam của vườn,
+      // trượt dọc rào chậm dần tới đứng ì rồi tự gỡ về điểm đầu, lặp
+      // vô hạn — tuyến phải né rào sẵn, đừng để watchdog gánh
+      gd8: [ {x:-13,z:-8.5},{x:-19.4,z:-8.6},{x:-19.4,z:3.5},{x:-18,z:3.5},{x:-11.6,z:4.8},{x:-11.5,z:11},{x:8,z:11.5},{x:12.5,z:9.8},{x:12,z:-6},{x:6,z:-12.6},{x:-8,z:-12.6} ]
     };
     const guards = GUARD_DEFS.map((def)=>{
       const mesh = makeChibi({ skin:def.skin, hair:0x2b2b30, hairStyle:'buzz', shirt:0x2e4057, pants:0x232a35,
@@ -2890,8 +2894,8 @@
       const cd = cellDefs[clamp((G.cellNo || 1) - 1, 0, cellDefs.length - 1)];
       const stops = [
         [{ x: cd.cx + 0.6, z: cd.frontZ + cd.facing * 0.95, look: 0.9 }],                    // trước cổng chuồng của người chơi
-        [{ x: 4.4, z: -3.2 }, { x: 6.4, z: -3.2 }, { x: 8.6, z: -3.2, look: 1.1 }],            // nhà vệ sinh (vô bằng cửa tây)
-        [{ x: -1.5, z: 7.6 }, { x: -1.5, z: 5.6 }, { x: -1.5, z: 3.4, look: 1.1 }],            // phòng ăn (vô bằng cửa nam)
+        [{ x: 4.4, z: -3.2 }, { x: 6.4, z: -3.2 }, { x: 8.6, z: -3.2, look: 1.1 }, { x: 6.4, z: -3.2 }, { x: 4.4, z: -3.2 }], // nhà vệ sinh (vô/ra bằng cửa tây)
+        [{ x: -1.5, z: 7.6 }, { x: -1.5, z: 5.6 }, { x: -1.5, z: 5.0, look: 1.1 }, { x: -1.5, z: 5.6 }, { x: -1.5, z: 7.6 }], // phòng ăn (vô/ra bằng cửa nam; điểm ngó ngay trong cửa, phía nam bàn chính — để điểm ngó ở giữa/ngoài bàn là hoặc nằm TRONG vật cản, hoặc phải xuyên qua bàn mới tới được)
         [{ x: 12.0, z: 4.8, look: 0.9 }],                                                      // cổng chuồng heo
         [{ x: -12.4, z: 8.5, look: 0.9 }],                                                     // chuồng gà
         [{ x: 12.4, z: -8.8, look: 0.9 }],                                                     // chuồng bò
@@ -2953,6 +2957,15 @@
         return;
       }
       // stage 'seek': đang lục soát — CHỈ khi nhìn thấy tận mắt mới rượt.
+      // TIMEOUT TỔNG của cả vòng lục soát: quá ~85 giây (hàng đợi
+      // từng chặng đã có timeout 7 giây riêng ở updateGuards) mà vẫn
+      // chưa xong thì bỏ cuộc như lục hết điểm — không để trạng
+      // thái seek treo vô hạn sang cả buổi sau
+      SEEK.t += gdt;
+      if(SEEK.t > 85){
+        seekFinish('Quản ngục tìm lâu quá, mệt nên bỏ cuộc rồi — bạn qua mặt được buổi điểm danh tối nay đó!', 'Tìm lâu quá… thôi, bỏ đi, mai tính!');
+        return;
+      }
       // Quản ngục đang bị đút lót thì "không thấy gì hết" như thường lệ
       if(g.bribeT <= 0){
         const d = Math.hypot(player.pos.x - g.pos.x, player.pos.z - g.pos.z);
@@ -2979,6 +2992,11 @@
        phòng mình trước / tới cửa phòng đích trước), qua cửa xong mới
        đi thẳng tới đích thật. guardNavGoTo trả về khoảng cách tới
        ĐÍCH THẬT để mọi check "tới nơi chưa" giữ nguyên ngữ nghĩa.
+       Hai ca phụ đã dính thiệt: (1) chọn điểm cửa theo ngưỡng khoảng
+       cách làm đích lật qua lật lại, quản ngục rung chết ở miệng cửa
+       — nay chọn theo tiến độ qua cửa (navDoorPoint). (2) cả hai ở
+       ngoài sân nhưng đường thẳng cắt ngang phòng (vừa ra WC lại đi
+       về phía bên kia phòng) — nay vòng qua góc phòng (navCrossPoint).
        ================================================================ */
     const NAV_ROOMS = [
       { id:'dine', minX:-7.2, maxX:4.2,  minZ:0.0,  maxZ:6.8,  doorIn:{x:-1.5, z:5.6},  doorOut:{x:-1.5, z:7.6} },
@@ -2990,25 +3008,92 @@
     }
     function navTarget(g, tx, tz){
       const gr = navRoomAt(g.pos.x, g.pos.z), tr = navRoomAt(tx, tz);
-      if(gr === tr) return null; // cùng khu (cùng phòng / cùng ngoài sân): đi thẳng
-      if(gr){ // đang ở trong phòng, đích ở ngoài: ra cửa phòng mình trước
-        return Math.hypot(gr.doorIn.x - g.pos.x, gr.doorIn.z - g.pos.z) > 0.45 ? gr.doorIn : gr.doorOut;
+      if(gr === tr){
+        if(gr) return null; // cùng ở trong 1 phòng: đi thẳng
+        // cả hai ở ngoài sân nhưng đường thẳng CẮT NGANG 1 phòng (hay
+        // gặp: vừa ra khỏi WC/phòng ăn lại phải đi về phía bên kia
+        // phòng — đi thẳng là chui lại cửa, kẹt ở miệng cửa): vòng
+        // qua góc phòng gần nhất thay vì xuyên phòng
+        return navCrossPoint(g, tx, tz);
       }
-      if(tr){ // đích ở trong phòng, mình ở ngoài: tới cửa phòng đó trước
-        return Math.hypot(tr.doorOut.x - g.pos.x, tr.doorOut.z - g.pos.z) > 0.45 ? tr.doorOut : tr.doorIn;
+      if(gr){ const p = navDoorPoint(g, gr, false); if(p) return p; } // đang ở trong phòng, đích ở ngoài: ra cửa phòng mình trước
+      if(tr){ const p = navDoorPoint(g, tr, true); if(p) return p; }  // đích ở trong phòng, mình ở ngoài: tới cửa phòng đó trước
+      return null;
+    }
+    function segHitsRoom(x1, z1, x2, z2, r, pad){
+      const minX = r.minX - pad, maxX = r.maxX + pad, minZ = r.minZ - pad, maxZ = r.maxZ + pad;
+      const dx = x2 - x1, dz = z2 - z1;
+      let t0 = 0, t1 = 1;
+      if(Math.abs(dx) < 1e-9){ if(x1 < minX || x1 > maxX) return false; }
+      else { let ta = (minX - x1) / dx, tb = (maxX - x1) / dx; if(ta > tb){ const tt = ta; ta = tb; tb = tt; } t0 = Math.max(t0, ta); t1 = Math.min(t1, tb); if(t0 > t1) return false; }
+      if(Math.abs(dz) < 1e-9){ if(z1 < minZ || z1 > maxZ) return false; }
+      else { let ta = (minZ - z1) / dz, tb = (maxZ - z1) / dz; if(ta > tb){ const tt = ta; ta = tb; tb = tt; } t0 = Math.max(t0, ta); t1 = Math.min(t1, tb); if(t0 > t1) return false; }
+      return true;
+    }
+    function navCrossPoint(g, tx, tz){
+      for(const r of NAV_ROOMS){
+        if(!segHitsRoom(g.pos.x, g.pos.z, tx, tz, r, 0.35)) continue;
+        const cs = [
+          { x: r.minX - 0.55, z: r.minZ - 0.55 }, { x: r.maxX + 0.55, z: r.minZ - 0.55 },
+          { x: r.minX - 0.55, z: r.maxZ + 0.55 }, { x: r.maxX + 0.55, z: r.maxZ + 0.55 }
+        ];
+        let best = null, bs = Infinity;
+        for(const c of cs){
+          if(pointBlocked(c.x, c.z, 0.35)) continue;
+          // chặng từ mình tới góc cũng không được cắt qua phòng —
+          // thiếu check này là góc xa phía bên kia phòng thắng điểm
+          // vì tổng đường ngắn hơn, mà đi tới đó lại phải xuyên phòng
+          if(segHitsRoom(g.pos.x, g.pos.z, c.x, c.z, r, 0)) continue;
+          const s = Math.hypot(c.x - g.pos.x, c.z - g.pos.z) + Math.hypot(tx - c.x, tz - c.z);
+          if(s < bs){ bs = s; best = c; }
+        }
+        if(best) return best;
       }
       return null;
+    }
+    /* Chọn điểm cửa theo TIẾN ĐỘ QUA CỬA, không theo ngưỡng khoảng
+       cách như trước: kiểu cũ cứ bước qua vạch 0.45 quanh điểm cửa
+       ngoài là đích lật ngược về điểm đó, bước lại gần thì lật tiếp
+       sang điểm trong — quản ngục rung qua lại ngay miệng cửa WC /
+       phòng ăn mãi không qua được (rượt đuổi cháy hết 45 giây, khiêng
+       người ngất phải chờ 14 giây mới tự gỡ được). Nay: đã lọt vào
+       HÀNH LANG CỬA (gần trục cửa và đã qua mặt điểm gần) thì đích
+       giữ nguyên là điểm phía xa cho tới khi qua hẳn cửa. */
+    function navDoorPoint(g, room, entering){
+      const A = entering ? room.doorOut : room.doorIn;  // điểm cửa phía mình đang đứng
+      const B = entering ? room.doorIn : room.doorOut;  // điểm cửa phía bên kia
+      const ax = B.x - A.x, az = B.z - A.z, len = Math.hypot(ax, az) || 1;
+      const t = ((g.pos.x - A.x) * ax + (g.pos.z - A.z) * az) / (len * len); // tiến độ dọc trục cửa: 0 ở A, 1 ở B
+      if(t >= 1) return null; // đã qua hẳn điểm xa: buông cho logic ngoài tính tiếp
+      const perp = Math.abs((g.pos.z - A.z) * ax - (g.pos.x - A.x) * az) / len; // lệch ngang khỏi trục cửa
+      const dA = Math.hypot(A.x - g.pos.x, A.z - g.pos.z);
+      if(dA <= 0.45 || (perp < 0.95 && t > -0.15)) return B;
+      return A;
     }
     function guardNavGoTo(g, tx, tz, speed, gdt){
       const nt = navTarget(g, tx, tz);
       if(nt) guardGoTo(g, nt.x, nt.z, speed, gdt);
       else guardGoTo(g, tx, tz, speed, gdt);
+      // ĐÍCH CUỐI của cả chặng (sau khi đã qua cửa / vòng góc phòng):
+      // watchdog đo tiến triển theo ĐÍCH CUỐI này, không theo điểm
+      // NAV trung gian — điểm cửa lật qua lật lại ở miệng cửa từng
+      // làm bộ đếm tiến triển bị reset liên tục, ổng kẹt ở cửa mà
+      // watchdog tưởng vẫn đang "đi có tiến triển"
+      g.destX = tx; g.destZ = tz;
       return Math.hypot(tx - g.pos.x, tz - g.pos.z);
     }
     function guardGoTo(g, x, z, speed, gdt){
       // ghi lại ĐÍCH THẬT mỗi lần được gọi — watchdog chống kẹt
       // (guardUnstick) dựa vào đây để biết ổng đang muốn đi đâu
       g.wantX = x; g.wantZ = z;
+      g.destX = x; g.destZ = z; // guardNavGoTo sẽ ghi đè bằng đích cuối sau khi gọi hàm này
+      // VỊ TRÍ đi DỨT KHOÁT: mỗi frame tiến thẳng min(d, speed*gdt)
+      // tới đích — giảm chấn hàm mũ của bản làm mượt CHỈ áp cho
+      // hướng mặt (rotY, cuối updateGuards) và camera/người chơi,
+      // KHÔNG áp lên vị trí quản ngục, nên không có chuyện "trôi
+      // tiệm cận mãi không tới": mọi mốc tới nơi (can thiệp, bắt
+      // giữ, khiêng, điểm danh) đều check theo khoảng cách thật
+      // và kích hoạt đúng như trước.
       let tx = x, tz = z;
       if(g.detourT > 0){
         // đang LÁCH tránh vật cản: đi tới điểm lách trước, tới nơi
@@ -3037,29 +3122,69 @@
       return false;
     }
     /* CHỐNG KẸT TỔNG cho quản ngục — chạy cho MỌI mode di chuyển
-       (tuần tra, về điểm trực, chủ trì điểm danh, can thiệp, rượt đuổi,
-       săn theo lịch, khiêng người, quay ra sau khi thả người):
-       có đích ở xa mà vị trí THẬT (sau va chạm) gần như không nhúc
-       nhích qua vài nhịp kiểm tra là coi như kẹt, leo thang xử lý:
-       1) lách ngang sang bên trống  2) lách xa hơn / đổi bên
-       3) chốt cuối: tự gỡ tới điểm trống gần nhất trên tuyến tuần
-       tra / điểm trực / đường khiêng của chính mình — không bao
-       giờ đứng chết một chỗ nữa. */
+       (tuần tra, về điểm trực, chủ trì điểm danh, can thiệp, hỗ trợ,
+       xử kỷ luật, đánh trả, rượt đuổi, săn theo lịch, ĐIỂM DANH TỐI
+       seekroll + LỤC SOÁT seek, đi đón + khiêng người ngất, rút về
+       sau khi thả, và MỌI chặng qua cửa của hệ NAV): hàm này được
+       gọi cuối vòng lặp cho từng quản ngục bất kể mode, và tiến
+       triển được đo theo ĐÍCH CUỐI của chặng (g.destX/destZ) chứ
+       không theo điểm NAV trung gian. Leo thang: lách ngang/lùi
+       vài lần -> vẫn kẹt thì CHỐT CUỐI: mode đích cố định được dời
+       tới điểm trống gần đích nhất; mode đích di động / can thiệp
+       thì BỎ CHẶNG AN TOÀN (rượt -> tính là thoát, săn -> bỏ cuộc,
+       đánh trả/can thiệp -> rút về điểm trực), không mode nào
+       được phép đứng ì vô hạn.
+       Hai kiểu kẹt phải bắt riêng, vì kiểu cũ chỉ đo "có nhúc nhích
+       không" nên lọt lưới 2 ca đã dính thiệt:
+       (a) ĐƠ CỨNG: vị trí thật gần như không nhúc nhích qua vài nhịp
+           kiểm tra -> leo thang: lách ngang 2 phía, lách lùi, chốt
+           cuối tự gỡ tới điểm trống GẦN ĐÍCH NHẤT thuộc về mình
+           (chọn gần mình như trước từng gỡ lùi về điểm xuất phát,
+           đi lại đúng chặng kẹt thành vòng lặp vô hạn).
+       (b) KHÔNG TIẾN TRIỂN: vẫn "đi" được (trượt dọc rào chậm dần,
+           rung qua lại quanh một điểm) nhưng khoảng cách tới đích
+           không giảm thêm 0.35 nào suốt 2.5 giây -> cũng lách như
+           trên, nhưng KHÔNG bao giờ tự gỡ tức thời (tránh teleport
+           giữa một cuộc rượt đuổi thiệt); mode đích di động (rượt /
+           săn / đánh trả) còn đòi thêm điều kiện chính mình cũng
+           đang ì, vì dí theo người đang chạy thì khoảng cách không
+           giảm là chuyện thường. */
     function guardUnstick(g, gdt){
-      const hasDest = (g.wantX !== undefined) && Math.hypot(g.wantX-g.pos.x, g.wantZ-g.pos.z) > 0.65;
-      if(!hasDest){ g.stuckT = 0; g.stuckChk = 0; g.lastX = g.pos.x; g.lastZ = g.pos.z; return; }
+      const destX = (g.destX !== undefined) ? g.destX : g.wantX, destZ = (g.destZ !== undefined) ? g.destZ : g.wantZ;
+      const hasDest = (destX !== undefined) && Math.hypot(destX-g.pos.x, destZ-g.pos.z) > 0.6;
+      if(!hasDest){ g.stuckT = 0; g.stuckChk = 0; g.slowT = 0; g.progT = 0; g.progD = Infinity; g.progWX = undefined; g.lastX = g.pos.x; g.lastZ = g.pos.z; return; }
       g.stuckChk = (g.stuckChk || 0) + gdt;
       if(g.stuckChk < 0.5) return;
+      const chk = g.stuckChk; g.stuckChk = 0;
       const moved = Math.hypot(g.pos.x-(g.lastX ?? g.pos.x), g.pos.z-(g.lastZ ?? g.pos.z));
       g.lastX = g.pos.x; g.lastZ = g.pos.z;
-      if(moved >= 0.06){ g.stuckT = 0; if(moved >= 0.3) g.stuckLvl = 0; g.stuckChk = 0; return; }
-      g.stuckT = (g.stuckT || 0) + g.stuckChk; g.stuckChk = 0;
-      if(g.stuckT < 1.2 || g.detourT > 0) return;
+      if(moved >= 0.06) g.stuckT = 0;
+      else g.stuckT = (g.stuckT || 0) + chk;
+      // cấp leo thang chỉ hạ khi có TIẾN TRIỂN thiệt tới đích — hạ
+      // theo độ nhúc nhích như trước thì 1 cú lách thành công (dù là
+      // lách lùi) cũng xóa cấp, lần kẹt sau ở cùng chỗ lại bắt đầu từ
+      // cấp 0, không bao giờ leo tới mức tự gỡ được
+      if(g.lvlAnchorD !== undefined && Math.hypot(destX-g.pos.x, destZ-g.pos.z) < g.lvlAnchorD - 0.5){ g.stuckLvl = 0; g.lvlAnchorD = undefined; }
+      g.slowT = moved < 0.09 ? (g.slowT || 0) + chk : 0;
+      // tiến triển tới đích: đích đổi thì neo lại mốc mới
+      const distNow = Math.hypot(destX-g.pos.x, destZ-g.pos.z);
+      if(g.progWX === undefined || Math.hypot(g.progWX-destX, g.progWZ-destZ) > 0.6){ g.progWX = destX; g.progWZ = destZ; g.progD = distNow; g.progT = 0; }
+      else if(distNow < g.progD - 0.35){ g.progD = distNow; g.progT = 0; }
+      else if(g.detourT > 0){ g.progT = 0; if(distNow < g.progD) g.progD = distNow; }
+      else g.progT = (g.progT || 0) + chk;
+      const movingTarget = (g.mode==='chase' || g.mode==='hunt' || g.mode==='fightback');
+      // ngưỡng đích hạ xuống 0.95 (trước là 2.0): ca kẹt SÁT đích —
+      // điểm lục soát / điểm cửa / điểm khiêng chỉ còn cách ~1m mà
+      // va chạm cứ đẩy ra, không bao giờ vào được ngưỡng "tới nơi"
+      // 0.5-0.6 — trước đây lọt lưới cả 2 kiểu kẹt, đứng ì vĩnh viễn
+      const progStuck = g.progT >= 2.5 && distNow > 0.95 && (!movingTarget || g.slowT >= 2.0);
+      const dispStuck = g.stuckT >= 1.2;
+      if((!dispStuck && !progStuck) || g.detourT > 0) return;
       // --- bị kẹt thiệt: leo thang ---
-      const dx = g.wantX-g.pos.x, dz = g.wantZ-g.pos.z, dl = Math.hypot(dx,dz) || 1;
+      const dx = destX-g.pos.x, dz = destZ-g.pos.z, dl = Math.hypot(dx,dz) || 1;
       const lvl = g.stuckLvl || 0;
       let placed = false;
-      if(lvl < 2){
+      if(lvl < 3){
         // lách sang bên: thử cả 2 phía vuông góc với hướng đi, phía
         // nào trống thì đi phía đó; lần lách sau xa hơn + ưu tiên bên ngược
         const px = -dz/dl, pz = dx/dl, off = lvl >= 1 ? 2.3 : 1.25;
@@ -3068,24 +3193,76 @@
           const cx = g.pos.x + px*s*off + dx/dl*0.4, cz = g.pos.z + pz*s*off + dz/dl*0.4;
           if(!pointBlocked(cx, cz, 0.35)){ g.detourX = cx; g.detourZ = cz; g.detourT = 1.6; placed = true; break; }
         }
+        if(!placed){ // 2 bên đều bị chắn (dính góc / miệng cửa): lách lùi ra sau một bước rồi tính tiếp
+          const bx = g.pos.x - dx/dl*1.5, bz = g.pos.z - dz/dl*1.5;
+          if(!pointBlocked(bx, bz, 0.35)){ g.detourX = bx; g.detourZ = bz; g.detourT = 1.2; placed = true; }
+        }
       }
-      g.stuckLvl = lvl + 1; g.stuckT = 0;
-      if(!placed){
-        // chốt cuối: tự gỡ tới điểm trống gần nhất thuộc về mình
+      g.stuckLvl = lvl + 1; g.stuckT = 0; g.progT = 0; g.progD = distNow; g.lvlAnchorD = distNow;
+      if(lvl >= 3){
+        // CHỐT CUỐI — lách 3 lần vẫn không qua được thì không chờ
+        // thêm nữa (trước đây tới cấp 2 là hết bài: cấp cứ tăng mà
+        // không có hành động nào nữa, kẹt vĩnh viễn ở miệng cửa /
+        // góc phòng). Hai hướng xử lý theo loại mode:
+        g.detourT = 0; g.stuckLvl = 0; g.lvlAnchorD = undefined; g.seekLegT = 0; g.legT = 0;
+        if(movingTarget || g.mode==='intervene' || g.mode==='assist'){
+          // (a) đích DI ĐỘNG / đang can thiệp: BỎ CHẶNG AN TOÀN —
+          // tuyệt đối không dịch chuyển ổng tới gần người chơi (ăn
+          // gian pha rượt); bỏ cuộc đúng cơ chế sẵn có của từng hệ
+          if(g.mode==='chase'){ if(CHASE.guard === g) endChaseEscaped(); else { g.mode = g.homeMode; g.taskT = 0; } }
+          else if(g.mode==='hunt'){ if(HUNT.guard === g) endHunt(false); else { g.mode = g.homeMode; g.taskT = 0; } }
+          else if(g.mode==='fightback'){
+            if(FIGHT.active && FIGHT.guard === g){ FIGHT.active = false; FIGHT.guard = null; hideFightHud(); for(const o of guards){ if(o.mode==='assist'){ o.mode = o.homeMode; o.taskT = 0; } } }
+            g.mode = g.homeMode; g.taskT = 0;
+          } else { g.mode = g.homeMode; g.taskT = 0; }
+          return;
+        }
+        // (b) đích CỐ ĐỊNH (tuần tra, điểm trực, điểm danh, lục
+        // soát, khiêng…): DỜI tới điểm trống gần ĐÍCH nhất — danh
+        // sách điểm gồm cả 2 điểm cửa của hệ NAV, điểm điểm danh,
+        // lộ trình khiêng, và vòng điểm quanh vị trí hiện tại mà
+        // gần đích hơn hiện tại; gỡ về phía trước, không gỡ lùi
         const cands = [];
         const route = GUARD_ROUTES[g.def.key]; if(route) for(const w of route) cands.push(w);
         if(g.def.post) cands.push(g.def.post);
         if(g.def.mealPost) cands.push(g.def.mealPost);
         if(g.carryPath) for(const w of g.carryPath) cands.push(w);
-        cands.push({ x:g.wantX, z:g.wantZ });
-        let best = null, bd = Infinity;
+        for(const r of NAV_ROOMS){ cands.push(r.doorIn, r.doorOut); }
+        cands.push(PRESIDE_SPOT);
+        cands.push({ x:destX, z:destZ });
+        for(let a = 0; a < 8; a++) for(const rr of [1.4, 2.6]){
+          const cx = g.pos.x + Math.cos(a * Math.PI / 4) * rr, cz = g.pos.z + Math.sin(a * Math.PI / 4) * rr;
+          if(Math.hypot(cx - destX, cz - destZ) < distNow - 0.3) cands.push({ x:cx, z:cz });
+        }
+        let best = null, bd = Infinity, bg = Infinity;
         for(const c of cands){
           if(pointBlocked(c.x, c.z, 0.35)) continue;
-          const dd = Math.hypot(c.x-g.pos.x, c.z-g.pos.z);
-          if(dd < bd){ bd = dd; best = c; }
+          const dd = Math.hypot(c.x-destX, c.z-destZ);
+          const dg = Math.hypot(c.x-g.pos.x, c.z-g.pos.z);
+          if(dd < bd - 0.01 || (Math.abs(dd - bd) <= 0.01 && dg < bg)){ bd = dd; bg = dg; best = c; }
         }
-        if(best && bd > 0.05){ g.pos.x = best.x; g.pos.z = best.z; }
-        g.detourT = 0; g.stuckLvl = 0;
+        if(best && bg > 0.05){ g.pos.x = best.x; g.pos.z = best.z; }
+        return;
+      }
+      if(!placed && dispStuck){
+        // đơ cứng ngay từ cấp thấp mà 2 bên đều bị chắn: tự gỡ sớm
+        // tới điểm trống gần ĐÍCH nhất thuộc về mình (như trước)
+        const cands = [];
+        const route = GUARD_ROUTES[g.def.key]; if(route) for(const w of route) cands.push(w);
+        if(g.def.post) cands.push(g.def.post);
+        if(g.def.mealPost) cands.push(g.def.mealPost);
+        if(g.carryPath) for(const w of g.carryPath) cands.push(w);
+        for(const r of NAV_ROOMS){ cands.push(r.doorIn, r.doorOut); }
+        cands.push({ x:destX, z:destZ });
+        let best = null, bd = Infinity, bg = Infinity;
+        for(const c of cands){
+          if(pointBlocked(c.x, c.z, 0.35)) continue;
+          const dd = Math.hypot(c.x-destX, c.z-destZ);
+          const dg = Math.hypot(c.x-g.pos.x, c.z-g.pos.z);
+          if(dd < bd - 0.01 || (Math.abs(dd - bd) <= 0.01 && dg < bg)){ bd = dd; bg = dg; best = c; }
+        }
+        if(best && bg > 0.05){ g.pos.x = best.x; g.pos.z = best.z; }
+        g.detourT = 0; g.stuckLvl = 0; g.lvlAnchorD = undefined;
       }
     }
     function updateGuards(gdt, t){
@@ -3110,7 +3287,7 @@
           g.bribeT -= gdt;
           if(g.mode==='intervene' || g.mode==='discipline'){ g.mode = g.homeMode; g.waitT = 2; g.taskT = 0; }
         }
-        g.wantX = undefined; // đích tính theo frame: mode nào không gọi guardGoTo frame này thì không bị watchdog coi là kẹt
+        g.wantX = undefined; g.destX = undefined; // đích tính theo frame: mode nào không gọi guardGoTo frame này thì không bị watchdog coi là kẹt
         let moving = false;
         const chase = (g.mode==='intervene' || g.mode==='assist' || g.mode==='discipline' || g.mode==='fightback' || g.mode==='chase' || g.mode==='hunt' || g.mode==='carryFetch' || g.mode==='carryBack');
         // fightback/chase chạy 3.35 — chậm hơn chân chạy trốn của người
@@ -3178,6 +3355,18 @@
           }
           const wp = g.carryPath[0];
           const lastLeg = g.carryPath.length === 1;
+          // TIMEOUT TỪNG CHẶNG KHIÊNG (ngoài timeout tổng 20s ở
+          // dưới): 1 chặng quá 7 giây không tới thì bỏ chặng đó đi
+          // tiếp chặng sau; kẹt ở chặng CUỐI thì ép hoàn thành luôn
+          // bằng nhánh timeout tổng — trước đây kẹt 1 chặng là cả
+          // lộ trình khiêng đứng ì tới 20 giây mới tự gỡ
+          if(g.legWp !== wp){ g.legWp = wp; g.legT = 0; }
+          g.legT = (g.legT || 0) + gdt;
+          if(g.legT > 7){
+            g.legT = 0;
+            if(lastLeg) g.taskT = 99; // ép nhánh "kẹt quá lâu" ở dưới thả người xuống ngay
+            else g.carryPath.shift();
+          }
           const d = guardGoTo(g, wp.x, wp.z, lastLeg ? 2.3 : 2.6, gdt);
           moving = d > 0.45;
           if(d <= (lastLeg ? 0.6 : 0.5)) g.carryPath.shift();
@@ -3218,9 +3407,17 @@
           g.taskT += gdt;
           if(g.carryPath && g.carryPath.length){
             const wp = g.carryPath[0];
-            const d = guardGoTo(g, wp.x, wp.z, 2.4, gdt);
-            moving = d > 0.4;
-            if(d <= 0.5) g.carryPath.shift();
+            // TIMEOUT TỪNG CHẶNG RA CỔNG: quá 5 giây không qua nổi
+            // 1 chặng cổng thì bỏ chặng đó (timeout tổng 8s ở dưới
+            // vẫn là chốt cuối) — khỏi đứng ì trong chuồng người ta
+            if(g.legWp !== wp){ g.legWp = wp; g.legT = 0; }
+            g.legT = (g.legT || 0) + gdt;
+            if(g.legT > 5){ g.carryPath.shift(); g.legT = 0; }
+            else {
+              const d = guardGoTo(g, wp.x, wp.z, 2.4, gdt);
+              moving = d > 0.4;
+              if(d <= 0.5) g.carryPath.shift();
+            }
           }
           if((!g.carryPath || !g.carryPath.length) || g.taskT > 8){
             g.carryPath = null; g.mode = g.homeMode; g.waitT = 1; g.taskT = 0;
@@ -3228,6 +3425,10 @@
         } else if(g.mode==='intervene' || g.mode==='assist'){
           g.taskT += gdt;
           if(!FIGHT.active){ g.mode = g.homeMode; }
+          else if(g.mode==='intervene' && g.taskT > 16){ // TIMEOUT CAN THIỆP: kẹt đường quá lâu không tới nổi thì rút về điểm trực — trận đấu tự kết thúc theo các mốc sẵn có của nó (đủ 14s tự giải tán / người chơi chạy xa thì chuyển rượt), không để ổng chạy đâm tường vô hạn
+            g.mode = g.homeMode; g.taskT = 0;
+            showBubble(g, 'Đường kẹt quá… thôi, tui về điểm trực đây!', 2000);
+          }
           else if(g.mode==='intervene' && FIGHT.delay > 0){ /* còn đang phản ứng, chưa can ngay — để 2 bên trao đòn vài nhịp cho có cảm giác thiệt */ }
           else if(g.mode==='assist' && FIGHT.kind==='guard'){
             // đồng nghiệp tới hóng + chực sẵn, không phá trận đấu tay đôi với quản ngục kia
@@ -3294,7 +3495,11 @@
           if(!moving) g.targetRot = Math.PI; // tới nơi thì quay mặt ra sân chờ
         } else if(g.mode==='seek'){
           // TRỐN TÌM: đi lục từng điểm trong SEEK.q; điểm cuối của mỗi
-          // chỗ (có 'look') thì đứng lại xoay ngó quanh một lúc mới đi
+          // chỗ (có 'look') thì đứng lại xoay ngó quanh một lúc mới đi.
+          // Đi bằng guardNavGoTo (không đi thẳng): chặng giữa 2 điểm
+          // lục soát có thể cắt ngang WC / phòng ăn (vừa ra khỏi WC
+          // lại phải qua chuồng bò phía đông bắc) — đi thẳng là chui
+          // lại vào phòng rồi kẹt ở góc trong
           if(g.seekWaitT > 0){
             g.seekWaitT -= gdt;
             g.targetRot += gdt * 1.7; // xoay người ngó quanh tìm
@@ -3302,11 +3507,22 @@
             if(g.seekWaitT <= 0 && SEEK.q.length) SEEK.q.shift();
           } else if(SEEK.q.length){
             const wp = SEEK.q[0];
-            const d = guardGoTo(g, wp.x, wp.z, 3.3, gdt);
-            moving = d > 0.5;
-            if(d <= 0.55){
-              if(wp.look) g.seekWaitT = wp.look;
-              else SEEK.q.shift();
+            // TIMEOUT TỪNG CHẶNG LỤC SOÁT: 1 điểm trong hàng đợi mà
+            // quá 7 giây không tới được (điểm sát vật cản, watchdog
+            // lách mãi không vào nổi ngưỡng 0.55) thì BỎ ĐIỂM ĐÓ đi
+            // tiếp điểm sau — trước đây không có timeout này nên 1
+            // điểm hỏng là cả hàng đợi đơ theo vĩnh viễn, ổng đứng
+            // ì ở 1 chỗ suốt buổi ngủ
+            if(g.seekHead !== wp){ g.seekHead = wp; g.seekLegT = 0; }
+            g.seekLegT = (g.seekLegT || 0) + gdt;
+            if(g.seekLegT > 7){ SEEK.q.shift(); g.seekLegT = 0; }
+            else {
+              const d = guardNavGoTo(g, wp.x, wp.z, 3.3, gdt);
+              moving = d > 0.5;
+              if(d <= 0.55){
+                if(wp.look) g.seekWaitT = wp.look;
+                else SEEK.q.shift();
+              }
             }
           } else moving = false;
         } else { // patrol
@@ -3316,9 +3532,18 @@
             if(g.sayCd <= 0 && Math.random() < gdt * 0.12){ g.sayCd = rand(14, 26); showBubble(g, pick(g.def.lines), 2400); }
           } else if(route){
             const wp = route[g.wp % route.length];
-            const d = guardGoTo(g, wp.x, wp.z, speed, gdt);
-            moving = d > 0.4;
-            if(!moving){ g.wp++; g.waitT = rand(2, 5); }
+            // TIMEOUT CHẶNG TUẦN TRA: chặng dài nhất hợp lệ ~35
+            // giây (đi ngang cả sân ở tốc độ tuần tra); quá 50 giây
+            // trên cùng 1 điểm tuyến thì bỏ điểm đó qua điểm kế —
+            // chốt phụ sau watchdog, không chặng nào chờ vô hạn
+            if(g.legWp !== wp){ g.legWp = wp; g.legT = 0; }
+            g.legT = (g.legT || 0) + gdt;
+            if(g.legT > 50){ g.wp++; g.waitT = rand(1, 2); g.legT = 0; }
+            else {
+              const d = guardGoTo(g, wp.x, wp.z, speed, gdt);
+              moving = d > 0.4;
+              if(!moving){ g.wp++; g.waitT = rand(2, 5); }
+            }
           }
         }
         collide(g.pos, 0.3);
